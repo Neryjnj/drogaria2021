@@ -21,7 +21,7 @@ Static lPrecMult    := .F.      //Indica se a Consulta esta ativa
 ±±³Uso       ³ Template de Drogarias                                       		³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Observ.   ³ Esta Rotina eh chamada pela rotina LOJC060, o qual disponibiliza-³±±
-±±³          ³ rá sua chamada atraves da verificacao HasTemplate("DRO")			³±±
+±±³          ³ rá sua chamada atraves da verificacao (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))			³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROCONSPRC()
 Local nReg		:= 1

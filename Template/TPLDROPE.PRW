@@ -33,7 +33,7 @@ Static lJaChamouANVISA	:= .F.	// Verifica se a tela para informacoes da ANVISA j
 Template Function FrtCarga()
 Local aRet := ParamIxb[1]
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	//Inclui arquivos utilizados pelo Template de Drogaria
 	AAdd(aRet, "ACO")	//Cabeçalho - Tabela de Preços
 	AAdd(aRet, "ACP")	//Itens - Tabela de Preços
@@ -573,7 +573,7 @@ Return _aAux
 Template Function FrtCancela()
 Local _uProdTPL 	:= ParamIxb[4]
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1 = Esta' cancelando um item da venda ³
 	//³2 = Esta' cancelando o cupom          ³
@@ -2192,7 +2192,7 @@ Return _lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function GQREENTR()
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	/*Grava informacoes referentes a medicamentos controlados*/
 	T_DroEntANVISA(.F.)
 	/*Grava informacoes do produto para pre-pedido de compras*/
@@ -2216,7 +2216,7 @@ Return .T.
 Template Function MT100GRV()
 Local lDeleta := ParamIxb[1]
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	If lDeleta
 		T_DroEntANVISA( .T. )
 	Endif
@@ -2242,7 +2242,7 @@ Local _aArea   := GetArea()
 Local _nOpcao  := ParamIxb[1]
 Local lFuncao  := .T.
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	_cCodCli := SA1->A1_COD
 	_cLojCli := SA1->A1_LOJA
 	
@@ -2528,7 +2528,7 @@ Return aRet
 Template Function CRDCRIABUT() 
 Local _aButtons   := {}
 
-If HasTemplate("DRO") 
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) 
 	_aButtons   := ParamIxb[1]
 	AAdd(_aButtons, {"AUTOM"  , {|| DRONewCart()} , STR0079 }) //"Novo cartão"
 EndIf
@@ -2867,20 +2867,37 @@ Return aBotoes
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
 Template Function FRTFuncoes()
-Local _aFuncoes := ParamIxb[1]			//Conteudo o array aFuncoes
+Local _aFuncoes := ParamIxb[1]	//Conteudo o array aFuncoes
+Local nOption   := IIf(Len(ParamIxb) > 1, ParamIxb[2],69)	//nOpção do Menu
+Local nNumMenu  := IIf(Len(ParamIxb) > 1, Val(ParamIxb[3]),30)	//nOpção do Menu
+Local cOrigem   := IIf(Len(ParamIxb) > 1, ParamIxb[4],"FRT")	//nOpção do Menu
+Local oTef20	:= NIL
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Intervalo utilizado pelos templates:³
 //³70 a 99                             ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If T_DroLenANVISA() > 0
-	AAdd( _aFuncoes, { "70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
-Endif
+If cOrigem == "FRT"
+	If T_DroLenANVISA() > 0
+		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
+	Endif
 
-If cTipTef == TEF_CLISITEF .AND. lUsaTef .AND. HasTemplate("DRO")  
-	AAdd( _aFuncoes, { "71", "PBM VidaLink"  				,"T_DroVLGet(1)"	, {|x|  .F. } } ) //"PBM VIDA LINK"
-	AAdd( _aFuncoes, { "72", "PBM PharmaSystem"  			,"T_DroVLGet(541)"	, {|x|  .F. } } ) //"PBM PHARMASYSTEM"
-	AAdd( _aFuncoes, { "73", "PBM Funcional Card"  			,"T_DroVLGet(560)"	, {|x|  .F. } } ) //"PBM Funcional Card"
+	If cTipTef == TEF_CLISITEF .AND. lUsaTef .AND. (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))  
+		AAdd( _aFuncoes, { "71", "PBM VidaLink"  	  ,"T_DroVLGet(1)"	, {|x|  .F. } } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { "72", "PBM PharmaSystem"  ,"T_DroVLGet(541)"	, {|x|  .F. } } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { "73", "PBM Funcional Card","T_DroVLGet(560)"	, {|x|  .F. } } ) //"PBM Funcional Card"
+	EndIf
+ElseIf cOrigem == "TOTVSPDV"
+	If T_DroLenANVISA() > 0
+		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T. )" , "", cValToChar(++nNumMenu)})
+	EndIf
+
+	oTEF20 := STBGetTEF()
+	If STFGetCfg("lUsaTef") .And. oTef20:oCOnfig:oCfgTef:oSitef:lCCCD //Verifica se está usando o Clisitef
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
+	EndIf
 EndIf
 
 Return _aFuncoes
@@ -3218,7 +3235,7 @@ Local cClassTe		:= ''
 Local cSupervisor	:= Space(25)
 Local lPermTelAnv	:= .T.
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	If ValType(cItem) == "C"
 		nItem := Val(cItem)
 	Else
@@ -3314,7 +3331,7 @@ Return
 Template Function LJ140EXC()
 Local lVendido := ParamIxb[1]
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	If !lVendido
 		T_DROCancANVISA(.T.)		//Localizado no fonte DROVLDFUNCS.prw
 	Endif
@@ -3587,7 +3604,7 @@ Return
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function MT340D3()
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	T_DroEntANVISA( .F., "MT340D3")
 Endif
 
@@ -3609,7 +3626,7 @@ Return .T.
 Template Function MT220GRV()
 Local cProd := Paramixb[3]  // codigo do produto
 
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	T_DroEntANVISA( .F., "MT220GRV",/* cCodLista*/ ,cProd )
 Endif
 
@@ -3727,7 +3744,7 @@ Static Function TPLDrVlSA2()
 Local cMensagem := ""
 Local lRet		:= .T.
 
-If HasTemplate("DRO") 
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) 
 	If SA2->(ColumnPos("A2_FABRICA")) > 0
 		If AllTrim(Upper(M->A2_FABRICA)) <> "S"
 			cMensagem := "Atenção . Campo A2_FABRICA não está preenchido com 'S' isso " +;

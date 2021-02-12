@@ -110,7 +110,7 @@ nNumPbm		:= nOpPbm	//nNumPBM é uma variavel estatica
 
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/
-If HasTemplate("DRO")
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 	T_DROLCS()
 EndIf
 

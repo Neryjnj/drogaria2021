@@ -1,0 +1,2028 @@
+#INCLUDE "LOJA110.CH"
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "FWADAPTEREAI.CH"
+#INCLUDE "FWMVCDEF.CH"
+
+Static aLocais  := {}
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Funcao    ³ Loja110	 ³ Autor ³ Vendas Cliente       ³ Data ³ 22/06/02 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Cadastro de produtos 									  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso		 ³ Automacao Comercial										  ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function LOJA110(xAutoCab, xAutoItens, nOpcAuto)
+
+Private aPos:= { 8, 4, 11, 74 }
+Private aRotina := MenuDef()
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Define o cabe‡alho da tela de atualiza‡oes                   ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Private cCadastro	:= STR0006		//"Atualiza‡„o de Produtos"
+Private lConfSx8	:= (ExistBlock("CONFSX8"))	// Atualiza o SX8
+Private lAtuB0Fil	:= (ExistBlock("ATUB0FIL"))	// Gera no SB0 registros para todas as filiais
+
+Private aMemos 		:= {}						//Array dos campos MEMO			
+Private lLoja110Auto := (xAutoCab <> NIL .OR. xAutoItens <> NIL)
+Private aAutoCab	:= {}
+Private aAutoItens	:= {}
+Private aCpoAltSB1 	:= {} 						// Vetor usado na gravacao do historico de alteracoes (AIF)
+
+//Carrega no array os campos MEMO
+LJ110Memo()
+
+DbSelectArea("SB0")
+DbSelectArea("SB1")
+
+If (Type("lLoja110Auto") <> "U" .And. lLoja110Auto)
+	DEFAULT nOpcAuto := 3
+	aAutoCab	:= xAutoCab
+	aAutoItens	:= xAutoItens
+	MBrowseAuto(nOpcAuto,aAutoCab,"SB1")
+Else
+	mBrowse( 6, 1,22,75,"SB1")
+EndIf
+
+Return
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Fun‡„o    |MenuDef	³ Autor ³ Fernando Amorim       ³ Data ³11/12/06  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Funcao de definição do aRotina                             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³ aRotina   retorna a array com lista de aRotina             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ SIGALOJA                                                   ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Static Function MenuDef()  
+
+Private aRotina := {	{ STR0001,"AxPesqui"	, 0 , 1 , , .F.},;			//"Pesquisar"
+			{ STR0002,"LJ110Visual"	, 0 , 2 , , .T.},;			//"Visualizar"
+			{ STR0003,"LJ110Inclui"	, 0 , 3 , , .T.},;			//"Incluir"
+			{ STR0004,"LJ110Altera"	, 0 , 4, 02 , .T.},;		//"Alterar"
+			{ STR0005,"LJ110Deleta"	, 0 , 5, 01 , .T. },;		//"Excluir"
+			{ STR0018,"LJ110Copia"	, 0 , 3, 0 , .T. }}			//"Copia"
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Ponto de entrada utilizado para inserir novas opcoes no array aRotina  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If ExistBlock("LJ110MNU")
+	LjGrvLog( NIL, "Antes da execução do P.E. LJ110MNU")
+	ExecBlock("LJ110MNU",.F.,.F.)
+	LjGrvLog( NIL, "Depois da execução do P.E. LJ110MNU")
+EndIf		
+	
+Return aRotina
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Fun‡„o    ³LJ110Visua³ Autor ³ Elaine Beraldo        ³ Data ³ 28.09.94 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Programa para visualizacao dos produtos                    ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ Void LJ110Visual(ExpC1,ExpN1)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpN1 = Numero do registro                                 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ SIGALOJA                                                   ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function LJ110Visual( cAlias, nReg, nOpc )
+Local bCampo
+Local nOpcA      := 0
+Local nUsado     := 0
+Local nSavRegSB0 := 0
+Local nSavRegSX3 := 0
+Local nCnt       := 0
+Local oDlg
+Local oGet
+Local nI		 := 0		// controle de loop
+Local _aObjects  := {}
+Local _aPosObj   := {}
+Local _aInfo     := {}
+Local _aSizeAut  := MsAdvSize()
+Local aBotao	   := {} 
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta a entrada de dados do arquivo                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Private aTELA[0][0]
+Private aGETS[0]
+Private aHeader[0]
+Private aCOLS[0]
+
+bCampo := {|nCPO| Field(nCPO) }
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Salva a integridade dos campos de Bancos de Dados            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea(cAlias)
+
+If Reccount() == 0
+	Return (.T.)
+Endif
+If SB1->B1_FILIAL <> xFilial("SB1")
+	Help(" ",1,"A000FI")
+	Return (.T.)
+Endif
+
+For nI := 1 to FCount()
+	M->&(EVAL(bCampo,nI)) := FieldGet(nI)
+Next nI
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Salva a integridade dos campos de Bancos de Dados 			  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cAlias1 := "SB0"
+
+DbSelectArea("SX2")
+DbSeek( cAlias1 )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Executa funcao para FillGetDados³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LJ110FillGet(nOpc, cAlias1)
+
+DbSelectArea( cAlias1 )
+DbSetOrder( 1 )
+DbSeek( xFilial("SB1")+SB1->B1_COD )
+nSavRegSB0 := Recno()
+
+//Deve mostrar o Menu Fiscal na tela de consulta de produto
+If LjHomolPaf() .AND. LjNfPafEcf(SM0->M0_CGC) .AND. LjxBGetPaf()[2]
+	Aadd(aBotao , {"historic",	{|| STBMenFis(.T.)}, "Menu Fiscal" })
+EndIf
+
+// Calcula as posicoes da tela
+_aObjects := {}
+AADD(_aObjects,{100,100,.T.,.T.})
+AADD(_aObjects,{315,035,.T.,.T.})
+_aInfo    := {_aSizeAut[1],_aSizeAut[2],_aSizeAut[3],_aSizeAut[4],3,3}
+_aPosObj  := MsObjSize(_aInfo,_aObjects,.T.)
+
+DEFINE MSDIALOG oDlg TITLE cCadastro From _aSizeAut[7],0 TO _aSizeAut[6],_aSizeAut[5] of oMainWnd PIXEL
+EnChoice( cAlias, nReg, nOpc, , , , , _aPosObj[1],, 3 )
+oGet	 := MsGetDados():New(_aPosObj[2,1],_aPosObj[2,2],_aPosObj[2,3],_aPosObj[2,4],nOpc,.T.,.T.,"",,,)
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{||oDlg:End()},{||oDlg:End()},,aBotao)
+
+Return nOpca
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Fun‡„o    ³LJ110Alter³ Autor ³ Elaine Beraldo        ³ Data ³ 28.09.94 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Programa exclusivo ao LOJA110 para alteracao               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ Void LJ110Altera(ExpC1,ExpN1)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpN1 = Numero do registro                                 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ LOJA110                                                    ³±±
+±±ÚÄÄÄÄÄÄÄÄÂÄÁÄÄÄÄÂÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³ DATA   ³ BOPS ³Prograd.³ALTERACAO                                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³10/04/07³122119³Fernando³Reposicionamento da tabela SB1 após a alteração±±
+±±³        ³      ³        ³da imagem do produto                          ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function LJ110Altera( cAlias, nReg, nOpc )
+
+Local aArea 	:= GetArea()    // Guarda a area 
+Local nI		:= 0			// controle de loop
+Local bCampo					// Bloco de codigo de codigo
+Local nOpca     := 0			// Numero da opcao
+Local lGravaOk  :=.T.
+Local nSavRegSB0     			// recno da tabela SBO
+Local aAltera
+Local _aObjects := {}
+Local _aPosObj  := {}
+Local _aInfo    := {}
+Local _aSizeAut := MsAdvSize()
+Local bGrava
+Local cChaveSB1 := Nil   			// guarda posição antes da alteração da imagem do produto
+
+Local lHistTab  := SuperGetMV("MV_HISTTAB", .F., .F.) 	// Historico de alteracoes do Cadastro de Produtos
+Local cFilialAIF := xFilial("AIF")
+Local cFilialSB1 := xFilial("SB1")
+Local dDataAlt
+Local cHoraAlt
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Tratamento para e-Commerce      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Local lECommerce := SuperGetMV("MV_LJECOMM",,.F.)
+Local nQtdEMIN   := SB1->B1_EMIN  //Salva a qtde para saber se ocorreu alteração.
+Local nPrv1      := SB1->B1_PRV1  //Salva preco de venda para saber se ocorreu alteração.
+Local lECCia		:= SuperGetMV("MV_LJECOMO",,.F.) //E-commerce ciashop
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Tratamento Integracao POS - Synthesis  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Local lIntPOS := (SuperGetMV("MV_LJSYNT",,"0") == "1")
+Local lZeraSB0:= .F.
+
+Private nCnt := 0
+Private aTELA[0][0]
+Private aGETS[0]
+Private aHeader[0]
+Private aCOLS[0]
+
+Private nUsado:=0
+
+bCampo := {|nCPO| Field(nCPO) }
+
+DbSelectArea(cAlias)
+If Reccount() == 0
+	Return (.T.)
+Endif
+
+If B1_FILIAL <> xFilial("SB1")
+	Help(" ",1,"A000FI")
+	Return (.T.)
+Endif
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta a entrada de dados do arquivo                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea(cAlias)
+For nI := 1 to FCount()
+	M->&(EVAL(bCampo,nI)) := FieldGet(nI)
+Next nI
+
+cAlias1 := "SB0"
+DbSelectArea("SX2")
+DbSeek( cAlias1 )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Monta o aHeader e aCols pelo FillGetDados³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LJ110FillGet(nOpc, cAlias1)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta o vetor com os campos que podem ser acessados na alteracao ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+aAltera := {}
+DbSelectArea("SX3")
+DbSetOrder(1)
+DbSeek( "SB1" )
+While ! EOF() .AND. (X3_ARQUIVO == "SB1")
+	If X3USO(X3_USADO) .AND. ! (AllTrim(X3_CAMPO) == "B1_COD")  .AND. cNivel >= SX3->X3_NIVEL
+		Aadd(aAltera,X3_CAMPO )
+	Endif
+	DbSkip()
+End
+
+bCampo	:= { |nCPO| Field(nCPO) }
+
+ljGrvLog(," Alias usado no Seek na Alteração : " + cAlias1 )
+ljGrvLog(," Cod. Produto pesquisado |"+ M->B1_COD+"|" )
+
+DbSelectArea(cAlias1)
+DbSetOrder( 1 )
+DbSeek(xFilial(cAlias1)+M->B1_COD)
+nSavRegSB0 := Recno()
+
+ljGrvLog(," Filial da SB1 |"+ xFilial(cAlias1) +"|" )
+
+
+// Calcula as posicoes da tela
+_aObjects := {}
+AADD(_aObjects,{100,100,.T.,.T.})
+AADD(_aObjects,{315,035,.T.,.T.})
+_aInfo    := {_aSizeAut[1],_aSizeAut[2],_aSizeAut[3],_aSizeAut[4],3,3}
+_aPosObj  := MsObjSize(_aInfo,_aObjects,.T.)
+
+bGrava    := { || nOpcA := 1, ;
+                  iIf( LJ110VldSB0(), ;
+                  	iIf( ExistBlock("LJ110GRV") .AND. ! ExecBlock("LJ110GRV", .F., .F.), Nil, ;
+                  		iIf( Obrigatorio(aGets, aTela), oDlg:End(), nOpcA := 0 ) ;
+                  	   ), Nil ) ;
+             }
+
+While .T.
+
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Guarda a Posição antes da alteração de imagem no folder atendimento ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	cChaveSB1 = xfilial("SB1")+M->B1_COD
+	
+	If !(Type("lLoja110Auto") <> "U" .And. lLoja110Auto)	
+		// Chamada ao RDMAKE via F10
+		SetKey(VK_F10,{|| LJ110F10()})
+		
+		DEFINE MSDIALOG oDlg TITLE cCadastro From _aSizeAut[7],0 TO _aSizeAut[6],_aSizeAut[5] of oMainWnd PIXEL
+		EnChoice( cAlias, nReg, nOpc, , , , , _aPosObj[1], aAltera, 3 )
+		oGet	 := MsGetDados():New(_aPosObj[2,1],_aPosObj[2,2],_aPosObj[2,3],_aPosObj[2,4],nOpc,,,,,,)
+		ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg, bGrava, { || nOpcA := 0, oDlg:End() })
+		
+		// Limpa a tecla de atalho
+		SetKey( VK_F10,{|| NIL})
+	Else
+		If(ExistBlock("LJ110GRV") .AND. !ExecBlock("LJ110GRV", .F., .F.))
+			nOpcA := 0
+		Else
+		  	If EnchAuto("SB1",aAutoCab,{|| Obrigatorio(aGets, aTela)},aRotina[nOpc][4]) .AND. MsGetDAuto(aAutoItens,NIL,{|| LJ110VldSB0()},aAutoCab,aRotina[nOpc][4])
+				nOpcA := 1
+			EndIf
+		EndIF
+	EndIf	
+	
+	If nOpcA == 1
+	
+		DbSelectArea("SB1")
+		DbSetOrder( 1 )
+		DbSeek(cChaveSb1)
+		
+		ljGrvLog(," Antes da LJ110Grava cAlias |"+ cAlias +"| , cAlias1 |" + cAlias1 +"|" )		
+		lGravaOk := LJ110Grava(cAlias,cAlias1)
+		
+		If lGravaOk
+			If lConfSx8
+				ExecBlock("CONFSX8",.F.,.F.)
+			Endif
+		Else
+			Help(" ",1,"LJ110NAOREG")
+			Loop
+		Endif
+		
+		//Processa Gatilhos
+		EvalTrigger()
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Gravar o historico das alteracoes realizadas pelo usuario    ³
+		//³na tabela AIF usando o vetor aCpoAltSB1 que foi carregado na ³
+		//³funcao LJ110Grava().                                         ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If lHistTab .And. Len(aCpoAltSB1) > 0 .AND. ExistFunc("MSGrvHist")
+			dDataAlt := Date()
+			cHoraAlt := Time()
+			For nI := 1 To Len(aCpoAltSB1)
+				MSGrvHist(cFilialAIF,;			// Filial de AIF
+				          cFilialSB1,;			// Filial da tabela SB1
+				          "SB1",;				// Tabela SB1
+				          "",;					// Codigo do cliente
+				          "",;					// Loja do cliente
+				          aCpoAltSB1[nI][1],;	// Campo alterado
+				          aCpoAltSB1[nI][2],;	// Conteudo antes da alteracao
+				          dDataAlt,;			// Data da alteracao
+			          	  cHoraAlt,;			// Hora da alteracao
+		          		  SB1->B1_COD)			// Codigo do produto
+			Next nI
+			aCpoAltSB1 := {} // limpar o vetor
+		EndIf
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Re-posiciona os registros para não haver problemas de gravacao do SLH ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		DbSelectArea("SB1")
+		DbGoTo(nReg)
+
+		If lGravaOk
+			Lj110ZeraUMov(cChaveSB1)				
+		EndIf
+				
+		SB0->(DbSetOrder(1))
+		SB0->(DbSeek(xFilial("SB0")+SB1->B1_COD))
+		
+		LJ110AltOk()
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Gravacao no Log de Alteracoes. ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If !ExistFunc("STFIsPOS") .OR. !STFIsPOS()
+			FRTGeraSLH("SB1", "A")
+		EndIf
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³e-Commerce: verifica se houve alteracao para liberar para exportacao. ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If  lECommerce
+		 	If !( Empty(Posicione("SB5",1,xFilial("SB5")+SB1->B1_COD,"B5_ECFLAG")) ) 
+			    If  SB1->B1_EMIN <> nQtdEMIN
+					LJ110ECSB2(SB1->B1_COD)
+				EndIf	
+	            
+	            // Enviar o preço para o e-Commerce caso o produto pai tenha o preço alterado
+			    If  (SB1->B1_PRV1 != nPrv1) .And. (Empty(SB1->B1_PRODPAI) .Or. (SB1->B1_PRODPAI == SB1->B1_COD)) .And. SB0->( SoftLock("SB0") )
+					SB0->B0_ECPRV := 0
+					SB0->( MsUnLock() )
+				EndIf
+			EndIf
+			
+			//CiaShop - Alteração reenvia dados
+			If lECCia  .AND. (SB0->B0_ECFLAG <> "")
+				lZeraSB0 := .T.
+			EndIf
+		EndIf
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Integracao com o POS - Synthesis ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If	lIntPOS .And. SB0->(ColumnPos("B0_POSFLAG") > 0) .And.;
+		 	SB0->(ColumnPos("B0_ECDTEX") > 0) .And. (SB0->B0_POSFLAG == "1")
+
+			lZeraSB0 := .T.
+		EndIf
+		
+		If lZeraSB0
+			RecLock("SB0",.F.)
+			SB0->B0_ECDTEX := ""
+			SB0->( MsUnLock() )
+		EndIf
+		//Dispara o integdef do MATA010
+		If ExistFunc("MT180ECEAI")
+			MT180ECEAI()
+		EndIf
+
+		Exit
+	ElseIf nOpcA == 2
+		LOOP
+	ELSE
+		Exit
+	Endif
+	
+End
+ 
+//Restaura o alias
+RestArea(aArea)
+
+Return nOpca
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³LJ110Inclu³ Autor ³ Elaine Beraldo        ³ Data ³ 28.09.94 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Programa exclusivo para inclus„o no LOJA110                ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe e ³ Void LJ110Inclui(ExpC1,ExpN1)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpN1 = Numero do registro                                 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ SIGALOJA                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+Function LJ110Inclui( cAlias, nReg, nOpc )
+Local bCampo
+Local nSavReg
+Local nI		:= 0		// controle de loop
+Local lInit
+Local cAlias1
+Local nOpca 	:= 0
+Local lGravaOk 	:= .T.
+Local _aObjects := {}
+Local _aPosObj  := {}
+Local _aInfo    := {}
+Local _aSizeAut := MsAdvSize()
+Local bGrava
+Local nSaveSx8 := 0
+
+Private aTela[0][0]
+Private aGets[0]
+
+Private nCnt := 0
+Private nUsado := 0
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta a entrada de dados do arquivo								  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+bCampo := { |nCPO| Field(nCPO) }
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Salva a integridade dos campos de Bancos de Dados 			  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea("SB1")
+DbSetOrder(1)
+nSavReg	:= Recno()
+
+For nI := 1 to FCount()
+	M->&(EVAL(bCampo,nI)) := FieldGet(nI)
+	lInit := .F.
+	If ExistIni(EVAL(bCampo,nI))
+		lInit := .T.
+		M->&(EVAL(bCampo,nI)) := InitPad(SX3->X3_RELACAO)
+		If ValType(M->&(EVAL(bCampo,nI))) = "C"
+			M->&(EVAL(bCampo,nI)) := PADR(M->&(EVAL(bCampo,nI)),SX3->X3_TAMANHO)
+		Endif
+		If M->&(EVAL(bCampo,nI)) == NIL
+			lInit := .F.
+		Endif
+	Endif
+	If !lInit
+		If ValType(M->&(EVAL(bCampo,nI))) == "C"
+			M->&(EVAL(bCampo,nI)) := SPACE(LEN(M->&(EVAL(bCampo,nI))))
+		ElseIf ValType(M->&(EVAL(bCampo,nI))) == "N"
+			M->&(EVAL(bCampo,nI)) := 0
+		ElseIf ValType(M->&(EVAL(bCampo,nI))) == "D"
+			M->&(EVAL(bCampo,nI)) := CTOD("  /  /  ")
+		ElseIf ValType(M->&(EVAL(bCampo,nI))) == "L"
+			M->&(EVAL(bCampo,nI)) := .F.
+		Endif
+	Endif
+Next nI
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta a entrada de dados do arquivo                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Private aHeader[0]
+Private aCOLS[0]
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Salva a integridade dos campos de Bancos de Dados            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cAlias1 := "SB0"
+DbSelectArea("Sx2")
+DbSeek( cAlias1 )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Monta o aHeader e aCols pelo FillGetDados³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LJ110FillGet(nOpc, cAlias1)
+
+bCampo	:= { |nCPO| Field(nCPO) }
+
+// Calcula as posicoes da tela
+_aObjects := {}
+AADD(_aObjects,{100,100,.T.,.T.})
+AADD(_aObjects,{315,035,.T.,.T.})
+_aInfo    := {_aSizeAut[1],_aSizeAut[2],_aSizeAut[3],_aSizeAut[4],3,3}
+_aPosObj  := MsObjSize(_aInfo,_aObjects,.T.)
+
+bGrava    := { || nOpcA := 1, ;
+                  iIf( LJ110VldSB0(), ;
+                  	iIf( ExistBlock("LJ110GRV") .AND. ! ExecBlock("LJ110GRV", .F., .F.), Nil, ;
+                  		iIf( Obrigatorio(aGets, aTela), oDlg:End(), nOpcA := 0 ) ;
+                  	   ), Nil ) ;
+             }
+
+While .T.
+
+	If !(Type("lLoja110Auto") <> "U" .And. lLoja110Auto)	
+		// Chamada ao RDMAKE via F10
+		SetKey(VK_F10,{|| LJ110F10()})
+		
+		DEFINE MSDIALOG oDlg TITLE cCadastro From _aSizeAut[7],0 TO _aSizeAut[6],_aSizeAut[5] of oMainWnd PIXEL
+		EnChoice( cAlias, nReg, nOpc, , , , , _aPosObj[1],, 3 )
+		oGet	 := MsGetDados():New(_aPosObj[2,1],_aPosObj[2,2],_aPosObj[2,3],_aPosObj[2,4],nOpc,,,,,,)
+		ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,bGrava,{ || nOpcA := 0, oDlg:End() })
+		
+		// Limpa a tecla de atalho
+		SetKey( VK_F10,{|| NIL})
+	Else
+		If(ExistBlock("LJ110GRV") .AND. !ExecBlock("LJ110GRV", .F., .F.))
+			nOpcA := 0
+		Else
+		  	If EnchAuto("SB1",aAutoCab,{|| Obrigatorio(aGets, aTela)},aRotina[nOpc][4]) .AND. MsGetDAuto(aAutoItens,NIL,{|| LJ110VldSB0()},aAutoCab,aRotina[nOpc][4])
+				nOpcA := 1
+			EndIf
+		EndIF
+	EndIf	
+	
+	If nOpcA == 1
+		
+		lGravaOk := LJ110Grava(cAlias,cAlias1)
+		
+		If lGravaOk
+			If lConfSx8
+				ExecBlock("CONFSX8",.F.,.F.)
+			Endif
+			
+			If lAtuB0Fil
+				ExecBlock("ATUB0FIL",.F.,.F.,{nOpc})
+			Endif
+		Else
+			Help(" ",1,"LJ110NAOREG")
+			Loop
+		Endif
+		
+		If __lSX8
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Modifica‡Æo feita p/ atender BOPS n§ 24536, Sistema nÆo est  ³
+			//³  verificando o inicializador padrÆo do campo B1_COD			 ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			While (GetSX8Len() > nSaveSx8 )
+				ConfirmSX8()
+			End
+		Endif
+		
+		//Processa Gatilhos
+		EvalTrigger()
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Re-posiciona os registros para não haver problemas de gravacao do SLH ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		SB0->(DbSetOrder(1))
+		SB0->(DbSeek(xFilial("SB0")+SB1->B1_COD))
+		
+		LJ110AltOk()
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Gravacao no Log de Alteracoes. ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If !FindFunction("STFIsPOS") .OR. !STFIsPOS()
+			FRTGeraSLH("SB1", "I")
+		EndIf
+		
+		//Dispara o IntegDef do MATA010
+		If ExistFunc("MT180ECEAI")
+			MT180ECEAI()
+		EndIf
+		Exit
+	ElseIf nOpcA == 2
+		Loop
+	Else
+		
+		If __lSX8
+			
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Modifica‡Æo feita p/ atender BOPS n§ 24536, Sistema nÆo est  ³
+			//³  verificando o inicializador padrÆo do campo B1_COD			 ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			While (GetSx8Len() > nSaveSX8)
+				RollBackSX8()
+			End
+		Endif
+		
+		Exit
+	Endif
+End
+DbSelectArea(cAlias)
+
+Return nOpca
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³LJ110F10  ³ Autor ³ Edilson Mendes        ³ Data ³ 03.12.01 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Aciona a chamada ao rdmake, a partir da tecla F10.         ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe e ³ Void LJ110F10()                                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ SIGALOJA                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+Static Function LJ110F10()
+
+If ExistBlock("LJ110F10")
+	ExecBlock("LJ110F10",.F.,.F.)
+Endif
+
+Return .T.
+
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³LJ110Delet³ Autor ³ Elaine Beraldo        ³ Data ³ 28.09.94 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Programa de exclusao de Produtos                           ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe e ³ Void LJ110Deleta(ExpC1,ExpN1)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpN1 = Numero do registro                                 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ SIGALOJA                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+Function LJ110Deleta( cAlias, nReg, nOpc )
+
+Local aArea 	:= GetArea()    // Guarda a area 
+Local nOpca     := 0
+Local nCnt      := 0
+Local nSavRegSX3
+Local nSavRegSB0
+Local bCampo
+Local lRet      := .T.
+Local lCompB1   
+Local lCompB2
+Local lCompB0
+Local aRegsB2   := {}
+Local nI		:= 0		// controle de loop
+Local aRegsB0   := {} 
+Local lExcluiB0 := .T.
+Local lExcluiB2 := .T.
+Local _aObjects := {}
+Local _aPosObj  := {}
+Local _aInfo    := {}
+Local _aSizeAut := MsAdvSize()
+Local lLj7110EOK:= ExistBlock("LJ110EOK") // Verifica a existencia do ponto de entrada LJ110EOK 
+Local xRet								  // Variavel de retorno do ponto de entrada 
+//³Tratamento para e-Commerce      ³
+Local lECommerce := SuperGetMV("MV_LJECOMM",,.F.)
+//³Tratamento para integracao Synthesis  ³
+Local lIntPOS := (SuperGetMV("MV_LJSYNT",,"0") == "1")
+
+Private aTELA[0][0]
+Private aGETS[0]
+Private aHeader[0]
+Private aCOLS[0]
+
+Private nUsado:=0
+
+bCampo := { |nCPO| Field(nCPO) }
+
+DbSelectArea(cAlias)
+
+If Reccount() == 0
+	Return (.T.)
+Endif
+If B1_FILIAL <> xFilial("SB1")
+	Help(" ",1,"A000FI")
+	Return (.T.)
+End
+
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Salva a integridade dos campos de Bancos de Dados            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea(cAlias)
+For nI := 1 to FCount()
+	M->&(EVAL(bCampo,nI)) := FieldGet(nI)
+Next nI
+
+cAlias1 := "SB0"
+
+DbSelectArea("SX2")
+DbSeek( cAlias1 )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Monta o aHeader e aCols pelo FillGetDados³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LJ110FillGet(nOpc, cAlias1)
+
+bCampo	:= { |nCPO| Field(nCPO) }
+
+DbSelectArea(cAlias1)
+DbSetOrder(1)
+DbSeek(cFilial+SB1->B1_COD)
+nSavRegSB0 := Recno()
+
+While SB1->B1_COD == SB0->B0_COD .AND. !Eof()
+	nCnt++
+	DbSkip()
+End
+
+// Calcula as posicoes da tela
+_aObjects := {}
+AADD(_aObjects,{100,100,.T.,.T.})
+AADD(_aObjects,{315,035,.T.,.T.})
+_aInfo    := {_aSizeAut[1],_aSizeAut[2],_aSizeAut[3],_aSizeAut[4],3,3}
+_aPosObj  := MsObjSize(_aInfo,_aObjects,.T.)
+
+While .T.
+
+	If !(Type("lLoja110Auto") <> "U" .And. lLoja110Auto)	
+		DEFINE MSDIALOG oDlg TITLE cCadastro From _aSizeAut[7],0 TO _aSizeAut[6],_aSizeAut[5] of oMainWnd PIXEL
+		EnChoice( cAlias, nReg, nOpc, , , , , _aPosObj[1],, 3 )
+		oGet	 := MsGetDados():New(_aPosObj[2,1],_aPosObj[2,2],_aPosObj[2,3],_aPosObj[2,4],nOpc,.T.,.T.,"",,,)
+		ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{||nOpca:=1,if(LOJAOK(STR0014),oDlg:End(),nOpca := 0)},{||oDlg:End()}) //"Confirma ExclusÆo?"
+	Else
+		If EnchAuto("SB1",aAutoCab,{|| Obrigatorio(aGets, aTela)},aRotina[nOpc][4]) .AND. MsGetDAuto(aAutoItens,NIL,NIL,aAutoCab,aRotina[nOpc][4])
+			nOpcA := 1
+		EndIf
+	EndIf	
+	
+	If nOpcA == 2 .OR. nOpca == 0
+		Exit
+	ElseIf nOpcA == 1
+		//Verifica se os arquivos sao compartilhados
+		lCompB1 := (xFilial("SB1") == Space(FWGETTAMFILIAL))
+		lCompB2 := (xFilial("SB2") == Space(FWGETTAMFILIAL))
+		lCompB0 := (xFilial("SB0") == Space(FWGETTAMFILIAL))
+		
+		//Quando for SB1 exclusivo
+		If !lCompB1
+			DbSelectArea( "SB2" )
+			DbSeek(cFilial+SB1->B1_COD)
+			While !Eof() .AND. B2_COD == SB1->B1_COD
+				AADD(aRegsB2,Recno())
+				If B2_QATU <> 0
+					Help(" ",1,"TEMSALDO")
+					lRet := .F.
+					Exit
+				End
+				If Lj110SeekSD(cFilial+SB1->B1_COD)
+					MsgStop(STR0016)
+					lRet := .F.
+					Exit
+				Endif
+				DbSkip()
+			End
+			If lCompB0
+				lExcluiB0 := .F.
+			Else
+				DbSelectArea("SB0")
+				DbSeek(xFilial()+SB1->B1_COD)
+				While !Eof() .AND. B0_FILIAL+B0_COD == xFilial()+SB1->B1_COD
+					AADD(aRegsB0,Recno())
+					DbSkip()
+				End
+				lExcluiB0 := .T.
+			Endif
+			
+			If lCompB2
+				lExcluiB2 := .F.
+			Endif
+			
+			DbSelectArea( "SL2" )
+			DbSetOrder(2)
+			If DbSeek(cFilial+SB1->B1_COD)
+				DbSetOrder(1)
+				Help(" ",1,"MA010_06")
+				lRet := .F.
+				Exit
+			Endif
+			DbSetOrder(1)
+			
+			// Verifica se existe solicitacoes de compra para este produto
+			DbSelectArea("SC1")
+			SC1->( DbSetOrder(2) )
+			If SC1->( DbSeek(xFilial("SC1")+SB1->B1_COD) )
+				HELP(" ",1,"MA10SC")
+				lRet := .F.
+				Exit
+			EndIf
+			
+			// Verifica se existe pedido de compra para este produto
+			DbSelectArea("SC7")
+			SC7->( DbSetOrder(2) )
+			If SC7->( DbSeek(xFilial("SC7")+SB1->B1_COD) )
+				HELP(" ",1,"MA10PC")
+				lRet := .F.
+				Exit
+			EndIf
+		Else
+			nRegOld := SM0->(Recno())
+			DbSelectArea("SM0")
+			DbGoTop()
+			While !Eof()
+				DbSelectArea("SB2")
+				DbSeek(FWxFilial("SB2",FWGETCODFILIAL)+SB1->B1_COD)
+				While !Eof() .AND. B2_FILIAL+B2_COD == FWxFilial("SB2",FWGETCODFILIAL)+SB1->B1_COD
+					AADD(aRegsB2,Recno())
+					If B2_QATU <> 0
+						Help(" ",1,"TEMSALDO")
+						lRet := .F.
+						Exit
+					End
+					If Lj110SeekSD(FWGETCODFILIAL+SB1->B1_COD)
+						MsgStop(STR0016)
+						lRet := .F.
+						Exit
+					Endif
+					DbSkip()
+				End
+				
+				// Verifica se existe solicitacoes de compra para este produto
+				DbSelectArea("SC1")
+				SC1->( DbSetOrder(2) )
+				If lRet .And. SC1->( DbSeek(FWxFilial("SC1",FWGETCODFILIAL)+SB1->B1_COD) )
+					HELP(" ",1,"MA10SC")
+					lRet := .F.
+				EndIf
+				
+				// Verifica se existe pedido de compra para este produto
+				DbSelectArea("SC7")
+				SC7->( DbSetOrder(2) )
+				If lRet .And. SC7->( DbSeek(FWxFilial("SC7",FWGETCODFILIAL)+SB1->B1_COD) )
+					HELP(" ",1,"MA10PC")
+					lRet := .F.
+				EndIf
+				
+				If !lRet
+					Exit
+				Endif
+				DbSelectArea("SM0")
+				DbSkip()
+			End
+			DbGoTo(nRegOld)
+			nRegOld := SM0->(Recno())
+			DbSelectArea("SM0")
+			DbGoTop()
+			While !Eof()
+				DbSelectArea("SB0")
+				DbSeek(FWxFilial("SB0",FWGETCODFILIAL)+SB1->B1_COD)
+				While !Eof() .AND. B0_FILIAL+B0_COD == FWxFilial("SB1",FWGETCODFILIAL)+SB1->B1_COD 
+					AADD(aRegsB0,Recno())
+					DbSkip()
+				End
+				DbSelectArea("SM0")
+				DbSkip()
+			End
+			DbGoTo(nRegOld)
+			lExcluiB0 := .T.
+			lExcluiB2 := .T.
+		Endif
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Validacao para o e-commerce, excluir pelo complemento (SB5)           ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If  lRet .And. lECommerce .And. SB5->(ColumnPos("B5_ECFLAG") > 0) .And. !( Empty(Posicione("SB5",1,xFilial("SB5")+SB1->B1_COD,"B5_ECFLAG")) )
+			Alert(STR0019)  //"Para produto e-commerce tem que excluir pelo Complemento do Produto!"
+			lRet := .F.
+		EndIf
+
+		/*
+		Validacao para o Template de Drogaria
+		*/
+		lRet := lRet .And. LjVldOper()
+		
+		If !lRet
+			Return
+		End
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³  Chamada do ponto de entrada LJ110EOK  ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If lLj7110EOK  
+			xRet := ExecBlock("LJ110EOK",.F.,.F.)
+			If ValType(xRet) == "L"
+				If !xRet
+					Exit 
+				EndIf
+			EndIf
+		EndIf  
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Re-posiciona os registros para não haver problemas de gravacao do SLH ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		DbSelectArea("SB1")
+		SB1->(DbGoTo(nReg))
+		
+		SB0->(DbSetOrder(1))
+		SB0->(DbSeek(xFilial("SB0")+SB1->B1_COD))
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Tratamento para enviar alteracao de bloqueio quando integracao Synthesis  ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If  lRet .AND. lIntPOS .AND. SB1->(ColumnPos("B1_MSBLQL") > 0) .AND. SB0->(ColumnPos("B0_ECDTEX") > 0)
+			RecLock("SB1",.F.)
+			SB1->B1_MSBLQL := "1"
+			SB1->( MsUnLock() )
+
+			RecLock("SB0",.F.)
+			SB0->B0_ECDTEX := ""
+			SB0->( MsUnLock() )
+		EndIf
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Gravacao no Log de Alteracoes. ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If !ExistFunc("STFIsPOS") .OR. !STFIsPOS()  
+			FRTGeraSLH("SB1", "D")
+		EndIf
+		
+		//Begin Transaction
+		DbSelectArea("SA5")
+		DbSetOrder( 2 )
+		DbSeek( xFilial()+SB1->B1_COD )
+		
+		If (SA5->A5_PRODUTO == SB1->B1_COD)
+			If MsgNoYes(STR0017)
+				While !Eof() .AND. (SA5->A5_PRODUTO == SB1->B1_COD)
+					RecLock("SA5",.F.,.T.)
+					dbDelete()
+					MsUnLock()
+					DbSkip()
+				End
+			End
+		End
+		If lExcluiB0
+			DbSelectArea("SB0")
+			For nI := 1 to Len(aRegsB0)
+				DbGoTo(aRegsB0[nI])
+				RecLock('SB0',.F.,.T.)
+				
+				//A cada exclusao do produto grava data e hora  
+				If SB0->(FieldPos("B0_DTHRALT") > 0) 
+					REPLACE SB0->B0_DTHRALT		WITH	DTos(Date()) + Left(Time(),8)				
+				EndIf
+				
+				dbDelete()
+				MsUnLock()
+			Next nI
+		Endif
+		
+		If lExcluiB2
+			DbSelectArea("SB2")
+			For nI := 1 to Len(aRegsB2)
+				DbGoTo(aRegsB2[nI])
+				RecLock('SB2',.F.,.T.)
+				dbDelete()
+				MsUnLock()
+			Next nI
+		Endif
+		
+        // Adequado para Integridade referencial
+		DbSelectArea("SB1")
+		RecLock(cAlias,.F.,.T.)
+			
+			//Limpo o campo do PAF, pois em deleção manual
+			//esse deve estar preenchido
+			REPLACE SB1->B1_PAFMD5	WITH ""
+			 		
+		dbDelete()
+		MsUnLock()
+
+		LJ110AltOk()
+
+		If lAtuB0Fil
+			ExecBlock("ATUB0FIL",.F.,.F.,{nOpc})
+		Endif
+		
+		If ExistFunc("MT180ECEAI")
+			MT180ECEAI()
+		EndIf
+		
+		DbSelectArea("SB1")
+		Exit
+	Endif
+End
+
+//Restaura o alias
+RestArea(aArea)
+
+Return nOpca
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Funcao    ³LJ110Copia³ Autor ³ Fernando Salvatori    ³ Data ³ 21.10.03 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Programa exclusivo ao LOJA110 para copia de produto        ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ Void LJ110Copia(ExpC1,ExpN1,ExpN2)                         ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpN1 = Numero do registro                                 ³±±
+±±³          ³ ExpN2 = Opcao do menu selecionado                          ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ LOJA110                                                    ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ DATA     ³ BOPS ³Analista³ALTERACAO                                   ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³28/06/05  ³082589³Marcos  ³Alteracao efetuada para executar o conteudo ³±± 
+±±³          ³      ³        ³de X3_RELACAO do campo B1_COD               ³±± 
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³13/03/06  ³094712³Geronimo³Retirada do block bGrava o comando existchav³±± 
+±±³          ³      ³        ³pois o mesmo eh desnecessario visto que a   ³±± 
+±±³          ³      ³        ³validação eh feita na digit. do campo B1_COD³±±
+±±³20/07/07  ³129536³Thiago H³Chamada da funcao FRTGeraSLH() para que a   ³±± 
+±±³          ³      ³        ³mesma gere arquivos na tabela SLH           ³±± 
+±±³          ³      ³        ³possibiltando assim a utilizacao correta    ³±±
+±±³          ³      ³        ³da rotina de Carga Rapida.                  ³±±
+±±³26/09/07  ³130243³Nunzio  ³Carrega os campos MEMO.			          ³±± 
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+Function LJ110Copia( cAlias, nReg, nOpc )
+
+Local nI		    := 0								//controle de loop
+Local bCampo     										//Bloco para buscar o nome do campo
+Local nOpca      	:= 0								//Opcao selecionada
+Local lGravaOk   	:= .T.                            	//Verifica se a gravacao foi OK
+Local _aObjects  	:= {}                              	//Criacao da tela
+Local _aPosObj   	:= {}								//Criacao da tela
+Local _aInfo     	:= {}								//Criacao da tela
+Local _aSizeAut  	:= MsAdvSize()
+Local bGrava     	:= .F.								//Retorno da gravacao
+Local nTamB1_COD 	:= TamSX3("B1_COD")[1] 				//Tamanho do campo B1_COD
+Local nScan 		:= 0                                //Posicao que o campo memo encontra-se no array
+Local cChaveSB1 := Nil   								// guarda posição antes da alteração da imagem do produto
+
+Private nCnt 		:= 0								//Contador
+Private aHeader[0]										//Criacao da tela
+Private aCOLS[0]                                       	//Criacao da tela
+Private aTELA[0][0]                                   	//Criacao da tela
+Private aGETS[0]                                     	//Criacao da tela
+Private nUsado		:=0									//Variavel de controle se determinado campo esta sendo usado
+
+bCampo := {|nCPO| Field(nCPO) }
+
+DbSelectArea(cAlias)
+If RecCount() <> 0
+	
+	//Carrega os campos memos para suas respectivas variaveis de memoria
+	For nI := 1 To FCount()
+		nScan := AScan(aMemos, { |x| x[1] == FieldName(nI)})
+		
+		If nScan > 0
+			M->&(aMemos[nScan,2]) := MSMM(FieldGet(nI))
+		EndIf 				
+	Next nI
+	
+	If B1_FILIAL <> xFilial("SB1")
+		Help(" ",1,"A000FI")
+	Else
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Monta a entrada de dados do arquivo                          ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ	
+		DbSelectArea(cAlias)	    
+		For nI := 1 to FCount()
+			M->&(EVAL(bCampo,nI)) := FieldGet(nI)
+			
+			If FieldName(nI) == "B1_MSEXP"
+				M->B1_MSEXP := Space( TamSX3("B1_MSEXP")[1] )
+			EndIF	
+
+			If FieldName(nI) == "B1_HREXP"
+				M->B1_HREXP := Space( TamSX3("B1_HREXP")[1] )
+			EndIF	
+
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³Se o campo == B1_COD, executa o conteudo do campo X3_RELACAO.³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ	
+			If FieldName(nI) == "B1_COD"
+				If ExistIni(EVAL(bCampo,nI))
+					M->&(EVAL(bCampo,nI)) := InitPad(SX3->X3_RELACAO)
+				Else	
+					M->B1_COD := Space( nTamB1_COD )
+				Endif
+			Endif
+		Next nI
+			
+		cAlias1 := "SB0"
+		DbSelectArea("SX2")
+		DbSeek( cAlias1 )
+		
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Executa funcao para FillGetDados³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		LJ110FillGet(nOpc, cAlias1)
+
+		bCampo	:= { |nCPO| Field(nCPO) }
+		
+		DbSelectArea(cAlias1)
+		DbSetOrder( 1 )
+		DbSeek(cFilial+SB1->B1_COD)
+		
+		// Calcula as posicoes da tela
+		_aObjects := {}
+		AAdd(_aObjects,{100,100,.T.,.T.})
+		AAdd(_aObjects,{315,035,.T.,.T.})
+		_aInfo    := {_aSizeAut[1],_aSizeAut[2],_aSizeAut[3],_aSizeAut[4],3,3}
+		_aPosObj  := MsObjSize(_aInfo,_aObjects,.T.)
+		
+		bGrava    := { || nOpcA := 1, ;
+		                  iIf( LJ110VldSB0(), ;
+		                  	iIf( ExistBlock("LJ110GRV") .AND. ! ExecBlock("LJ110GRV", .F., .F.), Nil, ;
+		                  		iIf( Obrigatorio(aGets, aTela), oDlg:End(), nOpcA := 0 ) ;
+		                  	   ), Nil ) ;
+		             }
+		
+		While .T.
+			
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³Guarda a Posição antes da alteração de imagem no folder atendimento ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			cChaveSB1 = xfilial("SB1")+SB1->B1_COD
+
+			// Chamada ao RDMAKE via F10
+			SetKey(VK_F10,{|| LJ110F10()})
+			
+			
+			DEFINE MSDIALOG oDlg TITLE cCadastro From _aSizeAut[7],0 TO _aSizeAut[6],_aSizeAut[5] of oMainWnd PIXEL
+			
+			EnChoice( cAlias, nReg, nOpc, , , , , _aPosObj[1],, 3 )
+			
+			oGet	 := MsGetDados():New(_aPosObj[2,1],_aPosObj[2,2],_aPosObj[2,3],_aPosObj[2,4],nOpc,,,,,,)
+			
+			ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,bGrava,{ || nOpcA := 0, oDlg:End() })
+			
+			
+			// Limpa a tecla de atalho
+			SetKey( VK_F10,{|| NIL})
+			
+			
+			If nOpcA == 1
+				
+				lGravaOk := LJ110Grava(cAlias,cAlias1)
+				
+				If lGravaOk
+					If lConfSx8
+						ExecBlock("CONFSX8",.F.,.F.)
+					Endif
+				Else
+					Help(" ",1,"LJ110NAOREG")
+					Loop
+				Endif             
+				
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³  Confirma a gravacao do numero sequencial   				 ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ		                
+				If __lSX8
+					ConfirmSX8()
+				Endif
+
+				
+				//Processa Gatilhos
+				EvalTrigger()
+
+				If lGravaOk
+					Lj110ZeraUMov(cChaveSB1)				
+				EndIf
+				
+				LJ110AltOk()                        
+				If !FindFunction("STFIsPOS") .OR. !STFIsPOS()                     
+					FRTGeraSLH("SB1", "I")
+				EndIf						
+										
+				Exit
+			ElseIf nOpcA == 2
+				LOOP
+			ELSE    
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³  Cancela a gravacao do numero sequencial   				 	 ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ		                
+				If __lSX8
+					RollBackSX8()
+				Endif
+				Exit
+			Endif			
+		End      		
+	Endif
+Endif	
+Return .T.
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Fun‡„o    ³LJ110Grava³ Autor ³ Elaine Beraldo        ³ Data ³ 28.09.94 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Grava todas informacoes nos arquivos SB1 e SB0             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
+±±³          ³ ExpC2 = Alias do arquivo                                   ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ LOJA110                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±³ DATA     ³ BOPS ³Analista       ³ALTERACAO                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³26/09/07  ³130243³Nunzio         ³ Gravacao do campo B1_OBS.			  ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Static Function LJ110Grava( cAlias, cAlias1 )
+Local nI	 := 0 									// controle de loop
+Local bCampo := {|nCPO| Field(nCPO) }  				//Bloco de comando	
+Local cMacro := ""									//Variavel auxiliar para executar uma macro
+Local cVar1  := ""									//Variavel para guardar o nome do campo MEMO
+Local cPafMd5:= "" 									//Chave MD5
+Local lHistTab  := SuperGetMV("MV_HISTTAB",.F.,.F.) 	// Historico de alteracoes do Cadastro de Produtos
+Local bCampoSB1 := { |x| SB1->(Field(x)) }				// Bloco de comando
+Local cFilBkp	:= ""   								//Filial de Backup 
+Local cEmpAtu   := ""									//Empresa Atual
+Local nDiasGar  := 0                                	//Dias Da Garantia Cadastrados no Produto Local
+Local nX        := 0
+Local aSM0		:= {}									//Array carrega informações das Filiais em SM0
+Local nPosGar	:= aScan(aHeader, { |x| AllTrim(x[02]) == "B0_DIASGAR" }) // Posicao do Campo Dias Garantia Estendida.
+Local lB1_CODLIS:= SB1->(ColumnPos("B1_CODLIS"))> 0
+Local cListaMed := If( lB1_CODLIS , SB1->B1_CODLIS , "X")  // se for x eh porque nao existe o campo 
+Local cAcao 	:= ""
+
+Private cVar	//Utilizada para guardar um campo do Header
+
+/***Gravacao do log de produtos
+   Deve ser feito antes da gravação do banco pois 
+   dentro da função ele compara a variável de memória
+   com o conteudo gravado no banco ***/
+If !Inclui .And. (cAlias == "SB1")
+	Lj110GrLog("SB1",M->B1_COD)
+EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Grava arquivo SB1 e SB0                                      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea( cAlias )
+RecLock( cAlias,IIF(INCLUI,.T.,.F. ) )
+
+For nI := 1 TO FCount()
+	If "FILIAL"$Field(nI)
+		FieldPut(nI,cFilial)
+	Else		
+		/*Carregar o vetor aCpoAltSB1 caso o campo B1_DESC tenha
+		sido alterado. Somente sera gravado na tabela AIF apos
+		a validacao completa da rotina.             */
+		IF cAlias == "SB1" .AND. !Inclui .And. lHistTab
+			IF (eVal( bCampoSB1, nI) == "B1_DESC") .OR. (eVal( bCampoSB1, nI) == "B1_PICMENT") .OR. (eVal( bCampoSB1, nI) == "B1_PICMRET")
+				If !(M->&( eVal( bCampoSB1, nI) ) == &( eVal( bCampoSB1, nI) ))
+					aAdd( aCpoAltSB1, { eVal( bCampoSB1, nI), &( eVal( bCampoSB1, nI) ) } )
+				EndIf
+			EndIf
+		EndIf 
+
+		FieldPut(nI,M->&(EVAL(bCampo,nI)))
+	Endif
+Next nI
+MsUnLock()
+
+//Grava os campos memo
+For nI := 1 to Len(aMemos)
+	
+	cVar1  := aMemos[nI][2]
+	cMacro := cAlias + "->" + aMemos[nI][1]  
+	
+	If INCLUI
+		MSMM(NIL, TamSx3(cVar1)[1]	, NIL, &cVar1, ;
+		     1	, NIL				, NIL, cAlias, ;
+		     aMemos[nI][1])
+	Else
+		MSMM(&cMacro, TamSx3(cVar1)[1]	, NIL, M->&cVar1, ; 
+		     1		, NIL				, NIL, cAlias	, ;
+		     aMemos[nI][1])	
+	EndIf
+Next nI
+
+If !(Type("lLoja110Auto") <> "U" .And. lLoja110Auto) .OR. ((Type("lLoja110Auto") <> "U" .And. lLoja110Auto) .And. aAutoItens <> NIL .And. Len(aAutoItens) > 0)
+	DbSelectArea("SB0")
+	
+	/***Gravacao do log de produtos***/
+	If !Inclui //Log da SB0
+		Lj110GrLog("SB0",M->B1_COD,aHeader,aCols)
+	EndIf
+	
+	For nI := 1 to Len(aHeader)
+		cVar := Trim(aHeader[nI][2])
+		If nI == 1
+			If !SB0->(DbSeek(xFilial("SB0")+SB1->B1_COD))
+				RecLock("SB0",.T.)
+				SB0->B0_FILIAL := xFilial("SB0")
+				SB0->B0_COD 	:= SB1->B1_COD
+			Else
+				RecLock("SB0",.F.)
+			Endif
+			
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³Incluir Verificação de Filial e caso haja mais que uma³
+			//³cadastrada, replicar os dados de SB0_DIASGAR em       ³
+			//³todas as Filiais do Sistema.                          ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			If (nPosgar > 0) .AND. !((aCols[1][nPosGar])==(SB0->B0_DIASGAR))
+				aAreaSB0 := SB0->(GetArea())
+				aAreaSM0 := SM0->(GetArea())
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³Posicao no aCols da Quantidade ³
+				//³de Dias da Garantia Estendida  ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+				nDiasGar := (aCols[1][nPosGar]) 
+			   	cFilBkp := cFilAnt
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³Funcao carrega todas as filiais existentes em SM0     ³
+				//³Realiza o "For" rodando todas as Filiais e verificando³
+				//³a existencia do mesmo Produto na SB0 e atualizando    ³
+				//³os dias de Garantia Estendida. "FWLoadSM0()"          ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+				aSM0 := FWLoadSM0()
+				For nX := 1 To Len(aSM0)
+			   		cEmpAtu := aSM0[nX][1]
+			   		cFilAnt := aSM0[nX][2]
+			   		If (cEmpAtu==cEmpAnt)
+			   			DbSelectArea("SB0")
+						SB0->(DbSetOrder(1))
+						If SB0->(DbSeek(xFilial("SB0")+SB1->B1_COD))
+							RecLock("SB0",.F.)
+ 							REPLACE SB0->B0_DIASGAR	WITH nDiasGar
+ 						EndIf 	
+			        EndIf
+			    Next nX
+			    cFilAnt := cFilBkp
+			    RestArea(aAreaSM0)
+			    RestArea(aAreaSB0)
+			EndIf
+			
+		End
+		REPLACE &cVar. WITH aCols[1][nI]
+	Next nI
+	
+	MsUnLock()
+EndIf
+
+//A cada alteração/inclusão do produto grava data e hora  
+If SB0->(ColumnPos("B0_DTHRALT")) > 0
+   	DbSelectArea("SB0")
+	DbSetOrder(1)//B0_FILIAL+B0_COD
+	If DbSeek(xFilial("SB0")+SB1->B1_COD)
+ 		RecLock("SB0",.F.)
+ 		REPLACE SB0->B0_DTHRALT		WITH	DTos(Date()) + Left(Time(),8)
+		SB0->(MsUnLock())
+	EndIf
+EndIf
+
+DbSelectArea( "SA5" )
+DbSetOrder( 2 )
+DbSeek( xFilial()+SB1->B1_COD )
+
+While !EOF() .AND. (SA5->A5_PRODUTO == SB1->B1_COD)
+	RecLock("SA5",.F.)
+	SA5->A5_NOMPROD := SB1->B1_DESC
+	MsUnLock()
+	DbSkip()
+End
+
+DbSetOrder( 1 )
+DbSelectArea(cAlias)
+
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) //se for drogaria grava troca de lista 
+	If lB1_CODLIS .And. SB1->B1_CODLIS <> cListaMed .AND. ALTERA
+		cAcao := "PRODUTO"
+	ElseIf INCLUI	
+		cAcao := "INCPROD"
+	EndIf
+	T_DroEntANVISA(,cAcao,cListaMed)
+EndIf
+
+//Grava MD5 dos Produtos por ultimo!
+If cAlias == "SB1"
+	cPafMd5 := STxPafMd5("SB1")
+	Reclock( cAlias ,.F.)
+	REPLACE SB1->B1_PAFMD5	WITH cPafMd5
+	(cAlias)->(MsUnlock())
+EndIf
+
+//-- Integracao Protheus x DRP NeoGrid (ALTERACAO)
+If Altera
+    If SB5->(ColumnPos("B5_DRPEXP")) > 0
+        SB5->(dbSetOrder(1)) //B5_FILIAL+B5_COD
+        If SB5->(dbSeek(xFilial("SB5") + M->B1_COD))
+            RecLock("SB5", .F.)
+            SB5->B5_DRPEXP := ""
+            SB5->(MsUnLock())
+        EndIf    
+    EndIf        
+EndIf
+
+Return .T.
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±ºPrograma  ³LJ110SeekSDºAutor  ³Edney Souza        º Data ³  03/12/01   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³ Verifica se existem lancamentos para o produto nos arquivosº±±
+±±º          ³ SD1, SD2 e SD3                                             º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ LOJA110.PRX                                                º±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function LJ110SeekSD( cChave ) // Chave deve conter filial e codigo do produto
+SD1->(DbSetOrder(2)) // Indice por D1_FILIAL+D1_COD+...
+If SD1->(DbSeek(cChave))
+	Return (.T.)
+Endif
+SD2->(DbSetOrder(1)) // Indice por D2_FILIAL+D2_COD+...
+If SD2->(DbSeek(cChave))
+	Return (.T.)
+Endif
+SD3->(DbSetOrder(3)) // Indice por D3_FILIAL+D3_COD+...
+If SD3->(DbSeek(cChave))
+	Return (.T.)
+Endif
+Return (.F.)
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³Lj110SXB8 ºAutor  ³Andre Veiga         º Data ³  12/12/03   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³Faz a consulta analitica (SXB Tipo 8)                       º±±
+±±º          ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³Na consulta F3 "SL2"                                        º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function Lj110SXB8( cAlias, nReg )
+
+Lj110Visual( cAlias, nReg, 2 )
+
+Return Nil
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±º Programa ³ LJ110VldSB0 º Autor ³ Fabiano Banin     º Data ³ 28/09/2004 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±º Desc.    ³ Verifica se o produto esta com preço zerado.                º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ LOJA110                                                     º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Static Function LJ110VldSB0()
+
+Local lRet         := .T.
+Local nPosPrV1     := aScan(aHeader, { |x| AllTrim(x[02]) == "B0_PRV1" })
+Local nX           := 0
+Local aLeg         := LJAnalisaLeg(15)
+Local lCaixaFiscal := IIF( FindFunction("STFIsPOS") .AND. STFIsPOS(),.f., LJProfile(3))
+Local lEmitNFCe		:= FindFunction("LjEmitNFCe") .AND. LjEmitNFCe()	//Indica a utilizacao da NFC-e
+Local cGE 			:= SuperGetMV("MV_LJTPGAR",,"GE")  //Tipo Garantia Estendida
+
+If lCaixaFiscal
+
+	For nX := 1 To Len(aCols)
+		If nPosPrV1 > 0 .AND. aCols[nX, nPosPrV1] == 0 .AND. aLeg[01]
+			LJMsgLeg(aLeg)
+			lRet := .F.
+			Exit
+		Endif
+	Next nX
+
+Endif
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Valida se o codigo de barra esta cadastrado para outro³
+//³produto                                               ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lRet .AND. !Empty( M->B1_CODBAR )
+	lRet := LjxValCBar( M->B1_COD , M->B1_CODBAR )
+EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Validação de B1_POSIPI com a tabela SYD³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lRet .AND. lEmitNfce
+	If Empty(M->B1_CODISS)
+		If !ExistCpo("SYD",M->B1_POSIPI)
+			MsgAlert(STR0023)  //"O valor de NCM no campo POS IPI (B1_POSIPI) na aba Impostos deve estar cadastrado na tabela de NCM (Tabela SYD)."
+			lRet := .F.
+		EndIf
+	EndIf
+EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Validação se B1_TIPO = "GE", o B1_ADMIN deve estar preenchido.
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lRet .AND. M->B1_TIPO = cGE .AND. Empty(M->B1_ADMIN)
+	MsgAlert(STR0024)		//"Produto do tipo Garantia Estendida (GE): o código de Administradora Financeira (B1_ADMIN, aba Garantia Estendida) deverá estar preenchido."
+	lRet := .F.
+EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Validação se B1_TIPO = "GE", o B1_GARANT deve estar como "2"(Não). Continua processando normalmente.
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lRet .AND. M->B1_TIPO = cGE .AND. M->B1_GARANT = "1"
+	MsgAlert(STR0025)		//"Produto do tipo Garantia Estendida (GE): foi alterado o campo Garantia (B1_GARANT, aba Garantia Estendida) para Não."
+	M->B1_GARANT := "2"
+EndIf
+
+/*Valida se o produto eh controlado e se poder salvo
+ pelo usuario                                    */
+If lRet
+	lRet := LjVldOper()
+EndIf
+
+Return lRet
+                             
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±º Programa ³ LJ110FillGetº Autor ³ Danilo Calil      º Data ³ 09/01/2007 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±º Desc.    ³ Montagem do aHeader e aCols pelo Protheus 9.                º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºSintaxe   ³ Void LJ110FillGet(ExpN1,ExpC2)                              º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºParametros³ ExpN1 = Operacao                                    		   º±±
+±±º          ³ ExpC2 = Alias da tabela                                     º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºRetorno   ³ Nil                                                 		   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ LOJA110                                                     º±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Static Function LJ110FillGet( nOpc , cAlias1 )
+
+Local cSeek		:= 	NIL								// Variavel de busca
+Local cWhile	:= 	NIL								// Enquanto
+Local aNoFields	:= {}								// Campos que não seram mostrados
+Local lInclusao	:= IIf(nOpc <> 3, .F. , .T. )		// Se eh inclusao
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Se for inclusao, nao alimenta as variaveis³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If !lInclusao
+	cSeek := xFilial("SB0") + SB1->B1_COD
+	cWhile := "SB0->B0_FILIAL + SB0->B0_COD"
+EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Campo que não sera apresentado³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+aAdd(aNoFields,"B0_COD")
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Montagem aHeader, aCols³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If Len(aHeader) == 0 .AND. Len(aCols) == 0
+	FillGetDados(	nOpc			,	cAlias1		,	1				,	cSeek			,;
+					{|| &cWhile}	,	{|| .T. }	,	aNoFields		,	/*aYesFields*/	,; 
+					/*lOnlyYes*/	,	/*cQuery*/	,	/*bMontCols*/	, 	lInclusao 		,;
+					/*aHeaderAux*/	,	/*aColsAux*/,	/*bAfterCols*/	, 	/*bBeforCols*/ 	)
+Endif
+ 
+Return Nil
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³LJ110Memo ³ Autor ³Vendas Cliente         ³ Data ³ 19.10.07 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³Carrega o array dos campos MEMO.                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³															  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³LOJA110                                                     ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function LJ110Memo()
+
+Local	aArea 		:= {}						//Array com os dados do alias corrente	
+Local	lRetorno 	:= .F.						//Verifica se o campo esta sendo usado
+	
+//Guarda o alias corrente
+aArea := GetArea()
+
+DbSelectArea("SX3")
+DbSetOrder(2)
+
+//Verifica se achou o registro e posiciona
+If DbSeek("B1_OBS")
+	//Verifica se esta sendo usado no modulo
+	lRetorno := X3USO(X3_USADO)
+    
+    If lRetorno
+    	//Alimenta o array com o campo MEMO
+    	AADD(aMemos, {"B1_CODOBS", "B1_OBS"})
+    EndIf
+EndIf
+    
+//Restaura o alias
+RestArea(aArea)
+	
+Return Nil
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Funcao    ³LJ110AltOk³ Autor ³ Vendas cliente		³ Data ³ 31/03/08 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Responsavel em enviar os dados do produto para integracao  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ Cadastro de produto	                                      ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function LJ110AltOk()
+
+	Local cTipo 		:= ""											//Como os dados serao integrados no processo offline    
+	Local oProcessOff 	:= Nil											//Objeto do tipo LJCProcessoOffLine
+	Local lAmbOffLn 	:= SuperGetMv("MV_LJOFFLN", Nil, .F.)			//Identifica se o ambiente esta operando em offline
+	
+	//Verifica se o ambiente esta em off-line
+	If lAmbOffLn
+		//Instancia o objeto LJCProcessoOffLine
+		oProcessOff := LJCProcessoOffLine():New("010")
+		
+		//Determina o tipo de operacao 
+		If INCLUI
+			cTipo := "INSERT"
+		ElseIf ALTERA
+			cTipo := "UPDATE"
+		Else
+			cTipo := "DELETE"
+			
+			//Considera os registros deletados
+			SET DELETED OFF
+		EndIf
+			    
+		If !Empty(cTipo)
+			//Insere os dados do processo (registro da tabela)
+			oProcessOff:Inserir("SB1", xFilial("SB1") + SB1->B1_COD, 1, cTipo)	
+			
+			//Insere os dados do processo (registro da tabela)
+			oProcessOff:Inserir("SB0", xFilial("SB0") + SB1->B1_COD, 1, cTipo)	
+				
+			//Processa os dados 
+			oProcessOff:Processar()	
+		EndIf
+		
+		//Desconsidera os registros deletados
+		SET DELETED ON
+	EndIf
+	
+Return Nil
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³ Lj110IncTrn  ºAutor  ³Paulo Benedet         º Data ³ 25/09/08 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDescricao ³ Inserir registro e atualizar tabela de sincronizacao          º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºParametros³ Nao ha                                                        º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºRetorno   ³ Nao ha                                                        º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºAplicacao ³ Funcao chamada pelo XB_CONTEM do tipo 03 da consulta padrao   º±±
+±±º          ³ do cadastro de produtos                                       º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function Lj110IncTrn()
+Local cAlias := "SB1" // Alias em uso
+Local nReg   := SB1->(RecNo()) // Numero do registro
+Local nOpc   := 3 // Opcao de inclusao
+
+If !IsInCallStack("LOJA110")
+	Private aMemos 		:= {}						//Array dos campos MEMO			
+	Private lConfSx8	:= ExistBlock("CONFSX8")	// Atualiza o SX8
+	Private lAtuB0Fil	:= ExistBlock("ATUB0FIL")	// Gera no SB0 registros para todas as filiais
+EndIf
+
+If SuperGetMv("MV_LJOFFLN", Nil, .F.) 
+	Lj110Inclui(cAlias, nReg, nOpc)
+Else   
+	A010INCLUI(cAlias, nReg, nOpc) 
+EndIf
+
+Return
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Funcao    ³LJ110ECSB2³ Autor ³ Antonio C Ferreira    ³ Data ³ 19/03/13 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Libera o estoque e-Commerce para Exportacao!	              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ Cadastro de Produtos					                      ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function LJ110ECSB2(cProduto)
+
+Local nA
+Local aArea    := GetArea()
+Local aAreaSB2 := SB2->( GetArea() )
+Local nLenLoc  := 0        //Numero de locais do e-commerce
+
+Default cProduto := ""
+
+SB2->( DbSetOrder(1) ) //B2_FILIAL+B2_COD+B2_LOCAL
+
+If  Empty(aLocais)
+    DbSelectArea("MF6")
+    DbSeek(xFilial("MF6"))
+    
+    Do  While !( Eof() )                      
+        If  (Ascan(aLocais, {|x| (x[1] == MF6_XFILIA) .And. (x[2] == MF6_LOCAL)}) <= 0)
+    		aadd(aLocais, {MF6_XFILIA, MF6_LOCAL})
+    	EndIf
+    		
+        DbSkip()
+    EndDo    
+EndIf
+
+nLenLoc := Len(aLocais)
+
+For nA := 1 to nLenLoc
+	If  SB2->( DbSeek(aLocais[nA][1]+PadR(cProduto,Len(B2_COD))+aLocais[nA][2]) )
+		If  SB2->( SoftLock("SB2") )  
+			SB2->B2_ECSALDO := 0  //Libera para exportacao
+			SB2->( MsUnLock() )
+		Else
+		    ConOut("...")
+			ConOut("LOJA110: LJ110ECSB2: " + STR0020 + SB2->B2_COD + STR0021 + SB2->B2_LOCAL + STR0022 + SB2->B2_FILIAL)	//"Nao foi possível travar o registro de estoque do produto: "##" Armazém: "##" Filial: "
+		    ConOut("...")
+		EndIf
+	EndIf
+Next nA
+
+RestArea(aAreaSB2)
+RestArea(aArea)
+	
+Return .T.
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Funcao    ³LJ110ZeraUMov³ Autor ³ Edilson Cruz       ³ Data ³ 18/11/13 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Os campos de exportação para o uMov serão zerados p/ uma	  ³±±
+±±³          ³ 	nova exportação.                       	                  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ Cadastro de Produtos					                      ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function Lj110ZeraUMov(cChaveSb1)
+
+// Se os registros foram exportados para o uMov anteriormente,
+// e houve alteração, os campos abaixo serão zerados para
+// uma nova exportação posterior.
+If SB1->(ColumnPos("B1_DTUMOV")) > 0 .And. SB1->(ColumnPos("B1_HRUMOV")) > 0
+	DbSelectArea("SB1")
+	DbSetOrder( 1 )
+	If SB1->(DbSeek(cChaveSb1))
+		RecLock("SB1",.F.)  // sempre alteração
+		SB1->B1_DTUMOV := CTOD("")
+		SB1->B1_HRUMOV := ""
+		MsUnlock()
+	EndIf
+EndIf 
+
+Return .T.
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Funcao    ³Lj110Integ³ Autor ³ Vendas Cliente        ³ Data ³ 28/09/15 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Inclusao do Preco de Venda na integracao de Produtos via	  ³±±
+±±³          ³ Mensagem Unica - MATI010.                   	              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ Cadastro de Produtos					                      ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function Lj110Integ(nEvento, cCode, aPrcVen)
+Local cCampo 	:= "" //Campo de Preco do Produto
+Local nI	  	:= 0 //Contador
+Local nPos		:= 0
+
+SB0->(dbSetOrder(1))
+
+//Inclusao e Alteracao           	       
+If nEvento <> 5           	           	
+	If SB0->(dbSeek(xFilial("SB0") + PadR(cCode, TamSX3("B1_COD")[1])))
+    	SB0->(RecLock("SB0", .F.)) //Alteracao
+   	Else 
+   		SB0->(RecLock("SB0", .T.)) //Inclusao
+   EndIf
+   
+   	SB0->(FieldPut(ColumnPos("B0_FILIAL"), xFilial("SB0"))) //Filial
+	SB0->(FieldPut(ColumnPos("B0_COD")   , PadR(cCode, TamSX3("B1_COD")[1]))) //Codigo do Produto					           	           		
+		
+	//Armazena Precos de Venda do Produto			
+	For nI := 1 To Len(aPrcVen)				
+		cCampo	:= "B0_PRV" + AllTrim(aPrcVen[nI][1])
+		nPos	:= SB0->(ColumnPos(cCampo)) 
+		If nPos > 0
+			SB0->(FieldPut(nPos, Val(aPrcVen[nI][2])))
+		EndIf
+	Next nI
+		
+	SB0->(MsUnLock())
+ElseIf nEvento == 5  //Deleta Preco do Produto - SB0            	           		
+	If SB0->(dbSeek(xFilial("SB0") + PadR(cCode, TamSX3("B1_COD")[1])))
+		While SB0->(!EOF()) .And. SB0->B0_FILIAL == xFilial("SB0") .And. SB0->B0_COD == PadR(cCode, TamSX3("B1_COD")[1])
+			SB0->(RecLock("SB0", .F.))
+			SB0->(dbDelete())
+			SB0->(MsUnLock())
+		
+			SB0->(dbSkip())
+		EndDo
+	EndIf
+EndIf           	
+
+Return Nil
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±³Funcao    ³LJ110SFWhen  ³ Autor ³ Varejo             ³ Data ³ 29/03/16 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descricao ³ Função When (X3_WHEN) para o campo B0_ServFin()	           ³±±
+±±³          ³ Como não coube a sentença toda no X3_WHEN, criamos a função³±±
+±±³          ³ X3_WHEN substituído por          ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Uso       ³ Cadastro de Produtos					                      ³±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Function Lj110SFWhen()
+
+Local cGE := SuperGetMV("MV_LJTPGAR",,"GE")  //Tipo Garantia Estendida
+Local cSF := SuperGetMV("MV_LJTPSF", ,"SF")  //Tipo Serviço Financeiro
+Local lRet := Iif(IsInCallStack("LOJA110"),!(M->B1_TIPO $ cGe + "." + cSF),.T.) //Retorno do When
+
+Return lRet
+
+//--------------------------------------------------------
+/*{Protheus.doc}LjVldOper
+Funcao para validacao de permissao de farmaceutico
+
+@author  	Varejo
+@version 	P11.8
+@since   	28/10/2015
+@obs     
+@sample
+*/
+//--------------------------------------------------------
+Static Function LjVldOper()
+Local lRet 		:= .T.
+Local lPsico 	:= .F.  // seta se eh remedio psicotropico, quando template de drogaria 	
+Local lClassT	:= .F.  // seta se eh remedio Classe terapeutica, quando template de drogaria  	
+Local cCaixaSup := ""
+
+/*Valida se o produto eh controlado e se poder salvo 
+ pelo usuario                                        */
+If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) // se for drogaria e tiver itens 
+	lPsico := M->B1_PSICOTR == "1"	
+	lClassT:= RTrim(M->B1_CLASSTE) $ "1|2"
+
+	If lPsico .Or. lClassT
+	 	If Alltrim(M->B1_CODLIS)== ""
+	 		Alert(STR0026) //"Remédio possui Classe Terapêtica ou é Psicotrópico portanto deve possuir um Código de Lista (ou seja B1_CODLIS preenchido)"
+	 		lRet := .F.
+	 	EndIf	
+
+		If lRet .AND. __cUserID == "000000"  //usuario administrador  
+			Alert(STR0027) //"Usuário administrador, não possui acesso como tipo 'farmacêutico' "
+			lRet := .F.
+		EndIf
+	
+		If lRet
+			lRet := T_DroVERPerm(2,@cCaixaSup) //verifica permissao do primeiro item controlado
+		EndIf
+	EndIf
+EndIf
+
+Return lRet
+
+//--------------------------------------------------------
+/*{Protheus.doc}Lj110GrLog
+Log de Alteração das tabelas COPIA da A013GrvLog
+pois a rotina trata variável de memória e nós usamos 
+um array para a SB0
+
+@author  	MATA013
+@version 	P12
+@since   	25/09/2018
+*/
+//--------------------------------------------------------
+Function Lj110GrLog(cTabela,cProduto,aCabecSB0,aItensSB0)
+Local aAreaTabs	:= {}
+Local uValAnte	:= NIL  			// Valor Anterior
+Local uValNovo	:= NIL           // Valor Novo
+Local nI		:= 0
+
+If SuperGetMV("MV_USALOGP",.F.,.F.)
+	LjGrvLog( Nil, "Rotina Log de Produtos Ativada - MV_USALOGP com .T.")
+	
+	If cTabela <> "SB0"
+		LjGrvLog( Nil, "Chamada da rotina Log de Produtos - A013GrvLog - [Tabela,Produto]", {cTabela,cProduto})
+		A013GrvLog(cTabela,cProduto)
+		LjGrvLog( Nil, "Retorno da rotina Log de Produtos - A013GrvLog")
+	Else
+		LjGrvLog( Nil, "Chamada da rotina Log de Produtos pelo LOJA110 para a Tabela SB0")
+		
+		dbSelectArea("SDO")
+		dbSelectArea("SDR")
+		
+		aadd(aAreaTabs,SDO->(GetArea()))
+		aadd(aAreaTabs,SDR->(GetArea()))
+		
+		SDO->(dbSetOrder(1)) //DO_FILIAL + DO_TABELA + DO_CAMPO
+		SDO->(dbSeek(xFilial("SDO")+cTabela))		
+		
+		While !SDO->(EOF()) .And. SDO->(DO_FILIAL+DO_TABELA) == xFilial("SDO")+cTabela
+			uValAnte := &(cTabela+"->"+SDO->DO_CAMPO)
+			nI := Ascan(aCabecSB0, {|x| AllTrim(Upper(x[2])) == Alltrim(Upper(SDO->DO_CAMPO))})
+			uValNovo := aItensSB0[1][nI]
+			
+			If uValAnte # uValNovo
+				RecLock("SDR",.T.)
+				SDR->DR_FILIAL	:= xFilial("SDR")
+				SDR->DR_PRODUTO	:= cProduto
+				SDR->DR_ALIAS	:= cTabela
+				SDR->DR_CAMPO	:= SDO->DO_CAMPO
+				SDR->DR_DATA	:= DATE()
+				SDR->DR_HORA	:= TIME()
+				SDR->DR_USUARIO	:= PswRet()[1][1]
+				If ValType(uValNovo) == "L"
+					If uValAnte == .T. .And. uValNovo == .F. 
+						SDR->DR_VALANTE	:= "VERDADEIRO"
+						SDR->DR_VALNOVO	:= "FALSO"
+					ElseIf uValAnte == .F. .And. uValNovo == .T.
+						SDR->DR_VALANTE	:= "FALSO"
+						SDR->DR_VALNOVO	:= "VERDADEIRO"
+					Endif
+				ElseIf ValType(uValNovo) == "N"
+					SDR->DR_VALANTE	:= AllTrim(Str(uValAnte))
+					SDR->DR_VALNOVO	:= AllTrim(Str(uValNovo))
+				ElseIf ValType(uValNovo) == "C"
+					SDR->DR_VALANTE	:= uValAnte
+					SDR->DR_VALNOVO	:= uValNovo
+				Endif
+				SDR->(MsUnlock())
+			EndIf
+			SDO->(dbSkip())
+		End
+		
+		LjGrvLog( Nil, "Fim da Chamada da rotina Log de Produtos pelo LOJA110 para a Tabela SB0")
+	EndIf
+
+	For nI := 1 to Len(aAreaTabs)
+		RestArea(aAreaTabs[nI])
+	Next nI	
+EndIf
+
+Return

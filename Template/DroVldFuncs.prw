@@ -3785,20 +3785,8 @@ Return lRet
 ±±ºUso       ³ Template Drogaria										º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROLCS()
-Local lIntProSc := SuperGetMV("MV_SCINTEG", ,.F.)	//indica se a integracao Protheus x SIAC esta ativa
 
-/*Se a Integracao Protheus x SIAC estiver ativa, 
-nao validamos a licenca do template de Drogaria(DRO.LTP)*/
-If lIntProSc	
-	conout(STR0057)	//"Template DRO - validado atraves da Integracao Protheus x SIAC"
-Else
-	/*se tiver Licença de Drogaria, o sistema continua a ser executado,
-	caso contrario, ele aborta a execucao da função*/
-	_ChkTemplate("DRO", .T.)
-	conout(STR0058)	//"Template DRO - validado atraves do arquivo de licenca"
-EndIf
-	
-Return Nil
+Return LjIsDro()
 
 /*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±ºPrograma  ³DroVERArray   º Autor ³ Vendas Clientes    º Data ³  26/03/15   º±±
@@ -5538,3 +5526,26 @@ IF RTrim(M->LK9_TIPUSO) == '2'
 EndIf
 
 Return .T.
+
+/*/{Protheus.doc} LjIsDro
+	Valida o template de Drogaria conforme o CNPJ
+	@type  Function
+	@author Julio.Nery
+	@since 29/01/2021
+	@version 12
+	@param nenhum
+	@return lRet, logico, confirma uso de TPL Dro?
+/*/
+Function LjIsDro()
+Local aSM0 := FWLoadSM0()
+Local lRet := .F.
+Local nX   := 0	
+
+For nX := 1 to Len(aSM0)
+	If AllTrim(aSM0[nX][18]) == "53113791000122"
+		lRet := .T.
+		Exit
+	EndIf
+Next nX
+
+Return lRet
