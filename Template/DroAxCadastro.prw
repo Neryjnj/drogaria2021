@@ -369,7 +369,7 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroVSNGPC(lF12		, lTela		, cCliente	, cLoja			,;
 							cClassTe	, nItem		, cProd		, lInfoAnvisa	,;
-							lJaAnvisa	, _nPosItem	, lAcessoLib, cOrigem		)
+							lJaAnvisa	, _nPosItem	, lAcessoLib, lTotvsPDV		)
 Local nI			:= 0
 Local nX			:= 0
 Local lRet			:= .F.	    // Retorno da funcao
@@ -386,7 +386,6 @@ Local aCposNObr     := {}
 Local lAntM			:= .F. 		//Medicamento antimicrobiano
 Local cSupervisor	:= Space(25)
 Local lContinua		:= .T.
-Local lTotvsPDV		:= .F.
 
 Default cCliente	:= ""
 Default cLoja		:= ""
@@ -397,7 +396,7 @@ Default lInfoAnvisa := .F.
 Default lJaAnvisa	:= .F.
 Default _nPosItem	:= 0
 Default lAcessoLib	:= .F.
-Default cOrigem		:= ""
+Default lTotvsPDV	:= .F.
 
 If !lAcessoLib .And. !LjProfile(42,@cSupervisor)
 	MsgStop("Usuário não tem permissão para venda de medicamentos controlados")
@@ -405,8 +404,7 @@ If !lAcessoLib .And. !LjProfile(42,@cSupervisor)
 EndIf
 
 If lContinua
-	lTotvsPDV := cOrigem == "TOTVSPDV"
-	If (lTotvsPDV) .Or. (nModulo <> 23)
+	If lTotvsPDV .Or. (nModulo <> 23)
 		cClassTe := Alltrim(SB1->B1_CLASSTE)
 	Else
 		cClassTe := Alltrim(SBI->BI_CLASSTE)
@@ -581,7 +579,7 @@ If lContinua
 					Irá alterar ou não o nome digitado na Venda Assistida.
 		*/ 
 		If !lDrVlApro	
-			T_DroAnviDad(cCliente,cLoja)
+			T_DroAnviDad(cCliente,cLoja,lTotvsPDV)
 		EndIf	
 		
 		//Inicio automatico para testes, pode ser ponto de entrada posteriormente -11122015
@@ -594,7 +592,7 @@ If lContinua
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Define os blocos de codigo para os botoes "Ok" e "Cancel" da dialog ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		bOk		:= {|| lRet := .T., If(T_DroVldTela(lRet, aCampos,@cClassTe), If(T_DroTempLK9(lRet, aCampos, lTela, lF12), oDlgLoja:End(),),.F.)}
+		bOk		:= {|| lRet := .T., If(T_DroVldTela(lRet, aCampos,@cClassTe,lTotvsPDV), If(T_DroTempLK9(lRet, aCampos, lTela, lF12), oDlgLoja:End(),),.F.)}
 		bCancel	:= {|| lRet := .F., oDlgLoja:End()}
 		
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

@@ -11,15 +11,10 @@ Template Function TDREA010()
 Local cRet    := "" 
 Local lRet    := .F.
 Local cSeek   := "" 
-Local cWhile  := ""                                                      
-Local aAreaAtu:= GetArea()                                               
+Local cWhile  := ""
 Local cAlias  := ""
 Local aCpos   := {}
-Local  cCodPag   := ""
-Local	nPosTip	:= 0	,;
-		nPosOper:= 0	,;
-		cAtual	:= ""	,;
-		cOpera	:= ""
+Local cCodPag := ""
 
 Private	oDlg, oLbx, oChk
 Private	oOk     := LoadBitMap(GetResources(), "LBTIK")        	// Bitmap utilizado no Lisbox  (Marcado)

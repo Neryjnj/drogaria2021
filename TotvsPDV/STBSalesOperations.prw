@@ -217,6 +217,9 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 
 	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistTemplate("FRTFuncoes")
 		aPEMenu := ExecTemplate("FRTFUNCOES",.F.,.F.,{aRet,nOption,"30","TOTVSPDV"})
+		If Len(aPEMenu) > 0
+			aRet := aPEMenu
+		EndIf
 	EndIf
 	
 	If lSTMenEdt

@@ -2886,14 +2886,16 @@ If cOrigem == "FRT"
 	EndIf
 ElseIf cOrigem == "TOTVSPDV"
 	If T_DroLenANVISA() > 0
-		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T.,,,,,,,,,," + cOrigem +")" , "", cValToChar(++nNumMenu)})
+		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T.,,,,,,,,,,.T.)" , "", cValToChar(++nNumMenu)})
 	EndIf
 
 	oTEF20 := STBGetTEF()
-	If STFGetCfg("lUsaTef") .And. oTef20:oCOnfig:oCfgTef:oSitef:lCCCD //Verifica se está usando o Clisitef
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
+	If STFGetCfg("lUsaTef") .And. ValType(oTef20:oConfig:oCfgTef) == "O" .And. ;
+		 ValType(oTef20:oConfig:oCfgTef:oSitef) == "O" .And. oTef20:oCOnfig:oCfgTef:oSitef:lCCCD //Verifica se está usando o Clisitef
+		
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
 	EndIf
 EndIf
 

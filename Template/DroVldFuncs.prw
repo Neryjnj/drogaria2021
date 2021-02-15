@@ -1140,7 +1140,7 @@ Return
 ±±ÃÕÕÕÕÕÕÕÕÕÕÿÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕπ±±
 ±±∫Retorno   ≥ExpL1 - Valida ou nao informacoes                            ∫±±
 ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/
-Template Function DroVldTela(lRet, aCampos,cClassTe)
+Template Function DroVldTela(lRet, aCampos,cClassTe,lTotvsPDV)
 Local lRetorno 		:= .F.			//Retorno da funcao
 Local nCont	   		:= 0			//Controle de loop
 Local lEmBranco		:= .F.		 	//Verifica se existe algum campo em branco
@@ -1159,7 +1159,9 @@ Local lVldCpoPac	:= .T.			//indica se valida os campos de Paciente
 Local cVdForaAu		:= ""//Campo SB1/SBI_VDFORAU
 Local lCpoAntM		:= .T.//Campos Antimicrobiano
 
-If nModulo == 23
+Default lTotvsPDV   := .F.
+
+If nModulo == 23 .And. !lTotvsPDV
 	cClassTe := Alltrim(SBI->BI_CLASSTE)	
 	cPsico := Alltrim(SBI->BI_PSICOTR)	
 	cVdForaAu := SBI->BI_VDFORAU
@@ -1802,7 +1804,7 @@ Local cUsoPro := "2"	// Uso Prolongado
 If !lInformouLote
 	nLinha := T_DroLenANVISA() 
 		
-	cTemp			:= T_DroLoteANVISA()
+	cTemp  := T_DroLoteANVISA()
 	If Valtype(cTemp) == "A" 
 		cLote		:= cTemp[1]  
 		cUsoPro	:= cTemp[2]
@@ -1811,7 +1813,7 @@ If !lInformouLote
 	EndIf
 	
 	aANVISA[nLinha][LOTEPROD] 	:= cLote 	//Lote
-	aANVISA[nLinha][USOPROLONG] 	:= cUsoPro	//Uso Prolongadoo
+	aANVISA[nLinha][USOPROLONG] := cUsoPro	//Uso Prolongadoo
 
 	If FunName() == "LOJA701"
 		LJ7AtuLote(cLote)
@@ -1833,121 +1835,120 @@ Return NIL
 ±±∫Retorno   ≥                       	                                      ∫±±
 ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/
 Template Function DroRestANVISA()
-
 Local nLinha	:= 0			//Linha do array a ser utilizada
 Local nI		:= 0
 Local aDroPELK9 := {}
 
-If AliasIndic("LK9")
-
-	// verifica se possui campo de usuario
-	If ExistBlock("DROPELK9")
-		aDroPELK9 := ExecBlock("DROPELK9",.F.,.F.,{{}})
-		If ValType(aDroPELK9) <> "A"
-			aDroPELK9 := {}
-		EndIf
+// verifica se possui campo de usuario
+If ExistBlock("DROPELK9")
+	LjGrvLog("DROVLDFUNCS","Antes da execuÁ„o do PE DROPELK9")
+	aDroPELK9 := ExecBlock("DROPELK9",.F.,.F.,{{}})
+	LjGrvLog("DROVLDFUNCS","Depois da execuÁ„o do PE DROPELK9",aDroPELK9)
+	If ValType(aDroPELK9) <> "A"
+		aDroPELK9 := {}
 	EndIf
+EndIf
 
-	aANVISA	   := {}			//Inicializa o array aANVISA
-	aAuxANVISA := {}			//Inicializa o array Auxiliar aANVISA
-	
-	aLK9Usr	   := {}
-	aAuxLK9Usr := {}
+aANVISA	   := {}			//Inicializa o array aANVISA
+aAuxANVISA := {}			//Inicializa o array Auxiliar aANVISA
 
-	DbSelectArea("LK9")
-	LK9->( DbSetOrder(4) )	//FILIAL+DATA+NUMORC
-	If LK9->( DbSeek(xFilial("SL1") + DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM) )
-		While LK9->(!EoF()) .AND. (LK9_FILIAL + DtoS(LK9_DATA) + LK9_NUMORC == xFilial("SL1")+DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM)
-	
-			aAdd(aANVISA, ARRAY(TAMANVISA))
-			aAdd(aLK9Usr, {})
+aLK9Usr	   := {}
+aAuxLK9Usr := {}
 
-			nLinha := T_DroLenANVISA()
-	
-			//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-			//≥Restaurando o array aANVISA≥
-			//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
-			aANVISA[nLinha][NUMORC]     := LK9->LK9_NUMORC
-			aANVISA[nLinha][NUMDOC]     := LK9->LK9_DOC
-			aANVISA[nLinha][SERIE]      := LK9->LK9_SERIE
-			aANVISA[nLinha][NOME]       := LK9->LK9_NOME		
-			aANVISA[nLinha][TIPOID]     := LK9->LK9_TIPOID
-			aANVISA[nLinha][NUMID]      := LK9->LK9_NUMID
-			aANVISA[nLinha][ORGEXP]     := LK9->LK9_ORGEXP
-			aANVISA[nLinha][UFEMIS]     := LK9->LK9_UFEMIS
-			aANVISA[nLinha][RECEITA]    := LK9->LK9_NUMREC
-			aANVISA[nLinha][TPRECEITA]  := LK9->LK9_TIPREC
-			aANVISA[nLinha][TPUSO]      := LK9->LK9_TIPUSO 
-			aANVISA[nLinha][DATRECEITA] := LK9->LK9_DATARE
-			aANVISA[nLinha][MEDICO]     := LK9->LK9_NOMMED
-			aANVISA[nLinha][CRM]        := LK9->LK9_NUMPRO
-			aANVISA[nLinha][CONPROF]    := LK9->LK9_CONPRO
-			aANVISA[nLinha][UFCONS]     := LK9->LK9_UFCONS
-			aANVISA[nLinha][PRODUTO]    := LK9->LK9_CODPRO
-			aANVISA[nLinha][DESCPRO]    := LK9->LK9_DESCRI		
-			aANVISA[nLinha][UM]         := LK9->LK9_UM
-			aANVISA[nLinha][QTDEPROD]   := LK9->LK9_QUANT
-			aANVISA[nLinha][LOTEPROD]   := LK9->LK9_LOTE
-			aANVISA[nLinha][IDANVISA]   := nLinha
-			aANVISA[nLinha][REGMS]      := LK9->LK9_REGMS 
-			aANVISA[nLinha][ENDERECO]   := LK9->LK9_END
-			aANVISA[nLinha][NPACIENTE]  := LK9->LK9_NOMEP
-			aANVISA[nLinha][USOPROLONG] := LK9->LK9_USOPRO
-			aANVISA[nLinha][IDADEP]		:= LK9->LK9_IDADEP
-			aANVISA[nLinha][UNIDAP]		:= LK9->LK9_UNIDAP
-			aANVISA[nLinha][SEXOPA]		:= LK9->LK9_SEXOPA
-			aANVISA[nLinha][CIDPA]		:= LK9->LK9_CIDPA 
-			aANVISA[nLinha][QUANTP]		:= LK9->LK9_QUANTP
-			aANVISA[nLinha][CLASSTERAP]	:= LK9->LK9_CLASST
+DbSelectArea("LK9")
+LK9->( DbSetOrder(4) )	//FILIAL+DATA+NUMORC
+If LK9->( DbSeek(xFilial("SL1") + DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM) )
+	While LK9->(!EoF()) .AND. (LK9_FILIAL + DtoS(LK9_DATA) + LK9_NUMORC == xFilial("SL1")+DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM)
 
-			If Len(aDroPELK9) = 2
-				For nI := 1 to Len(aDroPELK9[2])
-					aAdd( aLK9Usr[nLinha], {aDroPELK9[2][nI], &(aDroPELK9[2][nI])} )
-				Next
-			EndIf
+		aAdd(aANVISA, ARRAY(TAMANVISA))
+		aAdd(aLK9Usr, {})
 
-			LK9->( DbSkip() )
-		End
-	
-		aAuxANVISA := {ARRAY(TAMAUXANVISA)}
-		//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
-		//≥Restaurando o array aAuxANVISA (refente a informacoes do cliente, medico, receita)≥
-		//≥Sempre restaura com as informacoes do ultimo item informado na venda              |
-		//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
-		aAuxANVISA[1][NOME]			:= aANVISA[nLinha][NOME]      //1		Nome do cliente
-		aAuxANVISA[1][TIPOID]		:= aANVISA[nLinha][TIPOID]    //2		Tipo de identificacao do cliente
-		aAuxANVISA[1][NUMID]		:= aANVISA[nLinha][NUMID]     //3		Numero de identificacao do cliente
-		aAuxANVISA[1][ORGEXP]		:= aANVISA[nLinha][ORGEXP]    //4		Orgao Expedidor
-		aAuxANVISA[1][UFEMIS]		:= aANVISA[nLinha][UFEMIS]    //5		Unidade Federatica
-		aAuxANVISA[1][RECEITA]		:= aANVISA[nLinha][RECEITA]   //6		Numero da receita medica
-		aAuxANVISA[1][TPRECEITA]	:= aANVISA[nLinha][TPRECEITA] //7		Tipo da receita medica
-		aAuxANVISA[1][TPUSO]		:= aANVISA[nLinha][TPUSO]     //8		Tipo de uso da receita medica
-		aAuxANVISA[1][DATRECEITA]	:= aANVISA[nLinha][DATRECEITA]//9		Data da receita medica
-		aAuxANVISA[1][MEDICO]		:= aANVISA[nLinha][MEDICO]    //10		Nome do medico
-		aAuxANVISA[1][CRM]			:= aANVISA[nLinha][CRM]       //11		CRM do medico
-		aAuxANVISA[1][CONPROF]		:= aANVISA[nLinha][CONPROF]   //12		Conselho profissional do medico
-		aAuxANVISA[1][UFCONS]		:= aANVISA[nLinha][UFCONS]    //13		Unidade federativa do conselho profissional do medico
-		aAuxANVISA[1][LOTEPROD]		:= aANVISA[nLinha][LOTEPROD]  //14		Lote	
-	    aAuxANVISA[1][PRODUTO]		:= aANVISA[nLinha][PRODUTO]   //15		Codigo do Produto	
-   		aAuxANVISA[1][QTDEPROD]		:= aANVISA[nLinha][QTDEPROD]  //16     Quantidade
-		aAuxANVISA[1][NUMDOC]		:= aANVISA[nLinha][NUMDOC]	   //17     Numero do Doc
-		aAuxANVISA[1][SERIE]		:= aANVISA[nLinha][SERIE]	   //18     Serie do Documeto
-		aAuxANVISA[1][UM]	    	:= aANVISA[nLinha][UM]	   	   //19     Unidade de Medida do produto  
-		aAuxANVISA[1][DESCPRO]	   	:= aANVISA[nLinha][DESCPRO]   //20     Descricao do Produto 
-		aAuxANVISA[1][IDANVISA]	   	:= aANVISA[nLinha][IDANVISA]  //21     ID que faz referencia ao array aItens localizado no FRTA010
-		aAuxANVISA[1][NUMORC]	   	:= aANVISA[nLinha][NUMORC]    //22     Numero do Orcamento 
-		aAuxANVISA[1][REGMS]	   	:= aANVISA[nLinha][REGMS] 	   //23     Registro do produto no Ministerio da Saude   
-		aAuxANVISA[1][ENDERECO]		:= aANVISA[nLinha][15]//24 Endereco do cliente	 					
-		aAuxANVISA[1][NPACIENTE]	:= aANVISA[nLinha][16] //25 Nome Paciente
-		aAuxANVISA[1][USOPROLONG]	:= aANVISA[nLinha][USOPROLONG]//27 Nome Paciente
-		aAuxANVISA[1][IDADEP]		:= aANVISA[nLinha][IDADEP]//28 Idade Paciente 
-		aAuxANVISA[1][UNIDAP]		:= aANVISA[nLinha][UNIDAP]//29 Unidade da Idade
-		aAuxANVISA[1][SEXOPA]		:= aANVISA[nLinha][SEXOPA]//30 Sexo Paciente
-		aAuxANVISA[1][CIDPA]		:= aANVISA[nLinha][CIDPA]//31 Co. Inter. doenca Pac.
-		aAuxANVISA[1][QUANTP]		:= aANVISA[nLinha][QUANTP]//32 Quantidade Prescrita
+		nLinha := T_DroLenANVISA()
 
-	Endif     
-Endif
+		//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
+		//≥Restaurando o array aANVISA≥
+		//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+		aANVISA[nLinha][NUMORC]     := LK9->LK9_NUMORC
+		aANVISA[nLinha][NUMDOC]     := LK9->LK9_DOC
+		aANVISA[nLinha][SERIE]      := LK9->LK9_SERIE
+		aANVISA[nLinha][NOME]       := LK9->LK9_NOME		
+		aANVISA[nLinha][TIPOID]     := LK9->LK9_TIPOID
+		aANVISA[nLinha][NUMID]      := LK9->LK9_NUMID
+		aANVISA[nLinha][ORGEXP]     := LK9->LK9_ORGEXP
+		aANVISA[nLinha][UFEMIS]     := LK9->LK9_UFEMIS
+		aANVISA[nLinha][RECEITA]    := LK9->LK9_NUMREC
+		aANVISA[nLinha][TPRECEITA]  := LK9->LK9_TIPREC
+		aANVISA[nLinha][TPUSO]      := LK9->LK9_TIPUSO 
+		aANVISA[nLinha][DATRECEITA] := LK9->LK9_DATARE
+		aANVISA[nLinha][MEDICO]     := LK9->LK9_NOMMED
+		aANVISA[nLinha][CRM]        := LK9->LK9_NUMPRO
+		aANVISA[nLinha][CONPROF]    := LK9->LK9_CONPRO
+		aANVISA[nLinha][UFCONS]     := LK9->LK9_UFCONS
+		aANVISA[nLinha][PRODUTO]    := LK9->LK9_CODPRO
+		aANVISA[nLinha][DESCPRO]    := LK9->LK9_DESCRI		
+		aANVISA[nLinha][UM]         := LK9->LK9_UM
+		aANVISA[nLinha][QTDEPROD]   := LK9->LK9_QUANT
+		aANVISA[nLinha][LOTEPROD]   := LK9->LK9_LOTE
+		aANVISA[nLinha][IDANVISA]   := nLinha
+		aANVISA[nLinha][REGMS]      := LK9->LK9_REGMS 
+		aANVISA[nLinha][ENDERECO]   := LK9->LK9_END
+		aANVISA[nLinha][NPACIENTE]  := LK9->LK9_NOMEP
+		aANVISA[nLinha][USOPROLONG] := LK9->LK9_USOPRO
+		aANVISA[nLinha][IDADEP]		:= LK9->LK9_IDADEP
+		aANVISA[nLinha][UNIDAP]		:= LK9->LK9_UNIDAP
+		aANVISA[nLinha][SEXOPA]		:= LK9->LK9_SEXOPA
+		aANVISA[nLinha][CIDPA]		:= LK9->LK9_CIDPA 
+		aANVISA[nLinha][QUANTP]		:= LK9->LK9_QUANTP
+		aANVISA[nLinha][CLASSTERAP]	:= LK9->LK9_CLASST
+
+		If Len(aDroPELK9) == 2
+			For nI := 1 to Len(aDroPELK9[2])
+				aAdd( aLK9Usr[nLinha], {aDroPELK9[2][nI], &(aDroPELK9[2][nI])} )
+			Next
+		EndIf
+
+		LK9->( DbSkip() )
+	End
+
+	aAuxANVISA := {ARRAY(TAMAUXANVISA)}
+	//⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
+	//≥Restaurando o array aAuxANVISA (refente a informacoes do cliente, medico, receita)≥
+	//≥Sempre restaura com as informacoes do ultimo item informado na venda              |
+	//¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ
+	aAuxANVISA[1][NOME]			:= aANVISA[nLinha][NOME]      //1		Nome do cliente
+	aAuxANVISA[1][TIPOID]		:= aANVISA[nLinha][TIPOID]    //2		Tipo de identificacao do cliente
+	aAuxANVISA[1][NUMID]		:= aANVISA[nLinha][NUMID]     //3		Numero de identificacao do cliente
+	aAuxANVISA[1][ORGEXP]		:= aANVISA[nLinha][ORGEXP]    //4		Orgao Expedidor
+	aAuxANVISA[1][UFEMIS]		:= aANVISA[nLinha][UFEMIS]    //5		Unidade Federatica
+	aAuxANVISA[1][RECEITA]		:= aANVISA[nLinha][RECEITA]   //6		Numero da receita medica
+	aAuxANVISA[1][TPRECEITA]	:= aANVISA[nLinha][TPRECEITA] //7		Tipo da receita medica
+	aAuxANVISA[1][TPUSO]		:= aANVISA[nLinha][TPUSO]     //8		Tipo de uso da receita medica
+	aAuxANVISA[1][DATRECEITA]	:= aANVISA[nLinha][DATRECEITA]//9		Data da receita medica
+	aAuxANVISA[1][MEDICO]		:= aANVISA[nLinha][MEDICO]    //10		Nome do medico
+	aAuxANVISA[1][CRM]			:= aANVISA[nLinha][CRM]       //11		CRM do medico
+	aAuxANVISA[1][CONPROF]		:= aANVISA[nLinha][CONPROF]   //12		Conselho profissional do medico
+	aAuxANVISA[1][UFCONS]		:= aANVISA[nLinha][UFCONS]    //13		Unidade federativa do conselho profissional do medico
+	aAuxANVISA[1][LOTEPROD]		:= aANVISA[nLinha][LOTEPROD]  //14		Lote	
+	aAuxANVISA[1][PRODUTO]		:= aANVISA[nLinha][PRODUTO]   //15		Codigo do Produto	
+	aAuxANVISA[1][QTDEPROD]		:= aANVISA[nLinha][QTDEPROD]  //16     Quantidade
+	aAuxANVISA[1][NUMDOC]		:= aANVISA[nLinha][NUMDOC]	   //17     Numero do Doc
+	aAuxANVISA[1][SERIE]		:= aANVISA[nLinha][SERIE]	   //18     Serie do Documeto
+	aAuxANVISA[1][UM]	    	:= aANVISA[nLinha][UM]	   	   //19     Unidade de Medida do produto  
+	aAuxANVISA[1][DESCPRO]	   	:= aANVISA[nLinha][DESCPRO]   //20     Descricao do Produto 
+	aAuxANVISA[1][IDANVISA]	   	:= aANVISA[nLinha][IDANVISA]  //21     ID que faz referencia ao array aItens localizado no FRTA010
+	aAuxANVISA[1][NUMORC]	   	:= aANVISA[nLinha][NUMORC]    //22     Numero do Orcamento 
+	aAuxANVISA[1][REGMS]	   	:= aANVISA[nLinha][REGMS] 	   //23     Registro do produto no Ministerio da Saude   
+	aAuxANVISA[1][ENDERECO]		:= aANVISA[nLinha][15]//24 Endereco do cliente	 					
+	aAuxANVISA[1][NPACIENTE]	:= aANVISA[nLinha][16] //25 Nome Paciente
+	aAuxANVISA[1][USOPROLONG]	:= aANVISA[nLinha][USOPROLONG]//27 Nome Paciente
+	aAuxANVISA[1][IDADEP]		:= aANVISA[nLinha][IDADEP]//28 Idade Paciente 
+	aAuxANVISA[1][UNIDAP]		:= aANVISA[nLinha][UNIDAP]//29 Unidade da Idade
+	aAuxANVISA[1][SEXOPA]		:= aANVISA[nLinha][SEXOPA]//30 Sexo Paciente
+	aAuxANVISA[1][CIDPA]		:= aANVISA[nLinha][CIDPA]//31 Co. Inter. doenca Pac.
+	aAuxANVISA[1][QUANTP]		:= aANVISA[nLinha][QUANTP]//32 Quantidade Prescrita
+
+Endif     
+
 Return
 
 /*‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
@@ -3522,20 +3523,21 @@ Return cRet
 ±±√ƒƒƒƒƒƒƒƒƒƒ≈ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥±±
 ±±≥Uso		 ≥ DROVLDFUNCS	                							    ≥±±
 ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/  
-Template Function DroAnviDad(cCliente,cLoja)
-Local cLojP  := SuperGetMv("MV_LOJAPAD")
-Local cCliP  := SuperGetMv("MV_CLIPAD")  // = DEFINE O CLIENTE PADRAO
+Template Function DroAnviDad(cCliente,cLoja,lTotvsPDV)
+Local cLojP  := SuperGetMv("MV_LOJAPAD") //LOJA PADRAO
+Local cCliP  := SuperGetMv("MV_CLIPAD")  //CLIENTE PADRAO
 Local lAchou := .F.
 
 Default cCliente := ""
 Default cloja    := ""
+Default lTotvsPDV:= .F.
 
 If nModulo == 12 .AND. AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) <> cClip + cLojP
 	SA1->(DbSetOrder(1))
 	If SA1->(DbSeek(xFilial("SA1") + AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) ) ) .AND. cCliP+cLojP <> AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA)
 		lAchou := .T.
 	Endif
-ElseIf nModulo == 23 .AND. cCliente + cLoja  <> cClip + CLojP
+ElseIf (nModulo == 23 .Or. lTotvsPDV) .AND. cCliente + cLoja  <> cClip + CLojP
 	SA1->(DbSetOrder(1))
 	If SA1->(DbSeek(xFilial("SA1") + AllTrim(cCliente)+ AllTrim(cLoja) ) ) .AND. cCliP+cLojP <> AllTrim(cCliente)+ AllTrim(cLoja)
 		lAchou := .T.
@@ -3785,8 +3787,15 @@ Return lRet
 ±±∫Uso       ≥ Template Drogaria										∫±±
 ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/
 Template Function DROLCS()
+Local lRet := .F.
 
-Return LjIsDro()
+If LjIsDro()
+	lRet := .T.
+Else
+	Final("Acesso negado pois o CNPJ n„o esta liberado para uso de Template de Drogaria")
+EndIf
+
+Return lRet
 
 /*‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 ±±∫Programa  ≥DroVERArray   ∫ Autor ≥ Vendas Clientes    ∫ Data ≥  26/03/15   ∫±±

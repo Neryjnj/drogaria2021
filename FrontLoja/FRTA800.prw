@@ -29,7 +29,6 @@ Function FRTA800( 	nValor		,lUsaTef 	,aMoeda		, lRecebe 		,;
 					nDesconto	,aDadosCH   ,cItemCond	,lCondNegF5		,;
 					aParcelas	,cCliente   ,cLojaCli  	,nVlrDescTot   	,;
 					aRegTEF    ,lRecarEfet	,aTefBkpCS	, oteste	)
-					            
 
 // Variaveis Locais da Funcao
 Local aSavArea	 	:= GetArea() 				// salva area
@@ -71,7 +70,7 @@ Local aColsMAV    	:= {}        										// referencia de função
 Local lUsaAdm       := .T.												// se usa Adm
 Local cDesconto		:= "00,00"											// valor do desconto
 Local cDesAdm		:= ''												// desconto da adm
-Local cValorSL2		:= ''
+Local cValorSL2		:= "00,00"
 
 DbSelectArea('MDV')
 DBSetOrder(1)
@@ -88,7 +87,7 @@ DEFINE MSDIALOG oDlg TITLE OemtoAnsi(STR0001) FROM C(190),C(183) TO C(650),C(460
 	@ C(001),C(002) TO C(100),C(134) LABEL  STR0002 PIXEL OF oDlg //"Dados do Simulador"
 
 	@ C(016),C(003) Say STR0003 Size C(068),C(008) COLOR CLR_BLACK PIXEL OF oDlg // "Valor da Venda :"
-	@ C(014),C(060) Say " " Var cValorSL2 Size C(058),C(008) COLOR CLR_BLACK PIXEL OF oDlg
+	@ C(014),C(060) Say "" Var cValorSL2 Size C(058),C(008) COLOR CLR_BLACK PIXEL OF oDlg
 
 	@ C(029),C(003) Say STR0004 Size C(058),C(008) COLOR CLR_BLACK PIXEL OF oDlg		//"Desconto no Total: "
 	@ C(029),C(060) Say "00,00" Var cDesconto Size C(058),C(008) COLOR CLR_BLACK PIXEL OF oDlg	
