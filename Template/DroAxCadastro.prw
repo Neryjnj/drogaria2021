@@ -369,7 +369,7 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroVSNGPC(lF12		, lTela		, cCliente	, cLoja			,;
 							cClassTe	, nItem		, cProd		, lInfoAnvisa	,;
-							lJaAnvisa	, _nPosItem	, lAcessoLib)
+							lJaAnvisa	, _nPosItem	, lAcessoLib, cOrigem		)
 Local nI			:= 0
 Local nX			:= 0
 Local lRet			:= .F.	    // Retorno da funcao
@@ -386,6 +386,7 @@ Local aCposNObr     := {}
 Local lAntM			:= .F. 		//Medicamento antimicrobiano
 Local cSupervisor	:= Space(25)
 Local lContinua		:= .T.
+Local lTotvsPDV		:= .F.
 
 Default cCliente	:= ""
 Default cLoja		:= ""
@@ -396,6 +397,7 @@ Default lInfoAnvisa := .F.
 Default lJaAnvisa	:= .F.
 Default _nPosItem	:= 0
 Default lAcessoLib	:= .F.
+Default cOrigem		:= ""
 
 If !lAcessoLib .And. !LjProfile(42,@cSupervisor)
 	MsgStop("Usuário não tem permissão para venda de medicamentos controlados")
@@ -403,16 +405,18 @@ If !lAcessoLib .And. !LjProfile(42,@cSupervisor)
 EndIf
 
 If lContinua
-	If nModulo == 23
-		cClassTe := Alltrim(SBI->BI_CLASSTE)	
+	lTotvsPDV := cOrigem == "TOTVSPDV"
+	If (lTotvsPDV) .Or. (nModulo <> 23)
+		cClassTe := Alltrim(SB1->B1_CLASSTE)
 	Else
-		cClassTe := Alltrim(SB1->B1_CLASSTE)	
+		cClassTe := Alltrim(SBI->BI_CLASSTE)
 	Endif
 	
 	lAntM := AllTrim(cClassTe) == "1"
 	
 	If cClassTe == "1" //Antimicrobiano	
-		aCposNObr := {"LK9_CIDPA","LK9_TIPOID", "LK9_NOMEP","LK9_IDADEP", "LK9_UNIDAP", "LK9_SEXOPA", "LK9_NOME", "LK9_TIPOID","LK9_NUMID", "LK9_ORGEXP", "LK9_END", "LK9_UFEMIS"}	
+		aCposNObr := {"LK9_CIDPA","LK9_TIPOID", "LK9_NOMEP","LK9_IDADEP", "LK9_UNIDAP", "LK9_SEXOPA",;
+						 "LK9_NOME", "LK9_TIPOID","LK9_NUMID", "LK9_ORGEXP", "LK9_END", "LK9_UFEMIS"}	
 	ElseIf cClassTe == "2"
 		aCposNObr := {"LK9_CIDPA", ,"LK9_NOMEP","LK9_IDADEP","LK9_UNIDAP","LK9_SEXOPA","LK9_USOPRO","LK9_QUANTP"}
 	EndIf
@@ -479,7 +483,8 @@ If lContinua
 	
 	RegToMemory( "LK9", .T. )
 	
-	If !lDrVlApro .OR.  (lInfoAnvisa .AND. _nPosItem > 0 )			//Caso não veio da tela de aprovação de medicamentos. Se veio da tela da Venda Assistida, preciso recuperar os dados digitados ao incluir um item novo.
+	//Caso não veio da tela de aprovação de medicamentos. Se veio da tela da Venda Assistida, preciso recuperar os dados digitados ao incluir um item novo.
+	If !lDrVlApro .OR.  (lInfoAnvisa .AND. _nPosItem > 0 )
 		T_DroItemAnvisa( nItem, Nil, lInfoAnvisa, lJaAnvisa,_nPosItem )
 	EndIf
 	
@@ -491,7 +496,7 @@ If lContinua
 				M->&( SX3->X3_CAMPO ) := CriaVar( SX3->X3_CAMPO )
 			Endif
 			If   !(RTrim(SX3->X3_CAMPO) $ "LK9_NOMEP/LK9_IDADEP/LK9_UNIDAP/LK9_SEXOPA/LK9_CONPRO") .AND.;
-				 !(RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. nModulo == 12 .AND. lF12 .AND. lTela)
+				 !(RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. (nModulo == 12 .Or. lTotvsPDV) .AND. lF12 .AND. lTela)
 				 
 				 	ADD FIELD aCampos TITULO  X3TITULO()  ;
 								  CAMPO   SX3->X3_CAMPO   ;
@@ -502,10 +507,10 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX  
 	
-			ElseIf ( RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. nModulo == 12 .AND. lF12 .AND. lTela) .OR.;
+			ElseIf ( RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. (nModulo == 12 .Or. lTotvsPDV) .AND. lF12 .AND. lTela) .OR.;
 					( AllTrim(SX3->X3_CAMPO) $ "LK9_LOTE|LK9_USOPRO" .AND. lInfoAnvisa .AND. _nPosItem > 0)
 					
 					ADD FIELD aCampos TITULO  X3TITULO()      ;
@@ -517,7 +522,7 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX ;
 								  WHEN { || .F. }
 	
@@ -531,7 +536,7 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX ;
 								  WHEN { || RTrim(M->LK9_TIPUSO) <> '2'}
 			Endif
@@ -580,7 +585,7 @@ If lContinua
 		EndIf	
 		
 		//Inicio automatico para testes, pode ser ponto de entrada posteriormente -11122015
-		If nModulo == 12
+		If (nModulo == 12) .Or. lTotvsPDV
 			M->LK9_TIPREC := SB1->B1_CODLIS
 		Else
 			M->LK9_TIPREC := SBI->BI_CODLIS

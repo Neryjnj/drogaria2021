@@ -758,7 +758,7 @@ Return lRet
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Template Function DROVLVen( )
+Template Function DROVLVen()
 Local aRet := {}					// Retorno da funcao
 Local _aVidaLinkC := ParamIxb[2]	// aVidalinkC
 Local _aVidaLinkD := ParamIxb[3]	// aVidalinkD

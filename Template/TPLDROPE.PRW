@@ -2862,10 +2862,7 @@ Return aBotoes
 ±±º          ³ pressionado a tecla F12 no Front-Loja                      º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³ Template Drogaria                                          º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FRTFuncoes()
 Local _aFuncoes := ParamIxb[1]	//Conteudo o array aFuncoes
 Local nOption   := IIf(Len(ParamIxb) > 1, ParamIxb[2],69)	//nOpção do Menu
@@ -2889,7 +2886,7 @@ If cOrigem == "FRT"
 	EndIf
 ElseIf cOrigem == "TOTVSPDV"
 	If T_DroLenANVISA() > 0
-		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T. )" , "", cValToChar(++nNumMenu)})
+		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T.,,,,,,,,,," + cOrigem +")" , "", cValToChar(++nNumMenu)})
 	EndIf
 
 	oTEF20 := STBGetTEF()
