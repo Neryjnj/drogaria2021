@@ -582,12 +582,18 @@ Return .T.
 Template Function DROVLACli( cCodCli, cLojCli, cCliCodLoj, oGetCodCli,;
 							 cNomeCli, oNomeCli, lTotvsPDV )
 
-FR271EAltCli( Nil		   				, @cCodCli		   			, @cLojCli		   			, @aParamVL[1][VLP_LOCIOS]	,;
-			  @aParamVL[1][VLP_LRECEB]	, @aParamVL[1][VLP_LCXABE]	, @aParamVL[1][VLP_ACRDCL]	, @aParamVL[1][VLP_CCODCO]	,;
- 			  @aParamVL[1][VLP_CLOJAC]	, @aParamVL[1][VLP_CNUMCA] 	, @aParamVL[1][VLP_UCLITP]	, @aParamVL[1][VLP_UPRODT]	,;
-			  @aParamVL[1][VLP_AITENS]	, Nil		   				, Nil						, @aParamVL[1][VLP_CTIPOC]	,;
- 			  Nil						, Nil			  			, Nil						, Nil 						)
- 			 
+Default lTotvsPDV := .F.
+
+If lTotvsPDV
+	//JULIO - DESENVOLVER
+Else
+	FR271EAltCli( Nil		   				, @cCodCli		   			, @cLojCli		   			, @aParamVL[1][VLP_LOCIOS]	,;
+				@aParamVL[1][VLP_LRECEB]	, @aParamVL[1][VLP_LCXABE]	, @aParamVL[1][VLP_ACRDCL]	, @aParamVL[1][VLP_CCODCO]	,;
+				@aParamVL[1][VLP_CLOJAC]	, @aParamVL[1][VLP_CNUMCA] 	, @aParamVL[1][VLP_UCLITP]	, @aParamVL[1][VLP_UPRODT]	,;
+				@aParamVL[1][VLP_AITENS]	, Nil		   				, Nil						, @aParamVL[1][VLP_CTIPOC]	,;
+				Nil						, Nil			  			, Nil						, Nil 						)
+EndIf
+
 cCliCodLoj	:= StrZero(Val(cCodCli), 6, 0) + " - " + cLojCli
 cNomeCli	:= Subst(Posicione("SA1",1,xFilial("SA1")+cCodCli+cLojCli,"A1_NOME"),1,30)
 

@@ -2867,35 +2867,34 @@ Template Function FRTFuncoes()
 Local _aFuncoes := ParamIxb[1]	//Conteudo o array aFuncoes
 Local nOption   := IIf(Len(ParamIxb) > 1, ParamIxb[2],69)	//nOpção do Menu
 Local nNumMenu  := IIf(Len(ParamIxb) > 1, Val(ParamIxb[3]),30)	//nOpção do Menu
-Local cOrigem   := IIf(Len(ParamIxb) > 1, ParamIxb[4],"FRT")	//nOpção do Menu
+Local lTotvsPDV := IIf(Len(ParamIxb) > 1, ParamIxb[4],.F.)	//Origem da chamada
 Local oTef20	:= NIL
 
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Intervalo utilizado pelos templates:³
-//³70 a 99                             ³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If cOrigem == "FRT"
-	If T_DroLenANVISA() > 0
-		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
-	Endif
-
-	If cTipTef == TEF_CLISITEF .AND. lUsaTef .AND. (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))  
-		AAdd( _aFuncoes, { "71", "PBM VidaLink"  	  ,"T_DroVLGet(1)"	, {|x|  .F. } } ) //"PBM VIDA LINK"
-		AAdd( _aFuncoes, { "72", "PBM PharmaSystem"  ,"T_DroVLGet(541)"	, {|x|  .F. } } ) //"PBM PHARMASYSTEM"
-		AAdd( _aFuncoes, { "73", "PBM Funcional Card","T_DroVLGet(560)"	, {|x|  .F. } } ) //"PBM Funcional Card"
-	EndIf
-ElseIf cOrigem == "TOTVSPDV"
+//|Intervalo utilizado pelos templates:|
+//|70 a 99                             |
+If lTotvsPDV
 	If T_DroLenANVISA() > 0
 		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T.,,,,,,,,,,.T.)" , "", cValToChar(++nNumMenu)})
 	EndIf
 
 	oTEF20 := STBGetTEF()
-	If STFGetCfg("lUsaTef") .And. ValType(oTef20:oConfig:oCfgTef) == "O" .And. ;
-		 ValType(oTef20:oConfig:oCfgTef:oSitef) == "O" .And. oTef20:oCOnfig:oCfgTef:oSitef:lCCCD //Verifica se está usando o Clisitef
-		
+	// If STFGetCfg("lUsaTef") .And. ValType(oTef20:oConfig:oCfgTef) == "O" .And. ;
+	// 	 ValType(oTef20:oConfig:oCfgTef:oSitef) == "O" .And. ; //Verifica se está usando o Clisitef
+	// 	 oTef20:oCOnfig:oCfgTef:oSitef:lPBM //Verifica se a PBM esta ativa no cadastro de estação
+	If STFGetCfg("lUsaTef") .And. ValType(oTEF20) == "O" .And. oTEF20:oConfig:ISPBM()
 		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
 		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
 		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
+	EndIf
+Else
+	If T_DroLenANVISA() > 0
+		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
+	Endif
+
+	If cTipTef == TEF_CLISITEF .AND. lUsaTef .AND. (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))  
+		AAdd( _aFuncoes, { "71", "PBM VidaLink"  	 ,"T_DroVLGet(1)"	, {|x|  .F. } } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { "72", "PBM PharmaSystem"  ,"T_DroVLGet(541)"	, {|x|  .F. } } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { "73", "PBM Funcional Card","T_DroVLGet(560)"	, {|x|  .F. } } ) //"PBM Funcional Card"
 	EndIf
 EndIf
 

@@ -73,6 +73,7 @@ Local cFuncReimp		:= "STIPanReimpSale()" 		// Funcção padrao para reimpressao do
 Local cFuncCanc			:= ""						// Funcao de cancelamento de venda
 Local cMVLOJANF			:= AllTrim( GetMV("MV_LOJANF") )
 Local lMVFISNOTA		:= GetMV("MV_FISNOTA") .and. !Empty(cMVLOJANF) .and. cMVLOJANF <> "UNI"
+Local oTEF20			:= NIL
 
 If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 
@@ -212,11 +213,21 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 	  
 	//Lista de Presentes
 	If SuperGetMv("MV_LJLSPRE",, .F.)
-		AAdd( aRet , { AllTrim(STR(++nOption)) 				,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
+		AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
+	EndIf
+
+	If ExistFunc("STBPbmMenu") .And. AliasInDic("SLZ") .And. lUsaTef
+		SLZ->(DbSeek(xFilial("SLZ"), .T.))
+	 	If !SLZ->(EOF())
+		 	oTef20 := STBGetTEF()
+		 	If oTEF:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
+				AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
+			EndIf
+	 	EndIf
 	EndIf
 
 	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistTemplate("FRTFuncoes")
-		aPEMenu := ExecTemplate("FRTFUNCOES",.F.,.F.,{aRet,nOption,"30","TOTVSPDV"})
+		aPEMenu := ExecTemplate("FRTFUNCOES",.F.,.F.,{aRet,nOption,"31",.T.})
 		If Len(aPEMenu) > 0
 			aRet := aPEMenu
 		EndIf

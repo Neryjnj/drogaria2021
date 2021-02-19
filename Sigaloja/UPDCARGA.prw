@@ -6,14 +6,14 @@
 
 Static lSM0Open := .F.
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบ Programa ณ UPDCARGA บ Autor ณ TOTVS Protheus     บ Data ณ  14/11/2016 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบ Programa | UPDCARGA บ Autor | TOTVS Protheus     บ Data |  14/11/2016 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de update dos dicionแrios para compatibiliza็ใo     ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de update dos dicionแrios para compatibiliza็ใo     |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ UPDCARGA   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | UPDCARGA   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
+---------------------------------------------------------------------------*/
 User Function UPDCARGA( cEmpAmb, cFilAmb )
 Local   aSay      := {}
 Local   aButton   := {}
@@ -96,14 +96,14 @@ EndIf
 
 Return NIL
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบ Programa ณ FSTProc  บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบ Programa | FSTProc  บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da grava็ใo dos arquivos           ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da grava็ใo dos arquivos           |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSTProc    - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | FSTProc    - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
+---------------------------------------------------------------------------*/
 Static Function FSTProc( lEnd, aMarcadas )
 Local   aInfo     := {}
 Local   aRecnoSM0 := {}
@@ -164,18 +164,18 @@ If ( lOpen := MyOpenSm0(.T.) )
 			oProcess:SetRegua1( 8 )
 
 			//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-			//ณAtualiza o dicionแrio SX2         ณ
+			//|Atualiza o dicionแrio SX2         |
 			//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 			oProcess:IncRegua1( STR0016 + " - " + SM0->M0_CODIGO + " " + SM0->M0_NOME + " ..." ) //"Dicionแrio de arquivos"
 			FSAtuSX2( @cTexto )
 
 			//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-			//ณAtualiza o dicionแrio SX3         ณ
+			//|Atualiza o dicionแrio SX3         |
 			//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 			FSAtuSX3( @cTexto )
 
 			//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-			//ณAtualiza o dicionแrio SIX         ณ
+			//|Atualiza o dicionแrio SIX         |
 			//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 			oProcess:IncRegua1( STR0017 + " - " + SM0->M0_CODIGO + " " + SM0->M0_NOME + " ..." ) //"Dicionแrio de ํndices"
 			FSAtuSIX( @cTexto )
@@ -219,13 +219,13 @@ If ( lOpen := MyOpenSm0(.T.) )
 			Next nX
 
 			//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-			//ณAtualiza o dicionแrio SX6         ณ
+			//|Atualiza o dicionแrio SX6         |
 			//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 			oProcess:IncRegua1( STR0024 + " - " + SM0->M0_CODIGO + " " + SM0->M0_NOME + " ..." ) //"Dicionแrio de parโmetros"
 			FSAtuSX6( @cTexto )
 
 			//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-			//ณAtualiza os helps                 ณ
+			//|Atualiza os helps                 |
 			//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 			oProcess:IncRegua1( STR0025 + " - " + SM0->M0_CODIGO + " " + SM0->M0_NOME + " ..." ) //"Helps de Campo"
 			FSAtuHlp( @cTexto )
@@ -304,14 +304,14 @@ EndIf
 
 Return lRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบ Programa ณ FSAtuSX2 บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบ Programa | FSAtuSX2 บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SX2 - Arquivos      ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SX2 - Arquivos      |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAtuSX2   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | FSAtuSX2   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
+---------------------------------------------------------------------------*/
 Static Function FSAtuSX2( cTexto )
 Local aEstrut   := {}
 Local aSX2      := {}
@@ -544,18 +544,19 @@ cTexto += CRLF + STR0051 + " SX2" + CRLF + Replicate( "-", 128 ) + CRLF + CRLF /
 
 Return NIL
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบ Programa ณ FSAtuSX3 บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบ Programa | FSAtuSX3 บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SX3 - Campos        ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SX3 - Campos        |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAtuSX3   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | FSAtuSX3   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
+---------------------------------------------------------------------------*/
 Static Function FSAtuSX3( cTexto )
 Local aEstrut   := {}
 Local aSX3      := {}
-Local aTabelasLJ  := {}
+Local aTabelasLJ:= {}
+Local aTabTplDRO:= {}
 Local cAlias    := ""
 Local cAliasAtu := ""
 Local cMsg      := ""
@@ -2460,7 +2461,20 @@ aTabelasLJ := {	"SB1", "SB0", "SLH", "SBZ", "SM2", "SA1", "SA3", "SA6", "SAE", "
 				"DA1", "ACQ", "ACR", "SL6", "SL8", "SLD", "SL7", "SUG", "SUH", "SU1",;
 				"MDE", "MBS", "MBT", "MEN", "MEK", "MEI", "MEJ", "MB2", "MB3", "MB4",;
 				"MB5", "MB6", "MB7", "MB8", "CLK", "MEU", "MEV", "CC2", "AI0", "MBF",;
-				"MBL", "MG7", "MG8", "MGB", "MGC", "MHI"  }
+				"MBL", "MG7", "MG8", "MGB", "MGC", "MHI", "SLZ" }
+
+If ExistFunc("LjIsDro") .And. LjIsDro()
+	aTabTplDRO :=	{"MHA", "MHB", "MHC", "MHD", "MHE", "MHF", "MHG",; 
+					"LIP", "LK9", "LEO", "LFX", "LHU", "LJU", "LJG",;
+					"LHV", "LIO", "LJ2", "LHH", "LHG", "LKA", "LKB",;
+					"LKD", "LFW", "LHF"}
+	
+	For nI := 1 to Len(aTabTplDRO)
+        Aadd(aTabelasLJ,aTabTplDRO[nI])
+    Next nI
+
+	ConOut("Tabelas do Template de Drogaria terใo campos incluidos para a carga")
+EndIf
 
 For nCountTabLJ := 1 to Len(aTabelasLJ)
 	FSAddMSEXP(@aSX3, aTabelasLJ[nCountTabLJ]) //adiciona campo MSEXP na tabela
@@ -2636,18 +2650,18 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบ Programa ณ FSAtuSIX บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+ฑฑบ Programa | FSAtuSIX บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SIX - Indices       ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SIX - Indices       |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAtuSIX   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
+ฑฑ| Uso      | FSAtuSIX   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function FSAtuSIX( cTexto )
 Local aEstrut   := {}
@@ -2863,18 +2877,18 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบ Programa ณ FSAtuSX6 บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+ฑฑบ Programa | FSAtuSX6 บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SX6 - Parโmetros    ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SX6 - Parโmetros    |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAtuSX6   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
+ฑฑ| Uso      | FSAtuSX6   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function FSAtuSX6( cTexto )
 Local aEstrut   := {}
@@ -3283,18 +3297,18 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบ Programa ณ FSAtuHlp บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+ฑฑบ Programa | FSAtuHlp บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao dos Helps de Campos    ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao dos Helps de Campos    |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAtuHlp   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
+ฑฑ| Uso      | FSAtuHlp   - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function FSAtuHlp( cTexto )
 Local aHlpPor   := {}
@@ -3750,27 +3764,27 @@ cTexto += CRLF + STR0085 + " " + STR0082 + CRLF + Replicate( "-", 128 ) + CRLF +
 
 Return {}
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบRotina    ณESCEMPRESAบAutor  ณ Ernani Forastieri  บ Data ณ  27/09/04   บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบRotina    |ESCEMPRESAบAutor  | Ernani Forastieri  บ Data |  27/09/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao Generica para escolha de Empresa, montado pelo SM0_ บฑฑ
-ฑฑบ          ณ Retorna vetor contendo as selecoes feitas.                 บฑฑ
-ฑฑบ          ณ Se nao For marcada nenhuma o vetor volta vazio.            บฑฑ
+ฑฑบDescricao | Funcao Generica para escolha de Empresa, montado pelo SM0_ บฑฑ
+ฑฑบ          | Retorna vetor contendo as selecoes feitas.                 บฑฑ
+ฑฑบ          | Se nao For marcada nenhuma o vetor volta vazio.            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑบUso       | Generico                                                   บฑฑ
+---------------------------------------------------------------------------*/
 Static Function EscEmpresa()
 //ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-//ณ Parametro  nTipo                           ณ
-//ณ 1  - Monta com Todas Empresas/Filiais      ณ
-//ณ 2  - Monta so com Empresas                 ณ
-//ณ 3  - Monta so com Filiais de uma Empresa   ณ
-//ณ                                            ณ
-//ณ Parametro  aMarcadas                       ณ
-//ณ Vetor com Empresas/Filiais pre marcadas    ณ
-//ณ                                            ณ
-//ณ Parametro  cEmpSel                         ณ
-//ณ Empresa que sera usada para montar selecao ณ
+//| Parametro  nTipo                           |
+//| 1  - Monta com Todas Empresas/Filiais      |
+//| 2  - Monta so com Empresas                 |
+//| 3  - Monta so com Filiais de uma Empresa   |
+//|                                            |
+//| Parametro  aMarcadas                       |
+//| Vetor com Empresas/Filiais pre marcadas    |
+//|                                            |
+//| Parametro  cEmpSel                         |
+//| Empresa que sera usada para montar selecao |
 //ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
 Local   aSalvAmb := GetArea()
 Local   aSalvSM0 := {}
@@ -3856,18 +3870,18 @@ Return  aRet
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบRotina    ณMARCATODOSบAutor  ณ Ernani Forastieri  บ Data ณ  27/09/04   บฑฑ
+ฑฑบRotina    |MARCATODOSบAutor  | Ernani Forastieri  บ Data |  27/09/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao Auxiliar para marcar/desmarcar todos os itens do    บฑฑ
-ฑฑบ          ณ ListBox ativo                                              บฑฑ
+ฑฑบDescricao | Funcao Auxiliar para marcar/desmarcar todos os itens do    บฑฑ
+ฑฑบ          | ListBox ativo                                              บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
+ฑฑบUso       | Generico                                                   บฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function MarcaTodos( lMarca, aVetor, oLbx )
 Local  nI := 0
@@ -3882,17 +3896,17 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบRotina    ณINVSELECAOบAutor  ณ Ernani Forastieri  บ Data ณ  27/09/04   บฑฑ
+ฑฑบRotina    |INVSELECAOบAutor  | Ernani Forastieri  บ Data |  27/09/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao Auxiliar para inverter selecao do ListBox Ativo     บฑฑ
+ฑฑบDescricao | Funcao Auxiliar para inverter selecao do ListBox Ativo     บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
+ฑฑบUso       | Generico                                                   บฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function InvSelecao( aVetor, oLbx )
 Local  nI := 0
@@ -3907,17 +3921,17 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบRotina    ณRETSELECAOบAutor  ณ Ernani Forastieri  บ Data ณ  27/09/04   บฑฑ
+ฑฑบRotina    |RETSELECAOบAutor  | Ernani Forastieri  บ Data |  27/09/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao Auxiliar que monta o retorno com as selecoes        บฑฑ
+ฑฑบDescricao | Funcao Auxiliar que monta o retorno com as selecoes        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
+ฑฑบUso       | Generico                                                   บฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function RetSelecao( aRet, aVetor )
 Local  nI    := 0
@@ -3933,18 +3947,18 @@ Return NIL
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบRotina    ณ MARCAMAS บAutor  ณ Ernani Forastieri  บ Data ณ  20/11/04   บฑฑ
+ฑฑบRotina    | MARCAMAS บAutor  | Ernani Forastieri  บ Data |  20/11/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao para marcar/desmarcar usando mascaras               บฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบDescricao | Funcao para marcar/desmarcar usando mascaras               บฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
+ฑฑบUso       | Generico                                                   บฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function MarcaMas( oLbx, aVetor, cMascEmp, lMarDes )
 Local cPos1 := SubStr( cMascEmp, 1, 1 )
@@ -3965,14 +3979,14 @@ oLbx:Refresh()
 
 Return NIL
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบRotina    ณ VERTODOS บAutor  ณ Ernani Forastieri  บ Data ณ  20/11/04   บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบRotina    | VERTODOS บAutor  | Ernani Forastieri  บ Data |  20/11/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDescricao ณ Funcao auxiliar para verificar se estao todos marcardos    บฑฑ
-ฑฑบ          ณ ou nao                                                     บฑฑ
+ฑฑบDescricao | Funcao auxiliar para verificar se estao todos marcardos    บฑฑ
+ฑฑบ          | ou nao                                                     บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณ Generico                                                   บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑบUso       | Generico                                                   บฑฑ
+---------------------------------------------------------------------------*/
 Static Function VerTodos( aVetor, lChk, oChkMar )
 Local lTTrue := .T.
 Local nI     := 0
@@ -3986,14 +4000,14 @@ oChkMar:Refresh()
 
 Return NIL
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบ Programa ณ MyOpenSM0บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบ Programa | MyOpenSM0บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento abertura do SM0 modo exclusivo     ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento abertura do SM0 modo exclusivo     |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ MyOpenSM0  - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | MyOpenSM0  - Gerado por EXPORDIC / Upd. V.4.10.4 EFS       |ฑฑ
+---------------------------------------------------------------------------*/
 Static Function MyOpenSM0(lShared)
 Local lOpen := .F.
 Local nLoop := 0
@@ -4017,7 +4031,6 @@ For nLoop := 1 To 20
 	EndIf
 
 	Sleep( 500 )
-
 Next nLoop
 
 If !lOpen
@@ -4027,14 +4040,14 @@ EndIf
 
 Return lOpen
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบProgramaณ FSAddMSEXP บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+/*---------------------------------------------------------------------------
+ฑฑบPrograma| FSAddMSEXP บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SX2 - Arquivos      ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SX2 - Arquivos      |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAddMSEXP   -      										  ณฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+ฑฑ| Uso      | FSAddMSEXP   -      										  |ฑฑ
+---------------------------------------------------------------------------*/
 Static Function FSAddMSEXP( aSX3, cAlias )
 Local cPrefixo := If(SubStr(cAlias,1,1) == "S", SubStr(cAlias,2,3), cAlias)
 
@@ -4083,22 +4096,24 @@ Return
 
 
 /*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+-----------------------------------------------------------------------------
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
-ฑฑบ Programa ณ FSAddHREXP บ Autor ณ TOTVS Protheus     บ Data ณ  03/08/2012 บฑฑ
+ฑฑบ Programa | FSAddHREXP บ Autor | TOTVS Protheus     บ Data |  03/08/2012 บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบ Descricaoณ Funcao de processamento da gravacao do SX2 - Arquivos      ณฑฑ
-ฑฑบ          ณ                                                            บฑฑ
+ฑฑบ Descricao| Funcao de processamento da gravacao do SX2 - Arquivos      |ฑฑ
+ฑฑบ          |                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑณ Uso      ณ FSAddHREXP   -      ณฑฑ
+ฑฑ| Uso      | FSAddHREXP   -      |ฑฑ
 ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+-----------------------------------------------------------------------------
 */
 Static Function FSAddHREXP( aSX3, cAlias )
 
 Local cPrefixo := If(SubStr(cAlias,1,1) == "S", SubStr(cAlias,2,3), cAlias)
+
+ConOut("Alias atual : " + cAlias)
 
 aAdd( aSX3, { ;
 	cAlias																	, ; //X3_ARQUIVO
