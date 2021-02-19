@@ -220,7 +220,7 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 		SLZ->(DbSeek(xFilial("SLZ"), .T.))
 	 	If !SLZ->(EOF())
 		 	oTef20 := STBGetTEF()
-		 	If oTEF:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
+		 	If oTef20:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
 				AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
 			EndIf
 	 	EndIf
