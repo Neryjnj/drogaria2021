@@ -38,6 +38,9 @@ Local cTpDoc	:= "0" //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 
 Local nTamCupPBM:= 6 //Tamanho do cupom PBM
 Local oPbm      := NIL
 
+//////////// CONTINUAR DAQUI - 
+//PARECE QUE TEM QUE IMPORTAR A SLZ
+
 /* Busca o numero do documento fiscal */	
 cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
 
@@ -59,13 +62,13 @@ If !Empty(cDoc)
         EndIf
                 
         //Inicializa a venda PBM
-        If !oPbm:IniciaVend( cDoc, cOperador, cTpDoc )
-            STBIsVnPBM(.F.)
-            oPbm := Nil
-        Else
+        If oPbm:IniciaVend( cDoc, cOperador, cTpDoc )
             STFMessage("STBOPbm1","STOP", "Venda PBM" ) //"Venda PBM"
 		    STFShowMessage("STBOPbm1")
             STBIsVnPBM(.T.)
+        Else
+            STBIsVnPBM(.F.)
+            oPbm := Nil
         EndIf
     EndIf
 EndIf

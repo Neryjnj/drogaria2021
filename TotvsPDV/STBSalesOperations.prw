@@ -216,14 +216,15 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 		AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
 	EndIf
 
-	If ExistFunc("STBPbmMenu") .And. AliasInDic("SLZ") .And. lUsaTef
-		SLZ->(DbSeek(xFilial("SLZ"), .T.))
-	 	If !SLZ->(EOF())
+	// If ExistFunc("STBPbmMenu") .And. AliasInDic("SLZ") .And. lUsaTef
+	If ExistFunc("STBPbmMenu") .And. lUsaTef
+		// SLZ->(DbSeek(xFilial("SLZ"), .T.))
+	 	// If !SLZ->(EOF())
 		 	oTef20 := STBGetTEF()
 		 	If oTef20:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
 				AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
 			EndIf
-	 	EndIf
+	 	// EndIf
 	EndIf
 
 	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistTemplate("FRTFuncoes")

@@ -18,7 +18,7 @@ Local oTEF20 := NIL
 Local oDados := NIL
 Local cNumCup:= ""
 
-cNumCup := STDCSLastSale("L1_DOC")
+cNumCup := Substr(STDCSLastSale("L1_DOC"),1,6)
 cNumCup := Soma1(cNumCup)
 
 oTEF20 := STBGetTEF()
