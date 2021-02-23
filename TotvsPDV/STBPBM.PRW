@@ -37,18 +37,18 @@ Local cSerie	:= STFGetStation("SERIE")	// retorna a SERIE fiscal da estação
 Local cTpDoc	:= "0" //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 -sat
 Local nTamCupPBM:= 6 //Tamanho do cupom PBM
 Local oPbm      := NIL
-
-//////////// CONTINUAR DAQUI - 
-//PARECE QUE TEM QUE IMPORTAR A SLZ
+Local oTEF20    := NIL
+Local oDadosPbm := NIL
 
 /* Busca o numero do documento fiscal */	
 cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
 
 //Pega o numero do cupom
 If !Empty(cDoc)
+    oTEF20 := STBGetTEF()
 
     //Estancia o objeto LjCPbm
-    oPbm := LjCPbm():Pbm()
+    oPbm := oTEF20:Pbm()
 
     //Seleciona a PBM
     If !oPbm:SelecPbm()
@@ -60,9 +60,13 @@ If !Empty(cDoc)
         ElseIf LjEmitNFCe()
             cTpDoc := "1"
         EndIf
-                
+
+        oDadosPbm := LJCDadosTransacaoPBM():New(0               , cDoc         , Date()  ,  Time(),;
+                                                /*lUltimaTrn*/  ,/*cRede*/     , cTpDoc  ,  cOperador )
+
         //Inicializa a venda PBM
-        If oPbm:IniciaVend( cDoc, cOperador, cTpDoc )
+        // If oPbm:IniciaVend( cDoc, cOperador, cTpDoc )
+        If oPbm:IniciaVend( oDadosPbm )
             STFMessage("STBOPbm1","STOP", "Venda PBM" ) //"Venda PBM"
 		    STFShowMessage("STBOPbm1")
             STBIsVnPBM(.T.)

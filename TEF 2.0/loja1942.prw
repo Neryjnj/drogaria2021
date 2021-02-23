@@ -24,43 +24,40 @@ Class LJADadosTransacao
 	Data nParcela													//Numero de parcelas para vendas parceladas
 	Data dDataVcto  												//Data da transacao de pre-datado	
 	Data cOperador													//Operador da venda
+	Data cTpDoc														//tipo de documento utilizado no pbm => 0 - ecf, 1 - nfce, 2 -sat
 	
 	Method New()
 	Method Retorno()
 
 EndClass                
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºPrograma  ³New          ºAutor  ³Vendas CRM       º Data ³  29/10/09   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Metodo construtor da classe.                                º±±
 ±±º          ³                                                            º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³ MP10                                                       º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
-Method New(	nValor, 		nCupom, 		dData, cHora, ;
-			nTipoTrans,		lUltimaTrn,		cRede) Class LJADadosTransacao 
+---------------------------------------------------------------------------*/
+Method New(	nValor, 		nCupom, 		dData,	cHora, ;
+			nTipoTrans,		lUltimaTrn,		cRede,	cTpDoc, ;
+			cOperador) Class LJADadosTransacao 
 			
-			
-	Default lUltimaTrn := .T. //Valida apenas para gerenciador Direcao
-	
-	Self:nValor		:= nValor
-	Self:nCupom		:= nCupom
-	Self:dData		:= dData
-	Self:cHora		:= cHora
-	Self:nTipoTrans	:= nTipoTrans
-	Self:lUltimaTrn	:= lUltimaTrn   
-	Self:oRetorno 	:= Nil   
-	Self:cRede		:= cRede
-	Self:nParcela	:= 0
-	Self:dDataVcto	:=	CtoD("  /  /  ")
-	Self:cOperador  := ""
+Default lUltimaTrn := .T. //Valida apenas para gerenciador Direcao
+Default cTpDoc	   := "1" //Insiro padrão NFCE
+
+Self:nValor		:= nValor
+Self:nCupom		:= nCupom
+Self:dData		:= dData
+Self:cHora		:= cHora
+Self:nTipoTrans	:= nTipoTrans
+Self:lUltimaTrn	:= lUltimaTrn   
+Self:oRetorno 	:= Nil   
+Self:cRede		:= cRede
+Self:nParcela	:= 0
+Self:dDataVcto	:=	CtoD("  /  /  ")
+Self:cOperador  := cOperador
+Self:cTpDoc		:= cTpDoc //tipo de documento utilizado no pbm => 0 - ecf, 1 - nfce, 2 -sat
 
 Return Self 
 
