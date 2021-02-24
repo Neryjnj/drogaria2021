@@ -87,7 +87,7 @@ Class LJCComClisitef
 	Method IniciaCB()
 	Method ValCodBar()
 	Method ConfPinPad()
-	Method EnvSitDir()
+	Method EnvSitDir(oDadosTran)
 	Method SetTrans()
 	Method GetRetorno()
 	Method Fechar()
