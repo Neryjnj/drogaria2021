@@ -660,12 +660,13 @@ Return cNumCartao
 ±±ºRetorno   ³ExpL1 - Produto controlado ou nao                            º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroVerCont( cCodProd )
-Local cAlias 			:= ""		//Alias
-Local cCampo			:= ""		//Nome do campo
-Local cCampoClass		:= ""		//Nome do campo
-Local lRet   			:= .F.		//Retorno da funcao
+Local cAlias 	 := ""		//Alias
+Local cCampo	 := ""		//Nome do campo
+Local cCampoClass:= ""		//Nome do campo
+Local lRet   	 := .F.		//Retorno da funcao
+Local lTotvsPDV	 :=  STFIsPOS()
 
-If nModulo == 23
+If nModulo == 23 .And. !lTotvsPDV
 	cAlias 	  		:= "SBI"
 	cCampo	  		:= "SBI->BI_PSICOTR"
 	cCampoClass		:= "SBI->BI_CLASSTE"
@@ -676,8 +677,8 @@ Else
 Endif
 
 DbSelectArea(cAlias)                 
-DbSetOrder(1)
-If DbSeek(xFilial(cAlias) + cCodProd) 
+(cAlias)->(DbSetOrder(1))
+If (cAlias)->(DbSeek(xFilial(cAlias) + cCodProd))
 	If  &(cCampo) == "1" 
 		lRet := .T.
 	Endif
@@ -685,9 +686,9 @@ Endif
 
 If !lRet
 	DbSelectArea(cAlias)                 
-	DbSetOrder(1)
-	If DbSeek(xFilial(cAlias) + cCodProd) 
-		If  !Alltrim(&(cCampoClass)) == ""   
+	(cAlias)->(DbSetOrder(1))
+	If (cAlias)->(DbSeek(xFilial(cAlias) + cCodProd))
+		If !Alltrim(&(cCampoClass)) == ""   
 			lRet := .T.
 		Endif
 	Endif
@@ -3825,22 +3826,25 @@ EndIf
 
 Return lRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±ºPrograma  ³DroVERPerm   º Autor ³ Vendas Clientes    º Data ³  09/10/15   º±±
+/*-------------------------------------------------------------------------------
+±±ºPrograma  ³DroVERPerm   º Autor ³ Vendas Clientes    º Data ³  09/10/15    º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDescricao ³ Verifica Permissao de Farmaceutico                             º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³ Template Drogarias               	                          º±±
 ±±º          função chamada de varios fontes parapara verificar se ja há dadosº±±
 ±±º          de cliente preenchidos para remedios de controle especial        º±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+-------------------------------------------------------------------------------*/
 Template Function DroVERPerm(nOrigem,cCaixaSup)
 Local lRet		:= .T.
 Local cSuperior := ""
+Local cMensagem := ""
 Local aAreasTab	:= {}
 Local nX		:= 0
+Local lProfile42:= .F.
+Local lTotvsPDV := STFIsPOS()
 
-Default nOrigem		:= 1  //Sigaloja
+Default nOrigem		:= IIf(lTotvsPDV,4,1)  //1-Sigaloja / 4-TotvsPDV
 Default cCaixaSup	:= Space(25)
 
 cSuperior := cCaixaSup
@@ -3864,15 +3868,23 @@ If (nOrigem == 3) .Or. (ValType(cStrAcesso) == "C" .And. Empty(AllTrim(cStrAcess
 	EndIf
 EndIf
 
-If !LJProfile(42,@cSuperior)  // permissao para manipular remedios controlados (template drogaria)
-	lRet := .F. 
-	MsgAlert("Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro.")
+//permissao para manipular remedios controlados (template drogaria)
+If lTotvsPDV
+	lProfile42 := STFPROFILE(42)
+Else
+	lProfile42 := LJProfile(42,@cSuperior)
+EndIf
+
+If !lProfile42
+	lRet := .F.
+	cMensagem := "Usuário não é um Farmaceutico."
+	cMensagem += IIf(lTotvsPDV,"","Não poderá efetuar manutenção neste cadastro.")
+	MsgAlert(cMensagem)
 EndIf
 
 If lRet 
 	//Preenchimento dos campos de seguranca
-	If nOrigem == 1  // Venda Loja 
-		
+	If nOrigem == 1  // Venda Loja
 		M->LQ_USVENDA := cUserName
 		M->LQ_USAPROV := cSuperior
 
@@ -3881,6 +3893,9 @@ If lRet
 			M->B1_USVENDA := cUserName
 			M->B1_USAPRO := cSuperior 
 		EndIf
+	ElseIf nOrigem == 4 //TotvsPDV
+		STDSPBasket("SL1","L1_USVENDA",cUserName)
+		STDSPBasket("SL1","L1_USAPROV",cSuperior)
 	Endif
 EndIf
 
@@ -3905,11 +3920,21 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroGrvUs()
 Local lRet := .T.
+Local lProfile42:= .F.
+Local lTotvsPDV := STFIsPOS()
+Local cMsg := "Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro."
 
-cCaixaSup := Space(25)  // limpa a variavel estatica
-If !LJProfile(42,@cCaixaSup)  // permissao para manupilar remedios controlados (template drogaria)
-	MsgAlert("Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro.")
-	lRet := .F. 
+// permissao para manupilar remedios controlados (template drogaria)
+If lTotvsPDV
+	lProfile42 := STFPROFILE(42)
+Else
+	cCaixaSup := Space(25)  // limpa a variavel estatica
+	lProfile42 := LJProfile(42,@cCaixaSup)
+EndIf
+
+If !lProfile42
+	MsgAlert(cMsg)
+	lRet := .F.
 EndIf
 
 Return lRet

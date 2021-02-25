@@ -38,7 +38,7 @@ Static lValidSitef:= .F.
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                                          ³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Template Function DROVLGet( nOpPbm , lTotvsPDV )
+Template Function DROVLGet( nOpPbm )
 Local oNumAutori																				// Objeto do Numero de Autorizacao
 Local oNumConv																					// Objeto do Numero do Convenio
 Local oNumCartao																				// Objeto do Numero do Cartao do Convenio
@@ -80,20 +80,27 @@ Local aRetPbm		:= {}				//Retorno das informacoes gravadas do PBM Funcional Card
 Local lDrGScrExMC	:= NIL
 
 DEFAULT nOpPbm 	  	:= 1				// Identifica o PBM
-DEFAULT lTotvsPDV	:= .F.
+DEFAULT lTotvsPDV	:= STFIsPOS()
 
-If lSigaLoja
+If lSigaLoja .Or. lTotvsPDV
 	If Len(aParamVL) = 0
 		T_DROVLPSet()
 		aParamVL[1][VLP_AVLC] := {}
 		aParamVL[1][VLP_AVLD] := {}
 	EndIf
 
-	aParamVL[1][VLP_CCLIEN]	:= M->LQ_CLIENTE
-	aParamVL[1][VLP_CLOJAC]	:= M->LQ_LOJA
-	aParamVL[1][VLP_LCXABE]	:= LjCxAberto(.T.,xNumCaixa())
+	If lTotvsPDV
+		aParamVL[1][VLP_CCLIEN]	:= STDGPBasket( "SL1" , "L1_CLIENTE" )
+		aParamVL[1][VLP_CLOJAC]	:= STDGPBasket( "SL1" , "L1_LOJA" )
+		aParamVL[1][VLP_LCXABE]	:= STBCaixaVld()
+		aRetPBM := STGDadosVL()
+	Else
+		aParamVL[1][VLP_CCLIEN]	:= M->LQ_CLIENTE
+		aParamVL[1][VLP_CLOJAC]	:= M->LQ_LOJA
+		aParamVL[1][VLP_LCXABE]	:= LjCxAberto(.T.,xNumCaixa())
+		aRetPbm := LJGDadosVL()
+	EndIf
 	
-	aRetPbm := LJGDadosVL()
 	If Len(aRetPbm) > 2 .And. Len(aRetPbm[1]) > 0
 		aParamVL[1][VLP_NVIDAL]	:= aRetPbm[3]
 	Else
@@ -108,8 +115,10 @@ If nOpPbm <> 540
 	cCliCodLoj	:= aParamVL[1][VLP_CCLIEN] + " - " + aParamVL[1][VLP_CLOJAC]
 	cNomeCli	:= Subst(Posicione("SA1",1,xFilial("SA1") + aParamVL[1][VLP_CCLIEN] + aParamVL[1][VLP_CLOJAC],"A1_NOME"),1,30)
 Else
-	If !lTotvsPDV
-		oTEF  := LJTEFAbre()	    				//Prepara o objeto TEF e carrega as variáveis necessárias par
+	If lTotvsPDV
+		oTEF := STBGetTEF()
+	Else
+		oTEF := LJTEFAbre()	    				//Prepara o objeto TEF e carrega as variáveis necessárias par
 	EndIf
 Endif
 
@@ -126,7 +135,9 @@ If nOpPbm <> 540 .AND. aParamVL[1][VLP_NVIDAL] == 2 	// Jah Gravado VidaLink
 	Return(NIL)
 EndIf
 
-aKey := FRTSetKey()    // Cancela temporariamente as SetKey's do Fechamento da Venda
+If !lTotvsPDV
+	aKey := FRTSetKey()  //Cancela temporariamente as SetKey's do Fechamento da Venda
+EndIf
 
 DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregamento de Cotação da VidaLink
 
@@ -151,8 +162,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		@ 05,100 GET oNumAutori VAR _cNumAutori  VALID T_DroVLCar( 	@_cNumAutori, @_cNumAutAnt	, @aLin						, @aParamVL[1][VLP_AVLD]	,; 
 																	@nTotVenda	, @oTotVenda	, @oLbx						, nNumPbm					,;
 																	""			, ""			, aParamVL[1][VLP_CCLIEN]	, @aParamVL[1][VLP_CLOJAC] 	,;
-																				,				,							, lTotvsPDV					) ;
-												SIZE 50,7 PIXEL PICTURE "999999999999"
+																				,				,							) SIZE 50,7 PIXEL PICTURE "999999999999"
 	Else
 	
 		If nOpPbm	== 540
@@ -195,12 +205,12 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 	    	@ 175,240 BUTTON "Pesquisar" SIZE 39,12 OF oDlg PIXEL ACTION T_DroVLCar( 	@_cNumAutori, @_cNumAutAnt	, @aLin						, @aParamVL[1][VLP_AVLD]	,; 
 				    																	@nTotVenda	, @oTotVenda	, @oLbx						, nNumPbm					,; 
 		    																			_cNumConv	,_cNumCartao	, aParamVL[1][VLP_CCLIEN]	, @aParamVL[1][VLP_CLOJAC]	,;
-	    																				_cCPF  		, _cCRM			, _cUF 						, lTotvsPDV)
+	    																				_cCPF  		, _cCRM			, _cUF 						)
 	    Else
 	    	@ 175,240 BUTTON "Pesquisar" SIZE 39,12 OF oDlg PIXEL ACTION T_DroVLCar( 	@_cNumAutori, @_cNumAutAnt	, @aLin			, @aVidalinkD	,; 
 				    																	@nTotVenda	, @oTotVenda	, @oLbx			, nNumPbm		,; 
 		    																			_cNumConv	,_cNumCartao	, @aVidalinkC	, Nil			,;
-	    																				_cCPF  		, _cCRM			, _cUF 			, lTotvsPDV		)	    
+	    																				_cCPF  		, _cCRM			, _cUF 			)	    
 	    Endif																						
 		
 	Endif
@@ -235,7 +245,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		@ 065,100 GET oGetCodCli VAR cCliCodLoj  When .F. SIZE  50,7 PIXEL PICTURE "@!"
 		@ 065,150 GET oNomeCli   VAR cNomeCli    When .F. SIZE 120,7 PIXEL PICTURE "@!"
 		@ 065,010 BUTTON STR0043 SIZE 50,15 OF oDlg PIXEL ACTION ( T_DROVLACli(  @aParamVL[1][VLP_CCLIEN], @aParamVL[1][VLP_CLOJAC], @cCliCodLoj, @oGetCodCli,;
-																				 @cNomeCli				 , @oNomeCli 			   , lTotvsPDV	) ) // STR0043 "Altera Cliente"
+																				 @cNomeCli				 , @oNomeCli 			   ) ) // STR0043 "Altera Cliente"
 	Endif		
 		 						
 	If nOpPbm == 540
@@ -310,14 +320,16 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		T_DrSScrExMC( .F. )
 	EndIf
 	
-	FRTSetKey(aKey) // Restaura as SetKey's do Fechamento da Venda
+	If !lTotvsPDV
+		FRTSetKey(aKey) //Restaura as SetKey's do Fechamento da Venda
+	EndIf
 	
 	If nOpPbm <> 540
 		FRT271aVL({aParamVL[1][VLP_AVLD], aParamVL[1][VLP_AVLC], aParamVL[1][VLP_NVIDAL]})
 	Endif	
 	
 	If nOpPbm <> 540 .AND. aParamVL[1][VLP_NVIDAL] == 1  // Gravar VidaLink
-		If !lSigaLoja 
+		If !lSigaLoja .And. !lTotvsPDV
 			FR271HCarrega(   oDlg					, Nil						, @aParamVL[1][27]			, @aParamVL[1][145]	,;
 							 @aParamVL[1][1]		, @aParamVL[1][2]			, @aParamVL[1][3]			, @aParamVL[1][4]	,;
 							 @aParamVL[1][157]		, @aParamVL[1][45] 			, @aParamVL[1][7]			, @aParamVL[1][8]	,;
@@ -363,13 +375,14 @@ Return Nil
 Template Function DROVLCar( _cNumAutori	, _cNumAutAnt	, aLin			, aVidaLinkD	, ;
 							nTotVenda	, oTotVenda		, oLbx			, nNumPbm		, ;	 
 							_cNumConv	,_cNumCartao	,  _cCliente	, _cLoja		, ;
-							cCPF 		,cNumCRM		, cUFCRM		, lTotvsPDV		)
+							cCPF 		,cNumCRM		, cUFCRM		)
 
 Local I 		:= 0 	//Contador
 Local _cCPF		:= ""	//CPF do Cliente
 Local nValor	:= 0	//Valor do produto retornado pela Funcional Card
 Local lContinua	:= .T.
 Local lRet		:= .T.
+Local lTotvsPDV :=  STFIsPOS()
 
 Default cCPF 	:= ""
 Default cNumCRM := ""
@@ -580,9 +593,9 @@ Return .T.
 ±±³Uso		 ³ Front Loja com Template Drogarias 		                   ³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROVLACli( cCodCli, cLojCli, cCliCodLoj, oGetCodCli,;
-							 cNomeCli, oNomeCli, lTotvsPDV )
+							 cNomeCli, oNomeCli )
 
-Default lTotvsPDV := .F.
+Local lTotvsPDV := STFIsPOS()
 
 If lTotvsPDV
 	//JULIO - DESENVOLVER
@@ -591,7 +604,7 @@ Else
 				@aParamVL[1][VLP_LRECEB]	, @aParamVL[1][VLP_LCXABE]	, @aParamVL[1][VLP_ACRDCL]	, @aParamVL[1][VLP_CCODCO]	,;
 				@aParamVL[1][VLP_CLOJAC]	, @aParamVL[1][VLP_CNUMCA] 	, @aParamVL[1][VLP_UCLITP]	, @aParamVL[1][VLP_UPRODT]	,;
 				@aParamVL[1][VLP_AITENS]	, Nil		   				, Nil						, @aParamVL[1][VLP_CTIPOC]	,;
-				Nil						, Nil			  			, Nil						, Nil 						)
+				Nil							, Nil			  			, Nil						, Nil 						)
 EndIf
 
 cCliCodLoj	:= StrZero(Val(cCodCli), 6, 0) + " - " + cLojCli

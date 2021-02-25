@@ -296,13 +296,12 @@ Return Nil
 Function CrdxInt( lRec, lChkWs )
 
 Local lRet := .T.                   	//Ha integracao com SIGACRD
-Local lR5  := GetRpoRelease() >= "R5"   // Indica se o release e 11.5
 
 DEFAULT lRec 	:= .F.					//Verifica se ira' executar a analise de credito apos o Recebimento de titulos
 Default lChkWs 	:= .T.					//Verifica se foi digitado WebService no Cadastro de Estações
 
 If Type("lRecebe") == "L" .AND. lRecebe .AND. !lRec 
-	If lR5 .And. SuperGetMv("MV_LJCFID",,.F.) 
+	If SuperGetMv("MV_LJCFID",,.F.) 
 		lRet := .T.
 	Else		
 		lRet := .F.
@@ -733,7 +732,6 @@ Local nPosRecno     := 0                                   	// Posicao do regist
 Local aFilSE1 		:= {}									// Guarda as filiais em que o cliente possui titulos
 Local lVerEmpres    := Lj950Acres(SM0->M0_CGC)				// Verifica as filiais da trabalharam com acrescimento separado
 Local cSepRec       := If("|"$MVRECANT,"|",",")            // Tratamento para recebimento antecipado
-Local lR5			:= GetRpoRelease("R5")					// Indica se o release e 11.5
 Local lPosCrd		:= IsInCallStack("FWHOSTCONNECT") 	//Integração TotvsPDV x SIGACRD, como é retaguarda estou lendo se utilizou STBRemoteExecute no PDV através do FWHostConnect (Se FrontLoja, é __WSCONNECT). OBS: NÃO DEPENDO DE CONFIGURAR INTEGRAÇÃO SIGACRD NA RETAGUARDA. 
 
 DEFAULT aSaldoMeses  := {}
@@ -894,7 +892,7 @@ If lAchou
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³INCLUIR O ACRESCIMO FINANCEIRO NA COMPOSICAO  DO SALDO DOS TITULOS EM ABERTO ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		If lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")	
+		If lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")	
 			cQuery += "(SUM(SE1.E1_ACRESC)) AS ACRESC, "
 		Endif  
 		
@@ -963,7 +961,7 @@ If lAchou
 		   		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 				//³INCLUIR O ACRESCIMO FINANCEIRO NA COMPOSICAO  DO SALDO DOS TITULOS EM ABERTO ³
 				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-				If lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")    
+				If lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")    
 					nValor += &(cAliasTrb+"->ACRESC")
 				Endif		
 			Endif
@@ -1228,7 +1226,7 @@ If lAchou
 							//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 							//³INCLUIR O ACRESCIMO FINANCEIRO NA COMPOSICAO  DO SALDO DOS TITULOS EM ABERTO ³
 							//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-							If lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")   
+							If lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")   
 								CrdGuardaMes(SE1->E1_SALDO+SE1->E1_ACRESC,SubStr(DtoS(SE1->E1_VENCTO),1,6)  ,@aSaldoMeses)                                     
 								nValorSE1 += SE1->E1_SALDO + SE1->E1_ACRESC                    
 							Else
@@ -1775,7 +1773,6 @@ Local lVerEmpres    := Lj950Acres(SM0->M0_CGC)					// Verifica as filiais da tra
 Local nAcrsFin		:= 0										// Valor do acrescimento financiamento
 Local nValorL4		:= 0										// Valor da parcela de financiamento
 Local cCliVip		:= ""										// Cliente VIP?
-Local lR5			:= GetRpoRelease("R5")						// Indica se o release e 11.5
 Local uResult		:= NIL										// Retorno da chamada da funcao na Retaguarda
 Local lPosCrd		:= STFIsPOS() .And. CrdxInt(.F.,.F.)		// Integração TotvsPDV x SIGACRD
 Local cMsg			:= ""										// Mensagem para tentar novamente quando há falha de conexão ou erro se lPosCrd
@@ -2184,7 +2181,7 @@ If lRet
 	   //³estiver no LOJA950. Ou se usar conceito³     
    	   //³de acrescimo separado "MV_LJICMJR" =.T.³
 	   //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	   If lVerEmpres .OR. (( lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")  .AND. ;    
+	   If lVerEmpres .OR. ((SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")  .AND. ;    
 	       SE4->(FieldPos("E4_LIMACRS") > 0) .AND. SL4->(FieldPos("L4_ACRSFIN") > 0))
 		   DbSelectArea("SE4")
 		   DbSetOrder(1)
@@ -2214,7 +2211,7 @@ If lRet
 				  Loop		      
 			  End
            Endif
-	   ElseIf lVerEmpres .OR. ( (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")  .AND. ;
+	   ElseIf lVerEmpres .OR. ( (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")  .AND. ;
 	       SL4->(FieldPos("L4_ACRSFIN") > 0) )
            nDiasPagto	:= 0	
 		   
@@ -3388,7 +3385,6 @@ Local nValorL4 		:= 0										// Maior valor da parcela
 Local nAcrsFin 		:= 0   										// % de acrescimo financeiro
 Local lSoma			:= .F.										// Variavel utilizada para somar valores em acrescimo financeiro
 Local nL4ValTot		:= 0										// Valor total financiado
-Local lR5			:= GetRpoRelease("R5")						// Indica se o release e 11.5
 
 // Verifica se o cadastro do cliente existe localmente na base de dados do Caixa
 DbSelectArea("SA1")
@@ -3399,7 +3395,7 @@ Endif
 DbSelectArea("SL4")
 DbSetOrder(1)
 If	DbSeek(xFilial("SL4")+SL1->L1_NUM)
-	If (lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;         
+	If (lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;         
 	    SE4->(FieldPos("E4_LIMACRS") > 0) .AND. SL4->(FieldPos("L4_ACRSFIN") > 0)		
 		
 		If Alltrim(SL4->L4_FORMA) == "FI"
@@ -3436,7 +3432,7 @@ If	DbSeek(xFilial("SL4")+SL1->L1_NUM)
 			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 			//³ Alteracao para enviar os parametros corretos para alteracao de comprovante   ³
 			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-			If lSoma .AND. (lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;    
+			If lSoma .AND. (lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;    
 			   SE4->(FieldPos("E4_LIMACRS") > 0) .AND. SL4->(FieldPos("L4_ACRSFIN") > 0)
 			 								
 				
@@ -3455,7 +3451,7 @@ If	DbSeek(xFilial("SL4")+SL1->L1_NUM)
 		   		If DbSeek(xFilial("SE4") + SL1->L1_CONDPG)
 	         		nDiasPagto	:= SE4->E4_LIMACRS
  	       		Endif
-			ElseIf lSoma .AND. (lVerEmpres .OR. (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;    
+			ElseIf lSoma .AND. (lVerEmpres .OR. (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA")) .AND. ;    
 			   SL4->(FieldPos("L4_ACRSFIN") > 0)
 			 								
 				If Alltrim(SL4->L4_FORMA) == "FI"
@@ -3521,7 +3517,7 @@ aAdd( aComprov, STR0076 ) 													//"              Assinatura "
 		
 If ExistBlock("CRD010C")
 	aComprov := ExecBlock("CRD010C",.F.,.F.,{aComprov, nL4ValTot, nDiasPagto, nQtdParcel, nValorL4, nAcrsFin})
-ElseIf (lR5 .AND. SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA" .AND. FindFunction("LjxCrdCf"))   
+ElseIf (SuperGetMV("MV_LJICMJR",,.F.) .AND. cPaisLoc == "BRA" .AND. FindFunction("LjxCrdCf"))   
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Se trabalhar com o conceito de acrescimo separado, ³
 	//³altera mensagem do comprovante de financiamento    ³
@@ -6254,7 +6250,6 @@ Local cCodCliente			:= ""											// Codigo do cliente
 Local cCodLoja 				:= ""											// Codigo da loja
 Local bOkButton																// Bloco de codigo do botao Ok da enchoiceBar
 Local bCancelButton															// Bloco de codigo do botao Cancel da enchoiceBar
-Local lR5                   := GetRpoRelease("R5")                          // Indica se o release e 11.5
 Local nTamTela1				:= 6											// Posicionamento da tela Ver11.5
 Local nTamTela2				:= 2											// Posicionamento da tela Ver11.5
 Local lMultSel				:= .F.											// Informa se pode selecionar multiplos clientes
@@ -6353,10 +6348,8 @@ DEFINE MSDIALOG oDlgTelaCli TITLE STR0109 FROM (aSize1[7]*0.7),0 TO (aSize1[6]*0
 //³ Versão 11.0 Adiciona nTamTela1 := +6 no 1º Parametro e              ³
 //³ Adiciona nTamTela2 := +2 no 3ºParametro.                            ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If lR5
-	nTamTela1 := 0
-	nTamTela2 := 0
-EndIf
+nTamTela1 := 0
+nTamTela2 := 0
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Verifica se pode selecionar mais de um cliente ³
