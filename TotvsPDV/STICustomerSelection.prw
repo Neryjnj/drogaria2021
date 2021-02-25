@@ -412,6 +412,7 @@ Local aCampos		:= {}		//Campos que serão gravados
 Local aDados		:= {}		//Dados dos campos que serão gravados.
 Local lRet 			:= .T. 		//Retorno da função do PE STValidCli
 Local cMatricula	:= ""		//Matricula do cliente no caso de Convênio (Template Drogaria)
+Local aFRT010CL 	:= {}		//Retorno da Template Function FRT010CL
 
 //Cadastra o cliete selecionado caso não exista localmente
 If  nPos > 0 .AND. nPos <= Len(aDataCustomers) 
@@ -443,8 +444,30 @@ If nPos > 0 .AND. !Empty(nRecno)
 		lRet := ExecBlock("STValidCli",.F.,.F.,{SA1->A1_COD,SA1->A1_LOJA})
 	EndIf
 
-	If lRet 
+	// Integração SIGACRD x TOTVSPDV
+	If lRet .And. lPosCrd 
+		If Len(aCartaoMA6) >= nPos
+			cCartaoMA6	:= aCartaoMA6[nPos]
+		EndIf
+		
+		If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
+			cMatricula := AllTrim(SA1->A1_MATRICU)
+			
+			//Abre a tela para seleção do Plano de Fidelização (Template Drogaria)
+			If ExistTemplate("FRT010CL")
+				aFRT010CL := ExecTemplate( "FRT010CL", .F., .F., { {}, Nil, SA1->A1_COD, SA1->A1_LOJA, cCartaoMA6, .T., .T.} )
+				If ValType(aFRT010CL) == "A" .AND. Len(aFRT010CL) <> 2
+					lRet := aFRT010CL[1]
+				EndIf
+			EndIf
+		EndIf
 
+		If lRet
+			STBSetCrdIdent(cCartaoMA6,AllTrim(SA1->A1_CGC),AllTrim(SA1->A1_COD),AllTrim(SA1->A1_LOJA),cMatricula)
+		EndIf
+	EndIf
+
+	If lRet 
 		oModelCli := STWCustomerSelection(SA1->A1_COD+SA1->A1_LOJA)
 		STDSPBasket("SL1","L1_CLIENTE"	,oModelCli:GetValue("SA1MASTER","A1_COD"))
 		STDSPBasket("SL1","L1_LOJA"		,oModelCli:GetValue("SA1MASTER","A1_LOJA"))
@@ -458,18 +481,6 @@ If nPos > 0 .AND. !Empty(nRecno)
 		
 		//Responsável por setar codigo do cliente e codigo da loja para o recebimento de titulo
 		STWSCliLoj(oModelCli:GetValue("SA1MASTER","A1_COD"), oModelCli:GetValue("SA1MASTER","A1_LOJA"))
-		
-		// Integração SIGACRD x TOTVSPDV
-		If lPosCrd 
-			cCartaoMA6 := ""
-			If Len(aCartaoMA6) >= nPos
-				cCartaoMA6	:= aCartaoMA6[nPos]
-			EndIf
-			If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
-				cMatricula := AllTrim(SA1->A1_MATRICU)
-			EndIf
-			STBSetCrdIdent(cCartaoMA6,AllTrim(SA1->A1_CGC),AllTrim(SA1->A1_COD),AllTrim(SA1->A1_LOJA),cMatricula)
-		EndIf
 		
 		STFMessage(ProcName(),"STOP",STR0015)  // "Cliente Selecionado"
 		STFShowMessage(ProcName())
