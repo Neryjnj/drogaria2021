@@ -30,7 +30,7 @@ Local aRet			:= {}
 Local aDados		:= {"23", space(SLG->(TamSx3("LG_CRO")[1])) } 
 Local lArredondar 	:= SuperGetMV( "MV_LJINSAR",, .F.)			// Configuração para ativar doação para o Instituto Arredondar
 Local nArredondar	:= 0										// Valor da doação para o Instituto Arredondar 	
-Local lEmitNfce		:= Iif(FindFunction("LjEmitNFCe"), LjEmitNFCe(), .F.) // Sinaliza se utiliza NFC-e
+Local lEmitNfce		:= LjEmitNFCe() // Sinaliza se utiliza NFC-e
 Local cKeyNfce		:= ""
 Local nRetNfce		:= -1	//Sinaliza se transmitiu a NFCe
 Local lPrintNFCE	:= .T.																						// Se imprime Danfe Nfc-e
@@ -107,7 +107,7 @@ If lContinua
 	// Doação para o Instituto Arredondar
 	If lArredondar
 	
-		If SL1->(FieldPos( "L1_VLRARR" )) > 0
+		If SL1->(ColumnPos( "L1_VLRARR" )) > 0
 			nArredondar := STBGetInsArr()
 			If nArredondar > 0
 				If ExistFunc("STBIANotFiscal")
@@ -144,18 +144,16 @@ If lContinua
 	
 	// TO DO: Exibir mensagem de finalizacao de cupom
 	
-	If GetVersao(.F.) >= "12" .AND. !(lEmitNfce .OR. lSAT) //Impressão de Vale-Troca quando utilizada IMPRESSORA FISCAL
+	If !(lEmitNfce .OR. lSAT) //Impressão de Vale-Troca quando utilizada IMPRESSORA FISCAL
 		STBVTCupom(SL1->L1_DOC,.F.)
 	EndIf
 
 	//Versao Mobile Demonstrativa nao emite Cupom
-	If  lMobile 
-		
+	If  lMobile
 		//Se salva venda como orcamento 		
-		If  lSaveOrc 
+		If lSaveOrc 
 			STDFinishSale()		
-		EndIf	
-
+		EndIf
 	EndIf
 
 	//Executa PE para saber se gera NFC-e/NF-e/SAT ou utiliza parametro 
@@ -308,7 +306,7 @@ If lContinua
 		aRet := LJSATComando({"12","EnviarDadosVenda",LJSATnSessao(),cPass,cXML})
 
         If Len(aRet) > 2 .And. Val(aRet[2]) == 6000 //retorno de sucesso
-			If FindFunction("LJSATRetDoc")
+			If ExistFunc("LJSATRetDoc")
 				aSATDoc := LJSATRetDoc(Decode64(aRet[5]),aRet)  //retorna o doc e serie gerado no SAT
 
 				cDoc := cDocSat	:= aSATDoc[1] 
@@ -360,9 +358,8 @@ If lContinua
 									cALojaCli,cACPFCli,cAFormPg)
 			EndIf
 
-			If GetVersao(.F.) >= "12" //Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
-				STBVTCupom(SL1->L1_DOC,.T.)
-			EndIf
+			//Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
+			STBVTCupom(SL1->L1_DOC,.T.)
 			
 			STDFinishSale()
         	
@@ -440,7 +437,7 @@ If lContinua
 							cALojaCli	, cACPFCli	, cAFormPg	)
 		EndIf
 
-		If nRetNfce == 1 .And. GetVersao(.F.) >= "12" //Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
+		If nRetNfce == 1 //Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
 			STBVTCupom(SL1->L1_DOC,.T.)
 		EndIf
 

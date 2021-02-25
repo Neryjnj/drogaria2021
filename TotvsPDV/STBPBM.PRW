@@ -1,5 +1,10 @@
 #include "TOTVS.CH"
 
+
+Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
+Static aVidaLinkc	:= {}	// array cabecalho (Cliente,loja,etc) do orcamento gerado no PBM VidaLink
+Static nVidaLink	:= 0 	// Indica se Itens veio do VidaLink. 0=Nao usa VidalInk. 1=Gravando VidaLink. 2=Gravou VidaLink
+
 /*/{Protheus.doc} STBPbmMenu
     Chamada do Menu de PBM's
     @type  Function
@@ -37,18 +42,18 @@ Local cSerie	:= STFGetStation("SERIE")	// retorna a SERIE fiscal da estação
 Local cTpDoc	:= "0" //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 -sat
 Local nTamCupPBM:= 6 //Tamanho do cupom PBM
 Local oPbm      := NIL
+Local oTEF20    := NIL
+Local oDadosPbm := NIL
 
 /* Busca o numero do documento fiscal */	
 cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
 
 //Pega o numero do cupom
 If !Empty(cDoc)
-
-    //Estancia o objeto LjCPbm
-    oPbm := LjCPbm():Pbm()
-
-    //Seleciona a PBM
-    If !oPbm:SelecPbm()
+    oTEF20 := STBGetTEF()
+    oPbm := oTEF20:Pbm()
+    
+    If !oPbm:SelecPbm() //Seleciona a PBM
         oPbm := Nil
         STBIsVnPBM(.F.)
     Else
@@ -57,15 +62,18 @@ If !Empty(cDoc)
         ElseIf LjEmitNFCe()
             cTpDoc := "1"
         EndIf
-                
+
+        oDadosPbm := LJCDadosTransacaoPBM():New(0               , cDoc         , Date()  ,  Time(),;
+                                                /*lUltimaTrn*/  ,/*cRede*/     , cTpDoc  ,  cOperador )
+
         //Inicializa a venda PBM
-        If !oPbm:IniciaVend( cDoc, cOperador, cTpDoc )
-            STBIsVnPBM(.F.)
-            oPbm := Nil
-        Else
+        If oPbm:IniciaVend( oDadosPbm )
             STFMessage("STBOPbm1","STOP", "Venda PBM" ) //"Venda PBM"
 		    STFShowMessage("STBOPbm1")
             STBIsVnPBM(.T.)
+        Else
+            STBIsVnPBM(.F.)
+            oPbm := Nil
         EndIf
     EndIf
 EndIf
@@ -76,29 +84,31 @@ Return
 /*/{Protheus.doc} STBCancPbm
     Cancelamento da PBM
     @type  Function
-    @author user
+    @author Julio.Nery
     @since 19/02/2021
     @version 12
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @param nenhum
+    @return nenhum
 /*/
 Static Function STBCancPbm()
-Local oPbm := NIL
-
-oPbm := LjCPbm():Pbm()
+Local oTEF20:= STBGetTEF()
+Local oPbm := oTEF20:Pbm()
 
 If oPbm <> Nil
     If oPbm:SelecPbm()
         STFMessage("STBCancPbm1", "STOP", "Cancela PBM" ) //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
         
-        If oPbm:CancPbm()
-            oTef:ImpCupTef()
+        If oPbm:CancPbm() .And. oTEF20:Cupom():Imprimir()
+            Conout("Cancelamento de PBM efetuado com sucesso")
+            STFMessage("STBCancPbm2", "STOP", "Cancelamento de PBM efetuado com sucesso") //"Cancela PBM"
+		    STFShowMessage("STBCancPbm2")
         EndIf
     EndIf
 EndIf
 
-oPbm := Nil
+oPbm := NIL
+oTEF20 := NIL
 STBIsVnPBM(.F.)
 STFCleanInterfaceMessage()
 	
@@ -107,11 +117,13 @@ Return Nil
 /*/{Protheus.doc} STBPbmNDoc
     Numeração da PBM
     @type  Function
-    @author user
+    @author Julio.Nery copia de 
     @since 19/02/2021
     @version 12
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @param nTamCupPBM, integer, numero do cupom da PBM - tem que ser 6 (regra da PBM)
+    @param cSerie, string, serie do documento
+    @param lSomaCup, lógico, soma numero no cupom ?
+    @return cDoc, string, numero do doc
 /*/
 Static Function STBPbmNDoc(nTamCupPBM, cSerie, lSomaCup)
 Local aLastSat	:= {}
@@ -147,15 +159,14 @@ Return cDoc
 /*/{Protheus.doc} STBIsVnPBM()
     Retorna se esta em uma venda PBM
     @type  Function
-    @author user
-    @since date
-    @version version
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @author Julio.Nery
+    @since 24/02/2021
+    @version 12
+    @param lSet, lógico, Seta o valor ?
+    @return lRet, lógico, Esta numa venda PBM ?
 /*/
 Function STBIsVnPBM(lSet)
 Local lRet := .F.
-Default lSet := .F.
 
 Static lIsVndPBM := .F.
 
@@ -164,4 +175,102 @@ If ValType(lSet) == "L"
 EndIf
 
 lRet := lIsVndPBM
+Return lRet
+
+//--------------------------------------------------------
+/*/{Protheus.doc} STBPerDro
+Template Drogaria - Verifica se caixa tem permissão para vender remedio controlado
+
+@author  Varejo
+@version P12
+@since   13/10/2015
+@return	lRet, lógico, Tem permissão para venda de produto controlado ?
+@obs     
+@sample
+/*/
+//--------------------------------------------------------
+Function STBPerDro()
+Local lRet		 := .T.
+Local nX		 := 0
+Local nLength    := 0
+Local oModelCesta:= STDGPBModel()	//Model da cesta
+
+oModelCesta := oModelCesta:GetModel("SL2DETAIL")
+nLength := oModelCesta:Length()
+
+If (HasTemplate("DRO")  .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) .And. (nLength > 0)
+    // procura pelos itens controlados para pedir permissao do farmaceutico
+    // se for remedio controlado verifica permissao do primeiro item controlado
+	For nX := 1 To nLength
+        oModelCesta:GoLine(nX)
+		If T_DroVerCont(oModelCesta:GetValue("L2_PRODUTO"))
+			lRet := T_DroVERPerm(4)
+			Exit
+		EndIf
+	Next nX
+EndIf
+
+Return lRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} STBDadosVL
+@description Grava dados VidaLink PBM
+@author bruno.inoue
+@since 17/04/2017
+@version 11.80
+/*/
+//-------------------------------------------------------------------
+Function STBDadosVL(aVidaLink)
+Default aVidaLink := {}
+
+If Len (aVidaLink) > 2 
+	aVidaLinkD := aVidaLink[1]
+	aVidaLinkC := aVidaLink[2] 
+	nVidaLink  := aVidalink[3]
+Else
+	aVidaLinkD := {}
+	aVidaLinkC := {} 
+	If Len(aVidaLink) == 1
+		nVidaLink  := aVidaLink[1]
+	Else
+		nVidaLink  := 2
+	EndIf	
+EndIf	
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} STGDadosVL
+@description Retorna dados VidaLink PBM salvo
+@author bruno.inoue
+@since 17/04/2017
+@version 11.80
+/*/
+//-------------------------------------------------------------------
+Function STGDadosVL()
+Local aVidalink := {}
+aVidalink := {aVidaLinkD,aVidaLinkC,nVidalink}
+Return aVidalink
+
+//----------------------------------------------------------
+/*/{Protheus.doc} STBVldPbm
+Valida se utilizou PBM Funcional Card  
+
+@type 	 function
+@author  bruno.inoue
+@version P11.8
+@since   27/04/2017
+@return  lRet
+/*/
+//----------------------------------------------------------
+Function STBVldPbm()
+Local aRetPbm 	:= {}
+Local lRet		:= .F.
+
+If ExistTemplate("DROVLGet")
+	aRetPbm := STGDadosVL()
+	If Len(aRetPbm) > 0 .And. aRetPbm[3] == 2
+		lRet := .T.
+	EndIf
+EndIf	
+
 Return lRet

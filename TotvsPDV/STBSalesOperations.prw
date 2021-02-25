@@ -218,10 +218,16 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 
 	If ExistFunc("STBPbmMenu") .And. AliasInDic("SLZ") .And. lUsaTef
 		SLZ->(DbSeek(xFilial("SLZ"), .T.))
-	 	If !SLZ->(EOF())
+	 	If SLZ->(EOF())
+			ConOut("Para uso de PBM é necessário o preenchimento da tabela SLZ")
+			LjGrvLog(NIL,"Para uso de PBM é necessário o preenchimento da tabela SLZ")
+		 Else
 		 	oTef20 := STBGetTEF()
 		 	If oTef20:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
 				AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
+			Else
+				ConOut("Para uso de PBM é necessário ativar o TEF SITEF")
+				LjGrvLog(NIL,"Para uso de PBM é necessário ativar o TEF SITEF")
 			EndIf
 	 	EndIf
 	EndIf

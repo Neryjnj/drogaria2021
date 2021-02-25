@@ -2888,9 +2888,9 @@ If lTotvsPDV
 	// 	 ValType(oTef20:oConfig:oCfgTef:oSitef) == "O" .And. ; //Verifica se está usando o Clisitef
 	// 	 oTef20:oCOnfig:oCfgTef:oSitef:lPBM //Verifica se a PBM esta ativa no cadastro de estação
 	If STFGetCfg("lUsaTef") .And. ValType(oTEF20) == "O" .And. oTEF20:oConfig:ISPBM()
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
-		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560,.T.)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
 	EndIf
 Else
 	If T_DroLenANVISA() > 0
@@ -3650,8 +3650,7 @@ Return .T.
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function MA270TOK()
-
-Local cProd := Paramixb[1]  // codigo do produto
+Local cProd := Paramixb[1]  //codigo do produto
 Local lRet  := .T.
 Local cCaixaSup := ""
 

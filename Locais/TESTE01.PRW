@@ -15,19 +15,22 @@ Local lRet := .T.
 Local oPBM := NIL
 Local oRetTran:= NIL
 Local oTEF20 := NIL
+Local oPBM   := NIL
 Local oDados := NIL
 Local cNumCup:= ""
+Local cTpDoc := "1"
+Local cOperador := STFGetStation("PDV")
 
-cNumCup := STDCSLastSale("L1_DOC")
+cNumCup := Substr(STDCSLastSale("L1_DOC"),1,6)
 cNumCup := Soma1(cNumCup)
 
 oTEF20 := STBGetTEF()
-
+oPBM := oTEF20:Pbm()
 //Method New(nValor, nCupom, dData, cHora, lUltimaTrn, cRede)
-oDados := LJCDadosTransacaoPBM():New(0,cNumCup,Date(),Time())
+oDados := LJCDadosTransacaoPBM():New(0,cNumCup,Date(),Time(),,,cTpDoc,cOperador)
 
-If oTEF20:Pbm():SelecPBM()
-    oTEF20:Pbm():IniciaVend(oDados)
+If oPBM:SelecPBM()
+    oPBM:IniciaVend(oDados)
 EndIf
 
 Return lRet

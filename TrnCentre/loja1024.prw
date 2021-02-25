@@ -72,7 +72,7 @@ Class LJCTrnCentre From LJCSitefDireto
 		
 	//Metodos externos da interface	
 	Method TrnCentre()												//Metodo construtor
-	Method IniciaVend(cCupom, cOperador)							//Inica a venda com o PBM
+	Method IniciaVend(cCupom, cOperador, cTpDoc)					//Inica a venda com o PBM
 	Method VendProd(cCodBarra, nQtde, nPrUnit, nPercDesc, ;			//Realiza a venda do produto
 					lItemPbm)
 	Method CancProd(cCodBarra, nQtde)								//Cancela o produto da PBM
@@ -149,10 +149,7 @@ Method TrnCentre(oClisitef) Class LJCTrnCentre
 	
 Return Self
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณIniciaVendบAutor  ณVendas Clientes     บ Data ณ  06/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณInicia o metodo do processo de venda.                       บฑฑ
@@ -163,11 +160,8 @@ Return Self
 ฑฑบ			 ณExpC2 (2 - cOperador) - Codigo do operador.	              บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico                                                      บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
-Method IniciaVend(cCupom, cOperador) Class LJCTrnCentre
+---------------------------------------------------------------------------*/
+Method IniciaVend(cCupom, cOperador, cTpDoc) Class LJCTrnCentre
 	
 	Local lRetorno 	:= .F.		//Retorno do Metodo
 		

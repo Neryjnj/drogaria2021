@@ -31,7 +31,7 @@ Class LJCPBM
 	Data nTpOpera													//Tipo da operacao 1-Venda 2-Cancelamento
 	
 	Method PBM()													// Metodo construtor
-	Method IniciaVend( cCupom, cOperador, cTpDoc )							// Inica a venda com o PBM
+	Method IniciaVend( cCupom, cOperador, cTpDoc )					// Inica a venda com o PBM
 	Method VendProd( cCodBarra, nQtde, nPrUnit, nPercDesc, ;		// Realiza a venda do produto
 					 lItemPbm, lPrioPbm )
 	Method CancProd( cCodBarra, nQtde)								// Cancela o produto da PBM
@@ -124,7 +124,7 @@ Method VendProd( cCodBarra, nQtde, nPrUnit, nPercDesc, ;
     
 	lRet := ::oPbm:VendProd( cCodBarra, nQtde, nPrUnit, @nPercDesc, @lItemPbm, lPrioPbm )
 
-Return(lRet)
+Return lRet
 
 
 /*
@@ -240,7 +240,7 @@ Method ConfProd( cCodBarra, nQtde, lOk ) Class LJCPBM
 	
 	lRet := ::oPbm:ConfProd(cCodBarra, nQtde, lOk)
 	
-Return(lRet)
+Return lRet
 
 
 /*
@@ -329,7 +329,7 @@ Method ExecutaPBM(cCupom, cOperador) Class LJCPBM
 		EndIf
 	EndIf
 
-Return( lRet )
+Return lRet
 
 /*
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
