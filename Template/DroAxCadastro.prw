@@ -579,7 +579,7 @@ If lContinua
 					Irá alterar ou não o nome digitado na Venda Assistida.
 		*/ 
 		If !lDrVlApro	
-			T_DroAnviDad(cCliente,cLoja,lTotvsPDV)
+			T_DroAnviDad(cCliente,cLoja)
 		EndIf	
 		
 		//Inicio automatico para testes, pode ser ponto de entrada posteriormente -11122015

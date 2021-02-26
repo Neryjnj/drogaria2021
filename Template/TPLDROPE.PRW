@@ -447,11 +447,13 @@ Return aRet
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FrtCodB2()
-
 Local aAreaAtu  := GetArea()
 Local _aAux		:= aClone(ParamIxb[1])
 Local _uProdTPL := aClone(ParamIxb[2])					// Variavel Static criada em FRTA010A
 Local _uCliTPL  := ParamIxb[3]							// Variavel Static criada em FRTA010A
+Local lTotvsPDV	:= STFIsPos()
+Local oModelCesta:= Iif(lTotvsPDV,ParamIxb[4],0)			//Para TOTVSPDV enviar o model
+Local nItemModel := Iif(lTotvsPDV,ParamIxb[5],0)			//Para TOTVSPDV enviar o nItem
 
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/
@@ -463,13 +465,29 @@ If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] 
 	EndIf
 	
 	DbselectArea("SL1")
-	If ColumnPos("L1_CPLFIDE") > 0
+
+	If SL1->(ColumnPos("L1_CPLFIDE")) > 0
+
+		//JULIOOOOOOOOOOOOOOOOO - continuar daqui
+		//Inserir na cesta o campo L1_CPLFIDE para funcionar o comando do TOTVSPDV
 		If ValType(_uCliTPL) == "U"
-			_uCliTPL := SL1->L1_CPLFIDE
+			If lTotvsPDV
+				_uCliTPL := STDGPBasket("SL1","L1_CPLFIDE")
+			Else
+				_uCliTPL := SL1->L1_CPLFIDE
+			EndIf
 		EndIf
 		
-		DbselectArea("SL2")
-		AAdd(_uProdTPL,{_aAux[1],_aAux[2],SL2->L2_DESC,SL2->L2_PONTOS,.F.})
+		//JULIOOOOOOOOOOOOOOOOO - continuar daqui
+		//Verificar se os campos L2_PONTOS/L2_DESC vem no model para funcionar o comando do TOTVSPDV
+		//Verificar se não desposiciona o item do model
+		If lTotvsPDV
+			oModelCesta:GoLine(nItemModel)
+			AAdd(_uProdTPL,{_aAux[1],_aAux[2],oModelCesta:GetValue("L2_DESC"),oModelCesta:GetValue("L2_PONTOS"),.F.})
+		Else
+			DbselectArea("SL2")
+			AAdd(_uProdTPL,{_aAux[1],_aAux[2],SL2->L2_DESC,SL2->L2_PONTOS,.F.})
+		EndIf
 		
 		// Soma o total de pontos acumulados, até o momento, na venda
 		If Len(_uProdTPL) == 1

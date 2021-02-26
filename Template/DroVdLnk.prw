@@ -78,9 +78,9 @@ Local lSigaLoja		:= nModulo == 12	// Se utiliza o modulo Venda Assistida
 Local bGrvVend		:= Nil				//Bloco de codigo que será executado 
 Local aRetPbm		:= {}				//Retorno das informacoes gravadas do PBM Funcional Card
 Local lDrGScrExMC	:= NIL
+Local lTotvsPDV		:= STFIsPOS()
 
 DEFAULT nOpPbm 	  	:= 1				// Identifica o PBM
-DEFAULT lTotvsPDV	:= STFIsPOS()
 
 If lSigaLoja .Or. lTotvsPDV
 	If Len(aParamVL) = 0
