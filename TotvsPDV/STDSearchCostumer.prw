@@ -272,8 +272,14 @@ aAdd(aFields,'A1_DTNASC')
 aAdd(aFields,'A1_FILIAL')
 aAdd(aFields,'A1_GRPVEN')
 aAdd(aFields, "AI0_CLIFUN")
-If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
+
+//Se usa o Template de Drogaria, adiciona outros campos
+If ExistFunc("LJIsDro") .And. LJIsDro()
     aAdd(aFields,'A1_MATRICU')
+	aAdd(aFields,'A1_VENCLC')
+	aAdd(aFields,'A1_TPCONVE')
+	aAdd(aFields,'A1_EMPCONV')
+	aAdd(aFields,'A1_LOJCONV')
 EndIf
 
 //Ponto de entrada para retornar campos adicionais no aFields

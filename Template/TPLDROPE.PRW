@@ -640,6 +640,7 @@ Local cLojaCl           := ""                                        // Recebe o
 Local lConvenio			:= ValType(_cCodConv)     == "C" .AND.;
 						   ValType(_cLojConv)     == "C" .AND.;
 						   ValType(_cNumCartConv) == "C"
+Local lTotvsPDV			:= STFIsPOS() //Verifica se é Totvs PDV
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Objetos para a criacao da tela³
@@ -653,7 +654,7 @@ Private oNo     := LoadBitMap(GetResources(), "LBNO")			// Bitmap utilizado no L
 Private oNever  := LoadBitMap(GetResources(), "BR_VERMELHO")	// Bitmap utilizado no Lisbox  (Desabilitado)
 Private	lMark	:= .F.
 
-If FunName() == "FRTA271"
+If FunName() == "FRTA271" .Or. lTotvsPDV
 	lCxAbert := ParamIxb[6] 
 	lOcios   := ParamIxb[7]
 Else
@@ -802,43 +803,48 @@ Else
 	aEval( aLin, { |x,y| If( aLin[y,1] == 1, cRet := Alltrim(aLin[y,3]), ) } )
 	cCodReg := Posicione("MHG",1,xFilial("MHG")+cRet,"MHG_CODREG")
 	aRetCar[2] := cCodReg
-	nPtsA1  := T_TPTOSANTV()
+	If !lTotvsPDV
+		nPtsA1  := T_TPTOSANTV()
+	EndIf
 	//Variaveis Private do programa FRTA010A, que armazena o codigo do cliente caso encontre duas ocorrencias de CPF no SA1
 	//Somente atribui as variaveis se o CPF estiver duplicado
 	If lConvenio
 		_cCodConv   := SA1->A1_COD
 		_cLojConv   := SA1->A1_LOJA
-		If FunName() == "FRTA271"
+		If FunName() == "FRTA271" .Or. lTotvsPDV
 			cClient     := SA1->A1_COD
 			cLojaCl     := SA1->A1_LOJA
 		Else
 			cCliente    := SA1->A1_COD
 			cLojaCli    := SA1->A1_LOJA 
 		EndIf 	
-		aRetNumCart := CRDXNumCart()	// localizado no programa CRDXFUN
-		//Atribuir o numero do cartao porque eh uma chave unica
-		//A variavel cNumCartConv serah utilizada em outras customizacoes para posicionar no registro do SA1 correto,
-		//selecionado pelo usuario no inicio da venda
-		If aRetNumCart[1]
-			_cNumCartConv  := aRetNumCart[2]
-		Else                       
-			// Faz a busca na base local do PDV
-			aRetNumCart := LjBuscaCartao(xFilial("SA1"), _cCodConv, _cLojConv) // Localizado no programa WSCRD130
-			If aRetNumCart[1]          
-				_cNumCartConv  := aRetNumCart[2]			         
-			Else                                        
-				If  nModulo = 23 // modulo FRONT-LOJA
-					_cCodConv     := SuperGetmv("MV_CLIPAD") // codigo do cliente padrao
-					_cLojConv     := SuperGetmv("MV_LOJAPAD")// loja do cliente padrao
-					_cNumCartConv := ""//numero do cartao retorna branco, pois eh cliente padrao                 
-					Posicione("SA1",1,xFilial("SA1")+_cCodConv+_cLojConv,"A1_CODPLF1")//plano de fidelidade
-					If (!Empty(SA1->A1_CODPLF1) .AND. (SA1->A1_SITUAP1 = "A"))
-						aRetCar[2] := Posicione("MHG",1,xFilial("MHG")+SA1->A1_CODPLF1,"MHG_CODREG")//plano de fidelidade
-					Else
-						aRetCar[2] := Space(TamSx3("A1_CODPLF1")[1])
+		If !lTotvsPDV
+			aRetNumCart := CRDXNumCart()	// localizado no programa CRDXFUN
+		
+			//Atribuir o numero do cartao porque eh uma chave unica
+			//A variavel cNumCartConv serah utilizada em outras customizacoes para posicionar no registro do SA1 correto,
+			//selecionado pelo usuario no inicio da venda
+			If aRetNumCart[1]
+				_cNumCartConv  := aRetNumCart[2]
+			Else                       
+				// Faz a busca na base local do PDV
+				aRetNumCart := LjBuscaCartao(xFilial("SA1"), _cCodConv, _cLojConv) // Localizado no programa WSCRD130
+				If aRetNumCart[1]          
+					_cNumCartConv  := aRetNumCart[2]			         
+				Else                                        
+					If  nModulo = 23 // modulo FRONT-LOJA
+						_cCodConv     := SuperGetmv("MV_CLIPAD") // codigo do cliente padrao
+						_cLojConv     := SuperGetmv("MV_LOJAPAD")// loja do cliente padrao
+						_cNumCartConv := ""//numero do cartao retorna branco, pois eh cliente padrao                 
+						Posicione("SA1",1,xFilial("SA1")+_cCodConv+_cLojConv,"A1_CODPLF1")//plano de fidelidade
+						If (!Empty(SA1->A1_CODPLF1) .AND. (SA1->A1_SITUAP1 = "A"))
+							aRetCar[2] := Posicione("MHG",1,xFilial("MHG")+SA1->A1_CODPLF1,"MHG_CODREG")//plano de fidelidade
+						Else
+							aRetCar[2] := Space(TamSx3("A1_CODPLF1")[1])
+						Endif
 					Endif
 				Endif
-			Endif
+			EndIf
 		EndIf
 	Else
 		aRetCar[2] := Space(TamSx3("A1_CODPLF1")[1])
