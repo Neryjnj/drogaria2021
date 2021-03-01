@@ -850,28 +850,28 @@ Return aRetCar
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FRTCONDPAG()
-Local bKCode  := SetKey(116)
-Local cRet    := ""
-Local lRet    := .F.
-Local cSeek   := ""
-Local cWhile  := ""
-Local aAreaAtu:= GetArea()
-Local cAlias  := ""
-Local aCpos   := {}
-
-Local  cCodPag  := ""
-Local  nPosTip	:= 0	
-Local  nPosOper := 0	
-Local  cAtual	:= ""	
-Local  cOpera	:= ""
-Local  _uCliTPL := ParamIxb[1]
-Local  cCliVenda:= AllTrim(ParamIxb[2])
-Local  cLojVenda:= AllTrim(ParamIxb[3])
-Local  aPos		:= {}
-Local  oPanel
-Local  lIsLHF	:= .F.
-Local  nX := 0 //Variavel de Loop
-Local  aCondsPg := {} //Array para receber os registros da condicao de pagamento
+Local bKCode  	:= SetKey(116)
+Local cRet    	:= ""
+Local lRet    	:= .F.
+Local cSeek   	:= ""
+Local cWhile  	:= ""
+Local aAreaAtu	:= GetArea()
+Local cAlias  	:= ""
+Local aCpos   	:= {}
+Local cCodPag  	:= ""
+Local nPosTip	:= 0	
+Local nPosOper 	:= 0	
+Local cAtual	:= ""	
+Local cOpera	:= ""
+Local _uCliTPL 	:= ParamIxb[1]
+Local cCliVenda	:= AllTrim(ParamIxb[2])
+Local cLojVenda	:= AllTrim(ParamIxb[3])
+Local aPos		:= {}
+Local oPanel	:= Nil
+Local lIsLHF	:= .F.
+Local nX 		:= 0
+Local aCondsPg 	:= {} //Array para receber os registros da condicao de pagamento
+Local lTotvsPDV	:= STFIsPOS() //Verifica se é Totvs PDV
 
 Private	oDlg, oLbx
 Private	oOk     := LoadBitMap(GetResources(), "LBTIK")        	// Bitmap utilizado no Lisbox  (Marcado)
@@ -886,7 +886,9 @@ Private aCols   := {{"A"}}
 T_DROLCS()
 
 // Eh necessario para que o usuario nao pressione a tecla F5 várias vezes em sequencia.
-SetKey(VK_F5, {|| })
+If !lTotvsPDV
+	SetKey(VK_F5, {|| })
+EndIf
 
 If ValType(_uCliTPL) == "C" .AND. !Empty(_uCliTPL)
 	cSeek  := '"' + xFilial("LHF") + MHG->MHG_CODIGO + '"'
@@ -913,7 +915,9 @@ If (cCliVenda + cLojVenda) == AllTrim(SuperGetMV("MV_CLIPAD"))+AllTrim(SuperGetM
 	EndIf
 EndIf
 
-SetKey(15, {|| lRet := .T.,oDlg:End()} ) //Ctrl + O
+If !lTotvsPDV
+	SetKey(15, {|| lRet := .T.,oDlg:End()} ) //Ctrl + O
+EndIf
 
 DEFINE MSDIALOG oDlg TITLE STR0015 FROM 5,30 TO 25,80 //"Condicao de Pagamento"
 
@@ -945,7 +949,9 @@ oLbx:bLDblClick	:={ || ChgMarkLb(oLbx,aLin,{|| .T. },.F.) }
 
 ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,) CENTERED
 
-SetKey(15, {|| } ) //Limpa o Ctrl + O ao fechar a tela de condicao de pgto.
+If !lTotvsPDV
+	SetKey(15, {|| } ) //Limpa o Ctrl + O ao fechar a tela de condicao de pgto.
+EndIf
 
 If lRet
 	aEval( aLin, { |x,y| If( aLin[y,1] == 1, cRet := Alltrim(aLin[y,2]), ) } )
@@ -957,7 +963,9 @@ If lRet
 EndIf
 
 // Reativa a tecla F5
-SetKey(VK_F5, bKCode)
+If !lTotvsPDV
+	SetKey(VK_F5, bKCode)
+EndIf
 
 Return cCodPag
 
