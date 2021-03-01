@@ -444,10 +444,12 @@ If nPos > 0 .AND. !Empty(nRecno)
 		lRet := ExecBlock("STValidCli",.F.,.F.,{SA1->A1_COD,SA1->A1_LOJA})
 	EndIf
 
-	// Integração SIGACRD x TOTVSPDV
-	If lRet .And. lPosCrd 
-		If Len(aCartaoMA6) >= nPos
-			cCartaoMA6	:= aCartaoMA6[nPos]
+	If lRet
+		// Integração SIGACRD x TOTVSPDV
+		If lPosCrd
+			If Len(aCartaoMA6) >= nPos
+				cCartaoMA6	:= aCartaoMA6[nPos]
+			EndIf
 		EndIf
 		
 		If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
@@ -458,15 +460,21 @@ If nPos > 0 .AND. !Empty(nRecno)
 				aFRT010CL := ExecTemplate( "FRT010CL", .F., .F., { {}, Nil, SA1->A1_COD, SA1->A1_LOJA, cCartaoMA6, .T., .T.} )
 				If ValType(aFRT010CL) == "A" .AND. Len(aFRT010CL) <> 2
 					lRet := aFRT010CL[1]
+					If lRet
+						If ExistFunc("STBDroVars")
+							STBDroVars(.F., .T., aFRT010CL[2], Nil)
+						EndIf
+					EndIf
 				EndIf
 			EndIf
 		EndIf
 
-		If lRet
+		// Integração SIGACRD x TOTVSPDV
+		If lRet .And. lPosCrd
 			STBSetCrdIdent(cCartaoMA6,AllTrim(SA1->A1_CGC),AllTrim(SA1->A1_COD),AllTrim(SA1->A1_LOJA),cMatricula)
 		EndIf
 	EndIf
-
+		
 	If lRet 
 		oModelCli := STWCustomerSelection(SA1->A1_COD+SA1->A1_LOJA)
 		STDSPBasket("SL1","L1_CLIENTE"	,oModelCli:GetValue("SA1MASTER","A1_COD"))

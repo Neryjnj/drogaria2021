@@ -947,7 +947,7 @@ aCab	:= AClone(aRet[3])
 
 //Remove as linhas em branco da tela de condicao de pagamento
 For nX := 1 To Len(aRet[5])
-	If !Empty(aRet[5][nX][3])
+	If !Empty(aRet[5][nX][3]) .Or. Len(aRet[5]) == 1
 		aadd(aCondsPg,aRet[5][nX])
 	EndIf
 Next nX
