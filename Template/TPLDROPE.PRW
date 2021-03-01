@@ -452,8 +452,8 @@ Local _aAux		:= aClone(ParamIxb[1])
 Local _uProdTPL := aClone(ParamIxb[2])					// Variavel Static criada em FRTA010A
 Local _uCliTPL  := ParamIxb[3]							// Variavel Static criada em FRTA010A
 Local lTotvsPDV	:= STFIsPos()
-Local oModelCesta:= Iif(lTotvsPDV,ParamIxb[4],0)			//Para TOTVSPDV enviar o model
-Local nItemModel := Iif(lTotvsPDV,ParamIxb[5],0)			//Para TOTVSPDV enviar o nItem
+Local oModelCesta:= Iif(lTotvsPDV,_aAux[15],NIL)		//Para TOTVSPDV enviar o model
+Local nItemModel := Iif(lTotvsPDV,_aAux[16],0)			//Para TOTVSPDV enviar o nItem
 
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/

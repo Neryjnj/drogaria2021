@@ -3793,7 +3793,7 @@ Return lRet
 Template Function DROLCS()
 Local lRet := .F.
 
-If HasTemplate("DRO") .And. LjIsDro()
+If HasTemplate("DRO") .Or. LjIsDro()
 	lRet := .T.
 Else
 	Final("Acesso negado pois o CNPJ não esta liberado para uso de Template de Drogaria")

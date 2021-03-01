@@ -250,6 +250,7 @@ Local lLjLsPre		:= SuperGetMv("MV_LJLSPRE",, .F.) 	//Funcionalidade de Lista de 
 Local lLisPres		:= .F.
 Local lSaveOrc		:= IIF( ValType(STFGetCfg( "lSaveOrc" , .F. )) == "L" , STFGetCfg( "lSaveOrc" , .F. )  , .F. )   //Salva venda como orcamento
 Local lItemFiscal   := .T. 								//Valida se item fiscal
+Local lIsTPLDro		:= (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 
 Default nItem		:=	0
 Default oReasons	:=	Nil
@@ -317,7 +318,7 @@ If lRet .AND. !lServFin .AND. !lEmitNFCE .AND. !lLisPres .AND. !lSaveOrc .AND. l
 	//verifica se existe o item Servico Financeiro para cancelamento de item no ECF
 	aEstrItSF := STDGetProperty( "L2_ITEMREA" )
 
-	STCIRetUit(oModelCesta,lFinServ,aEstrItSF,@uItem)
+	STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
 	
 	// Inicia Evento 	
 	aRet := 	STFFireEvent(	ProcName(0)												,;		// Nome do processo
@@ -350,9 +351,9 @@ If lRet
 	
 	aAux := {"","",""}
 	aAux[3] := AllTrim(oModelCesta:GetValue("L2_CODBAR"))
-	If ExistTemplate("FRTCODB2") /* Tratamento para o Template de Drogarias*/
+	If lIsTPLDro .And. ExistTemplate("FRTCODB2") /* Tratamento para o Template de Drogarias*/
 		
-		STCIRetUit(oModelCesta,lFinServ,aEstrItSF,@uItem)
+		STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
 		aTPLCODB2 := {uItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
 					  "", "", "", "", "", "", .F.,/*Valor de Solidário*/}
 		aSTBDroVar := STBDroVars(.F.)
@@ -385,7 +386,7 @@ If lRet
 	// 	EndIf
 	
 	/* Tratamento para a venda PBM*/
-	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() //.And. 
+	If lIsTPLDro .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() //.And. 
 		STCnProPBM(aAux[3],oModelCesta:GetValue("L2_QUANT"))
 	EndIf
 
@@ -529,7 +530,7 @@ Return aItensRel
 	(examples)
 	@see (links_or_references)
 /*/
- Static Function STCIRetUit(oModelCesta,lFinServ,aEstrItSF,uItem)
+ Static Function STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,uItem)
 
  //Compatibilizado para cancelar item maior que 99
 If lFinServ .And. Len(aEstrItSF) > 0
