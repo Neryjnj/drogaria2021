@@ -767,8 +767,9 @@ EndIf
 
 //Valida permissão de usuário para vender produto controlado - TPL Drogaria
 If lRet .And. !STBPerDro()
-	Conout("Não é permitido a venda de produto controlado pois o usuário não tem permissão")
-	STFMessage(ProcName(),"STOP","Não é permitido a venda de produto controlado pois o usuário não tem permissão") //"Não é permitido a venda de produto controlado pois o usuário não tem permissão"
+	LjGrvLog(NIL,"Não é permitido a venda de produto controlado pois o usuário não tem permissão - " +;
+				"SOLUÇÃO: Remova o produto controlado ou efetue a venda com um usuário do tipo FARMACÊUTICO")
+	STFMessage(ProcName(),"STOP","Venda de produto controlado não permitida") //"Venda de produto controlado não permitida"
 	STFShowMessage(ProcName())
 	lRet := .F.
 EndIf

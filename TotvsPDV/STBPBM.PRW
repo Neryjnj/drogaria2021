@@ -4,6 +4,10 @@
 Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
 Static aVidaLinkc	:= {}	// array cabecalho (Cliente,loja,etc) do orcamento gerado no PBM VidaLink
 Static nVidaLink	:= 0 	// Indica se Itens veio do VidaLink. 0=Nao usa VidalInk. 1=Gravando VidaLink. 2=Gravou VidaLink
+Static uCliTPL      := Nil
+Static uProdTPL     := Nil
+Static oTPLPBM      := NIL
+Static lIsVndPBM    := .F.
 
 /*/{Protheus.doc} STBPbmMenu
     Chamada do Menu de PBM's
@@ -41,7 +45,6 @@ Local cOperador := STFGetStation("PDV")		// Guada o codigo do pdv para passar pa
 Local cSerie	:= STFGetStation("SERIE")	// retorna a SERIE fiscal da estação
 Local cTpDoc	:= "0" //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 -sat
 Local nTamCupPBM:= 6 //Tamanho do cupom PBM
-Local oPbm      := NIL
 Local oTEF20    := NIL
 Local oDadosPbm := NIL
 
@@ -51,11 +54,10 @@ cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
 //Pega o numero do cupom
 If !Empty(cDoc)
     oTEF20 := STBGetTEF()
-    oPbm := oTEF20:Pbm()
+    STBIsVnPBM(.T.,oTEF20:Pbm())
     
-    If !oPbm:SelecPbm() //Seleciona a PBM
-        oPbm := Nil
-        STBIsVnPBM(.F.)
+    If !oTPLPBM:SelecPbm() //Seleciona a PBM        
+        STBIsVnPBM(.F.,Nil)
     Else
         If STFGetCfg("lUseSAT",.F.)
             cTpDoc := "2"
@@ -67,13 +69,11 @@ If !Empty(cDoc)
                                                 /*lUltimaTrn*/  ,/*cRede*/     , cTpDoc  ,  cOperador )
 
         //Inicializa a venda PBM
-        If oPbm:IniciaVend( oDadosPbm )
+        If oTPLPBM:IniciaVend( oDadosPbm )
             STFMessage("STBOPbm1","STOP", "Venda PBM" ) //"Venda PBM"
 		    STFShowMessage("STBOPbm1")
-            STBIsVnPBM(.T.)
         Else
-            STBIsVnPBM(.F.)
-            oPbm := Nil
+            STBIsVnPBM(.F.,NIL)
         EndIf
     EndIf
 EndIf
@@ -92,14 +92,15 @@ Return
 /*/
 Static Function STBCancPbm()
 Local oTEF20:= STBGetTEF()
-Local oPbm := oTEF20:Pbm()
 
-If oPbm <> Nil
-    If oPbm:SelecPbm()
+STBIsVnPBM(.T.,oTEF20:Pbm())
+
+If oTPLPBM <> Nil
+    If oTPLPBM:SelecPbm()
         STFMessage("STBCancPbm1", "STOP", "Cancela PBM" ) //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
         
-        If oPbm:CancPbm() .And. oTEF20:Cupom():Imprimir()
+        If oTPLPBM:CancPbm() .And. oTEF20:Cupom():Imprimir()
             Conout("Cancelamento de PBM efetuado com sucesso")
             STFMessage("STBCancPbm2", "STOP", "Cancelamento de PBM efetuado com sucesso") //"Cancela PBM"
 		    STFShowMessage("STBCancPbm2")
@@ -107,12 +108,30 @@ If oPbm <> Nil
     EndIf
 EndIf
 
-oPbm := NIL
+STBIsVnPBM(.F.,NIL)
 oTEF20 := NIL
-STBIsVnPBM(.F.)
 STFCleanInterfaceMessage()
 	
 Return Nil
+
+/*/{Protheus.doc} STCnProPBM
+    Cancelamento de item da PBM
+    @type  Function
+    @author Julio.Nery
+    @since 26/02/2021
+    @version 12
+    @param cCodBarra, string, código de barras do produto
+    @param nQtde, integer, quantidade
+    @return lRet, lógico, produto cancelado da PBM ?
+/*/
+Function STCnProPBM( cCodBarra, nQtde )
+Local lRet := .F.		// Retorno da funcao
+
+If oTPLPBM:CancProd( cCodBarra, nQtde )
+    lRet := .T.
+EndIf
+
+Return lRet
 
 /*/{Protheus.doc} STBPbmNDoc
     Numeração da PBM
@@ -165,17 +184,33 @@ Return cDoc
     @param lSet, lógico, Seta o valor ?
     @return lRet, lógico, Esta numa venda PBM ?
 /*/
-Function STBIsVnPBM(lSet)
+Function STBIsVnPBM(lSet,oVARPBM)
 Local lRet := .F.
 
-Static lIsVndPBM := .F.
+DEFAULT oVARPBM := NIL
 
 If ValType(lSet) == "L"
-    lIsVndPBM := lSet
+    lIsVndPBM:= lSet
+    oTPLPBM  := oVARPBM
 EndIf
 
 lRet := lIsVndPBM
 Return lRet
+
+/*/{Protheus.doc} STBGetVPBM()
+    Retorna o objeto da PBM para prosseguir venda PBM
+    @type  Function
+    @author Julio.Nery
+    @since 26/02/2021
+    @version 12
+    @param nenhum
+    @return oRetPBM, objeto, objeto com os dados da PBM atual
+/*/
+Function STBGetVPBM()
+Local oRetPbm
+oRetPbm := oTPLPBM
+
+Return oRetPbm
 
 //--------------------------------------------------------
 /*/{Protheus.doc} STBPerDro
@@ -274,3 +309,30 @@ If ExistTemplate("DROVLGet")
 EndIf	
 
 Return lRet
+
+/*/{Protheus.doc} STBDroVars
+    Retorna as variáveis estáticas usadas no TPL DRO
+    @type  Function
+    @author Julio.Nery
+    @since 26/02/2021
+    @version 12
+    @param lLimpar, lógico, Limpar variaveis?
+    @return aRet, array, contem os dados atuais das variáveis
+/*/
+Function STBDroVars(lLimpar, lSetVal, setUCliTPL, setUProdTPL)
+Local aRet := Array(2)
+
+Default lSetVal := .F.
+
+If lLimpar
+    uCliTPL  := Nil
+    uProdTPL := Nil
+EndIf
+
+If lSetVal
+    uCliTPL := setUCliTPL
+    uProdTPL:= setUProdTPL
+EndIf
+
+aRet := {uCliTPL,uProdTPL}
+Return aRet

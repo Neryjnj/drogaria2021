@@ -665,20 +665,23 @@ Local cCampo	 := ""		//Nome do campo
 Local cCampoClass:= ""		//Nome do campo
 Local lRet   	 := .F.		//Retorno da funcao
 Local lTotvsPDV	 :=  STFIsPOS()
+Local nTamCodProd:= 0
 
 If nModulo == 23 .And. !lTotvsPDV
 	cAlias 	  		:= "SBI"
 	cCampo	  		:= "SBI->BI_PSICOTR"
 	cCampoClass		:= "SBI->BI_CLASSTE"
+	nTamCodProd		:= TamSx3("BI_COD")[1]
 Else
 	cAlias 	  		:= "SB1"
 	cCampo	  		:= "SB1->B1_PSICOTR"
-	cCampoClass		:= "SB1->B1_CLASSTE"		
+	cCampoClass		:= "SB1->B1_CLASSTE"
+	nTamCodProd		:= TamSx3("B1_COD")[1]		
 Endif
 
 DbSelectArea(cAlias)                 
 (cAlias)->(DbSetOrder(1))
-If (cAlias)->(DbSeek(xFilial(cAlias) + cCodProd))
+If (cAlias)->(DbSeek(xFilial(cAlias) + Padr(AllTrim(cCodProd),nTamCodProd)))
 	If  &(cCampo) == "1" 
 		lRet := .T.
 	Endif
@@ -687,7 +690,7 @@ Endif
 If !lRet
 	DbSelectArea(cAlias)                 
 	(cAlias)->(DbSetOrder(1))
-	If (cAlias)->(DbSeek(xFilial(cAlias) + cCodProd))
+	If (cAlias)->(DbSeek(xFilial(cAlias) + Padr(AllTrim(cCodProd),nTamCodProd)))
 		If !Alltrim(&(cCampoClass)) == ""   
 			lRet := .T.
 		Endif
@@ -1141,7 +1144,7 @@ Return
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³ExpL1 - Valida ou nao informacoes                            º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Template Function DroVldTela(lRet, aCampos,cClassTe,lTotvsPDV)
+Template Function DroVldTela(lRet, aCampos,cClassTe)
 Local lRetorno 		:= .F.			//Retorno da funcao
 Local nCont	   		:= 0			//Controle de loop
 Local lEmBranco		:= .F.		 	//Verifica se existe algum campo em branco
@@ -1159,8 +1162,7 @@ Local cComple       := ""								 // Complemento do tipo de Receita
 Local lVldCpoPac	:= .T.			//indica se valida os campos de Paciente
 Local cVdForaAu		:= ""//Campo SB1/SBI_VDFORAU
 Local lCpoAntM		:= .T.//Campos Antimicrobiano
-
-Default lTotvsPDV   := .F.
+Local lTotvsPDV     := STFIsPOS()
 
 If nModulo == 23 .And. !lTotvsPDV
 	cClassTe := Alltrim(SBI->BI_CLASSTE)	
@@ -3524,14 +3526,15 @@ Return cRet
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ DROVLDFUNCS	                							    ³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/  
-Template Function DroAnviDad(cCliente,cLoja,lTotvsPDV)
+Template Function DroAnviDad(cCliente,cLoja)
 Local cLojP  := SuperGetMv("MV_LOJAPAD") //LOJA PADRAO
 Local cCliP  := SuperGetMv("MV_CLIPAD")  //CLIENTE PADRAO
 Local lAchou := .F.
+Local lTotvsPDV:= STFIsPOS()
 
 Default cCliente := ""
 Default cloja    := ""
-Default lTotvsPDV:= .F.
+
 
 If nModulo == 12 .AND. AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) <> cClip + cLojP
 	SA1->(DbSetOrder(1))
@@ -3790,7 +3793,7 @@ Return lRet
 Template Function DROLCS()
 Local lRet := .F.
 
-If LjIsDro()
+If HasTemplate("DRO") .Or. LjIsDro()
 	lRet := .T.
 Else
 	Final("Acesso negado pois o CNPJ não esta liberado para uso de Template de Drogaria")
@@ -3840,6 +3843,7 @@ Local lRet		:= .T.
 Local cSuperior := ""
 Local cMensagem := ""
 Local aAreasTab	:= {}
+Local aProfile42:= {}
 Local nX		:= 0
 Local lProfile42:= .F.
 Local lTotvsPDV := STFIsPOS()
@@ -3870,15 +3874,16 @@ EndIf
 
 //permissao para manipular remedios controlados (template drogaria)
 If lTotvsPDV
-	lProfile42 := STFPROFILE(42)
+	aProfile42 := STFPROFILE(42)
+	lProfile42 := aProfile42[1]
+	cSuperior  := aProfile42[2]
 Else
 	lProfile42 := LJProfile(42,@cSuperior)
 EndIf
 
 If !lProfile42
 	lRet := .F.
-	cMensagem := "Usuário não é um Farmaceutico."
-	cMensagem += IIf(lTotvsPDV,"","Não poderá efetuar manutenção neste cadastro.")
+	cMensagem := "Usuário não é um Farmaceutico. Venda/Cadastro não permitido"
 	MsgAlert(cMensagem)
 EndIf
 
@@ -3919,7 +3924,7 @@ Return lRet
 ±±º          de cliente preenchidos para remedios de controle especial        º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroGrvUs()
-Local lRet := .T.
+Local lRet		:= .T.
 Local lProfile42:= .F.
 Local lTotvsPDV := STFIsPOS()
 Local cMsg := "Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro."
