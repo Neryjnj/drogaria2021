@@ -93,6 +93,9 @@ Local cSitTrib			:= ""
 Local cVlrItem			:= ""
 Local aAux 				:= {}
 Local aTPLCODB2			:= {}
+Local aTPLCODB3			:= {}
+Local lItemPbm			:= .F.
+Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
 			
 Default nItemLine 		:= 0				   										// Linha do Item na Venda
 Default cItemCode 		:= ""														// Codigo do Item
@@ -372,11 +375,8 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Nao possui preco")
 				lRet := .F.
 				STFMessage("ItemRegistered","STOP",STR0001) //"Preço não encontrado"
-
 			EndIf
-
 		EndIf
-
 
 		// Busca TES que sera usada para calcular imposto do item
 		// Caso nao tenha sido informada por parametro
@@ -587,6 +587,51 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 							cVlrItem		:= aRetLj7013[7]
 						EndIf
 					EndIf
+
+					//JULIOOOO - incluir aqui a chamada do PE TPL FrtDescIT
+					//olhar o fonte FRTA271A e prosseguir a implementação
+					If lTPLDrogaria .And. ExistTemplate("FRTDESCIT")
+						
+						//chama o FRTDESCIT
+						aRet := ExecTemplate("FRTDESCIT")
+						
+						If ExistTemplate("DrSScrExMC") //Seta falso para cancelamento da tela de PBM
+							T_DrSScrExMC(.F.)
+						EndIf
+
+						//Caso a tela de medicamento controlado seja cancelada, aborta a emissao do item.
+						If HasTemplate("DRO") .AND. aRet[5]
+							MsgAlert(STR0080 +chr(10)+chr(13)+ STR0081) //"Medicamentos Controlados necessitam de Infomações do Paciente." ##"Produto não será registrado"  
+							nVlrPercIT := 0
+							nVlrDescIT := 0
+							cCodProd := ''
+							cProduto := ''
+							nQuant   := 1
+							nVlrUnit := 0
+							nVlrItem := 0
+							nTotItens := 0
+							nVlrPercIT := 0
+							oProduto:Refresh()
+							oQuant:Refresh()
+							oVlrUnit:Refresh()
+							oVlrItem:Refresh()
+							oTotItens:Refresh()
+							oVlrTotal:Refresh()
+							oDesconto:Refresh()
+							
+							If ExistTemplate("DrSScrExMC") //Seta se cancelou a tela da medicamento controlado para cancelar os produtos da PBM
+								T_DrSScrExMC(.T.)
+							EndIf
+							
+							Return (.F.)
+						Else
+							nVlrPercIT := aRet[1]
+							nVlrDescIT := aRet[2]
+							uProdTPL   := aClone(aRet[3])
+							uCliTPL    := aRet[4]
+						EndIf
+
+					EndIf
 									
 					LjGrvLog(cL1Num,	"Registro do Item - Inicio"+; 
 										" Codigo:"+cCodeForPrint+;
@@ -754,18 +799,47 @@ Else
 	LjGrvLog("Registra_Item", "ID_ALERT")
 EndIf
 
-If lRet .And. (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
-	LjGrvLog("Registra_Item", "Antes da execução do PE Template FRTCODB2")
-	If ExistTemplate("FRTCODB2") //JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
-		aTPLCODB2 := {cValToChar(nItemLine), AllTrim(STDGPBasket("SL2","L2_PRODUTO")),;
+If lRet .And. lTPLDrogaria
+	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
+	aTPLCODB2 := {cValToChar(nItemLine), AllTrim(STDGPBasket("SL2","L2_PRODUTO")),;
 					 AllTrim(STDGPBasket("SL2","L2_CODBAR")), AllTrim(STDGPBasket("SL2","L2_DESC")),;
 					 cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),;
 					 "", cValToChar(STDGPBasket("SL2","L2_VLRITEM")),;
-					 "", "", .F.,/*Valor de Solidário*/}
-	EndIf
-	LjGrvLog("Registra_Item", "Depois da execução do PE Template FRTCODB2")
-EndIf
+					 "", "", .F.,""}
+	aAux := STBDroVars(.F.)
+	AADD(aTPLCODB2,aAux[2]) //uProdCli
+	AADD(aTPLCODB2,aAux[1]) //uCliTPL
+	
+	aTPLCODB3 := aClone(aTPLCODB2)
 
+	If ExistTemplate("FRTCODB2")
+		aTPLCODB2 := ExecTemplate( "FRTCODB2",.F.,.F.,{aTPLCODB2, aAux[2], aAux[1] } )
+		aAux := Array(2)
+		If ValType( aTPLCODB2[13] ) == "A" //uProdCLI
+			aAux[2] := aClone(aTPLCODB2[13])
+		Else
+			aAux[2] := aTPLCODB2[13]
+		Endif
+
+		If ValType( aTPLCODB2[14] ) == "A" //uCLiTPL
+			aAux[1]  := aClone(aTPLCODB2[14])
+		Else
+			aAux[1]  := aTPLCODB2[14]
+		Endif
+		STBDroVars(.F.,.T.,aAux[1],aAux[2])
+	EndIf
+
+	If ExistTemplate("FRTCODB3")
+		aAux := STBDroVars(.F.)
+		Aadd(aTPLCODB3,nItemLine)
+		aTPLCODB3 := ExecTemplate("FRTCODB3",.F.,.F.,{aTPLCODB3,aAux[2],aAux[1]})
+		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]) )
+	EndIf
+
+	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+		STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR")), STDGPBasket("SL2","L2_QUANT"), .T., lItemPbm)
+	EndIf
+EndIf
 
 Return lRet
 

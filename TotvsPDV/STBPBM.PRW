@@ -133,6 +133,38 @@ EndIf
 
 Return lRet
 
+/*/{Protheus.doc} nomeFunction
+    Copia da função LjConfProdPBM para venda
+    de Produto PBM no TotvsPDV
+
+    @type  Function
+    @author user
+    @since 02/03/2021
+    @version 12
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+/*/
+Function STCnfPrPBM( cCodBarra	, nQtde, lOk, lItemPbm )
+Local lRet := .F. // Retorno da funcao
+
+If lItemPbm
+    lRet := oTPLPBM:ConfProd( cCodBarra, nQtde, lOk )
+    If !lRet        
+        MsgAlert("Produto não confirmado na PBM. Cupom fiscal sera cancelado.")
+        
+        //Cancela o Cupom Fiscal e PBM
+        FrtCancCup( .T. )
+    Else
+        //JULIOOOOOOO
+        //Criar aqui a referencia para preencher o campo dinamico que controla se é PBM
+        STDSPBasket("SL1","L1_ITPBM",lItemPbm)
+    EndIf
+Else
+    lRet := .T.
+EndIf
+	
+Return lRet
+
 /*/{Protheus.doc} STBPbmNDoc
     Numeração da PBM
     @type  Function

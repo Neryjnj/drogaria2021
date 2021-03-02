@@ -366,16 +366,16 @@ If lRet
 			
 			aAux[3] := PadR(aTPLCODB2[3],TamSX3("B1_CODBAR")[1])
 
-			If ValType( aTPLCODB2[13] ) == "A"
-				aAux[1] := aClone(aTPLCODB2[13])
+			If ValType( aTPLCODB2[13] ) == "A" //uProdTPL
+				aAux[2] := aClone(aTPLCODB2[13])
 			Else
-				aAux[1] := aTPLCODB2[13]
+				aAux[2] := aTPLCODB2[13]
 			Endif
 
-			If ValType( aTPLCODB2[14] ) == "A"
-				aAux[2]  := aClone(aTPLCODB2[14])
+			If ValType( aTPLCODB2[14] ) == "A" //uCliTPL
+				aAux[1]  := aClone(aTPLCODB2[14])
 			Else
-				aAux[2]  := aTPLCODB2[14]
+				aAux[1]  := aTPLCODB2[14]
 			Endif
 			STBDroVars(.F.,.T.,aAux[1],aAux[2])
 		EndIf

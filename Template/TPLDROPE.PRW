@@ -527,11 +527,13 @@ Return _aAux
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FrtCodB3()
-
 Local _aAux 	:= ParamIxb[1]
 Local _uProdTPL := aClone(ParamIxb[2])	//Variavel Static criada em FRTA010A
 Local _uCliTPL  := ParamIxb[3]			//Variavel Static criada em FRTA010A
 Local aAreaAtu  := GetArea()
+Local lTotvsPDV := STFIsPOS()
+Local nItemLine := Iif(lTotvsPDV,ParamIXB[4],0)
+Local lCliente  := .F.
 
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/
@@ -539,8 +541,15 @@ T_DROLCS()
 
 // Valoriza o array, que possui dados referentes ao desconto no item e ao pontos do plano de fidelidade, com o
 // número do item que está sendo registrado.
-If (ValType(_uProdTPL) == "A") .AND. !Empty(_uProdTPL) .AND. (Val(SL2->L2_ITEM) == Len(_uProdTPL))
-	_uProdTPL[Len(_uProdTPL)][1] := Val(SL2->L2_ITEM)
+If (ValType(_uProdTPL) == "A") .AND. !Empty(_uProdTPL) .AND.;
+	((lTotvsPDV .And. nItemLine == Len(_uProdTPL)) .Or. ;
+	 (!lTotvsPDV .And. Val(SL2->L2_ITEM) == Len(_uProdTPL)) )
+	
+	If lTotvsPDV
+		_uProdTPL[Len(_uProdTPL)][1] := nItemLine
+	Else
+		_uProdTPL[Len(_uProdTPL)][1] := Val(SL2->L2_ITEM)
+	EndIf
 	
 	If ValType(nTotPontos) <> "N" // Converte o tipo caso nao seja numero
 		nTotPontos := 0
@@ -553,21 +562,38 @@ If (ValType(_uProdTPL) == "A") .AND. !Empty(_uProdTPL) .AND. (Val(SL2->L2_ITEM) 
 	nTotPontos += _uProdTPL[Len(_uProdTPL)][4]
 	
 	// Realiza Gravação do código do plano de fidelidade utilizado e dos pontos adquiridos
-	DbselectArea("SL1")
-	If (SL1->L1_CLIENTE+SL1->L1_LOJA <> SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAPAD")) .AND.;
-		(ColumnPos("L1_CPLFIDE") > 0) .AND. (ColumnPos("L1_PONTOS") > 0)
-		
+	If lTotvsPDV
+		STDGPBasket("SL1","L1_CPLFIDE")
+		lCliente := STDGPBasket("SL1","L1_CLIENTE") + STDGPBasket("SL1","L1_LOJA") <> ;
+						SuperGetmv("MV_CLIPAD") + SuperGetmv("MV_LOJAPAD")
+	Else
 		DbselectArea("SL1")
-		RecLock("SL1",.F.)
-		L1_CPLFIDE := _uCliTPL
-		L1_PONTOS  := nTotPontos
-		MsUnLock()
+		lCliente := (SL1->L1_CLIENTE+SL1->L1_LOJA <> SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAPAD"))
+	EndIf
+	
+	If lCliente .And. SL1->(ColumnPos("L1_CPLFIDE") > 0) .AND. SL1->(ColumnPos("L1_PONTOS") > 0)
+
+		If lTotvsPDV
+			STDSPBasket("SL1","L1_CPLFIDE",_uCliTPL)
+			STDSPBasket("SL1","L1_PONTOS",nTotPontos)
+
+			// Realiza Gravação dos pontos adquiridos por item vendido
+			STDSPBasket("SL2","L2_PONTOS",_uProdTPL[Len(_uProdTPL)][4],nItemLine)
+		Else
+			DbselectArea("SL1")
+			RecLock("SL1",.F.)
+			REPLACE L1_CPLFIDE WITH _uCliTPL
+			REPLACE L1_PONTOS  WITH nTotPontos
+			SL1->(MsUnLock())
+
+			// Realiza Gravação dos pontos adquiridos por item vendido
+			DbselectArea("SL2")
+			RecLock("SL2",.F.)
+			REPLACE L2_PONTOS WITH _uProdTPL[Len(_uProdTPL)][4]
+			SL2->(MsUnLock())
+		EndIf
 		
-		// Realiza Gravação dos pontos adquiridos por item vendido
-		DbselectArea("SL2")
-		RecLock("SL2",.F.)
-		L2_PONTOS := _uProdTPL[Len(_uProdTPL)][4]
-		MsUnLock()
+		
 	EndIf
 	_aAux[13] := aClone(_uProdTPL)
 	_aAux[14] := _uCliTPL	
