@@ -468,8 +468,6 @@ If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] 
 
 	If SL1->(ColumnPos("L1_CPLFIDE")) > 0
 
-		//JULIOOOOOOOOOOOOOOOOO - continuar daqui
-		//Inserir na cesta o campo L1_CPLFIDE para funcionar o comando do TOTVSPDV
 		If ValType(_uCliTPL) == "U"
 			If lTotvsPDV
 				_uCliTPL := STDGPBasket("SL1","L1_CPLFIDE")
@@ -589,22 +587,19 @@ Return _aAux
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FrtCancela()
-Local _uProdTPL 	:= ParamIxb[4]
+Local _uProdTPL := ParamIxb[4]
 
-If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³1 = Esta' cancelando um item da venda ³
-	//³2 = Esta' cancelando o cupom          ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	If ParamIxb[1] == 2
-		// Reinicializa variáveis 'static' para a próxima venda.
-		nTotPontos   	:= Nil
-		cCodRegra    	:= Nil
-		lPesqDescGer 	:= Nil
-		lCupAberto   	:= .F.
-		lJaChamouANVISA	:= .F.	
-	EndIf
-Endif
+//|1 = Esta' cancelando um item da venda |
+//|2 = Esta' cancelando o cupom          |
+If ParamIxb[1] == 2
+	// Reinicializa variáveis 'static' para a próxima venda.
+	nTotPontos   	:= Nil
+	cCodRegra    	:= Nil
+	lPesqDescGer 	:= Nil
+	lCupAberto   	:= .F.
+	lJaChamouANVISA	:= .F.	
+EndIf
+
 Return _uProdTPL
 
 /*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ

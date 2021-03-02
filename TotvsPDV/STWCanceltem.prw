@@ -351,44 +351,53 @@ If lRet
 	
 	aAux := {"","",""}
 	aAux[3] := AllTrim(oModelCesta:GetValue("L2_CODBAR"))
-	If lIsTPLDro .And. ExistTemplate("FRTCODB2") /* Tratamento para o Template de Drogarias*/
+	If lIsTPLDro /* Tratamento para o Template de Drogarias*/
+		If ExistTemplate("FRTCODB2")
 		
-		STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
-		aTPLCODB2 := {uItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
-					  "", "", "", "", "", "", .F.,/*Valor de Solidário*/}
-		aSTBDroVar := STBDroVars(.F.)
-		Aadd(aTPLCODB2, aSTBDroVar[2]) 	//Produto TPL
-		Aadd(aTPLCODB2, aSTBDroVar[1]) 	//Cliente TPL
-		Aadd(aTPLCODB2, oModelCesta) 	//Model para poder acessar e ler o conteudo de SL2
-		Aadd(aTPLCODB2, nItem) 			//Item do model 
-		aTPLCODB2 := ExecTemplate("FRTCODB2",.F.,.F.,{aTPLCODB2,aSTBDroVar[2],aSTBDroVar[1]})
+			STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
+			aTPLCODB2 := {uItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
+						"", "", "", "", "", "", .F.,/*Valor de Solidário*/}
+			aSTBDroVar := STBDroVars(.F.)
+			Aadd(aTPLCODB2, aSTBDroVar[2]) 	//Produto TPL
+			Aadd(aTPLCODB2, aSTBDroVar[1]) 	//Cliente TPL
+			Aadd(aTPLCODB2, oModelCesta) 	//Model para poder acessar e ler o conteudo de SL2
+			Aadd(aTPLCODB2, nItem) 			//Item do model 
+			aTPLCODB2 := ExecTemplate("FRTCODB2",.F.,.F.,{aTPLCODB2,aSTBDroVar[2],aSTBDroVar[1]})
+			
+			aAux[3] := PadR(aTPLCODB2[3],TamSX3("B1_CODBAR")[1])
+
+			If ValType( aTPLCODB2[13] ) == "A"
+				aAux[1] := aClone(aTPLCODB2[13])
+			Else
+				aAux[1] := aTPLCODB2[13]
+			Endif
+
+			If ValType( aTPLCODB2[14] ) == "A"
+				aAux[2]  := aClone(aTPLCODB2[14])
+			Else
+				aAux[2]  := aTPLCODB2[14]
+			Endif
+			STBDroVars(.F.,.T.,aAux[1],aAux[2])
+		EndIf
+
+		//JULIOOOOOO - inserir uma validação como no front, que pergunta se o produto
+		//é de PBM mesm juntamente se esta numa venda PBM, conforme IF comentado abaixo
+
+		// If LjGetOPBM() <> Nil .AND. aItens[nI][AIT_PBM]
+		// 		LjCancProdPBM( cCodigo, aItens[nI][AIT_QUANT] )
+		// 	EndIf
 		
-		aAux[3] := PadR(aTPLCODB2[3],TamSX3("B1_CODBAR")[1])
-		If ValType( aTPLCODB2[13] ) == "A"
-			aAux[1] := aClone(aTPLCODB2[13])
-		Else
-			aAux[1] := aTPLCODB2[13]
-		Endif
+		/* Tratamento para a venda PBM*/
+		If lIsTPLDro .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() //.And. 
+			STCnProPBM(aAux[3],oModelCesta:GetValue("L2_QUANT"))
+		EndIf
 
-		If ValType( aTPLCODB2[14] ) == "A"
-			aAux[2]  := aClone(aTPLCODB2[14])
-		Else
-			aAux[2]  := aTPLCODB2[14]
-		Endif
-		STBDroVars(.F.,.T.,aAux[1],aAux[2])
-	EndIf
-
-	//JULIOOOOOO - inserir uma validação como no front, que pergunta se o produto
-	//é de PBM mesm juntamente se esta numa venda PBM, conforme IF comentado abaixo
-
-	// If LjGetOPBM() <> Nil .AND. aItens[nI][AIT_PBM]
-	// 		LjCancProdPBM( cCodigo, aItens[nI][AIT_QUANT] )
-	// 	EndIf
-	
-	/* Tratamento para a venda PBM*/
-	If lIsTPLDro .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() //.And. 
-		STCnProPBM(aAux[3],oModelCesta:GetValue("L2_QUANT"))
-	EndIf
+		If lIsTPLDro .And. ExistTemplate("FRTCancela")
+			aSTBDroVar := STBDroVars(.F.)
+			aSTBDroVar[2] := ExecTemplate("FRTCancela",.F.,.F.,{1,cSupervisor,uItem,aSTBDroVar[2]})
+			STBDroVars(.F.,.T.,aSTBDroVar[1],aSTBDroVar[2])
+		EndIf
+	EndIf	
 
 	oModelCesta:LoadValue("L2_VENDIDO","N")
 	oModelCesta:DeleteLine(Nil ,.T.)

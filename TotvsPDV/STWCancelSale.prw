@@ -202,7 +202,7 @@ If lRet
 		aSL1 := {{"L1_SITUA",	"00"}}
 		STFSaveTab( "SL1" , aSL1 )
 
-		If ExistTemplate("FRTCancela")
+		If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) .And. ExistTemplate("FRTCancela")
 			aSTBDroVar := STBDroVars(.T.)
 			aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,cSupervisor,,aSTBDroVar[1]})
 			STBDroVars(.F.,.T.,aSTBDroVar[1],NIL)
