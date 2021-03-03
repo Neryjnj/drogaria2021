@@ -133,9 +133,8 @@ EndIf
 
 Return lRet
 
-/*/{Protheus.doc} nomeFunction
-    Copia da função LjConfProdPBM para venda
-    de Produto PBM no TotvsPDV
+/*/{Protheus.doc} STCnfPrPBM
+    Copia da função LjConfProdPBM para venda de Produto PBM no TotvsPDV
 
     @type  Function
     @author user
@@ -155,14 +154,53 @@ If lItemPbm
         //Cancela o Cupom Fiscal e PBM
         FrtCancCup( .T. )
     Else
-        //JULIOOOOOOO
-        //Criar aqui a referencia para preencher o campo dinamico que controla se é PBM
-        STDSPBasket("SL1","L1_ITPBM",lItemPbm)
+        STDSPBasket("SL2","L2_ITPBM",lItemPbm)
     EndIf
 Else
     lRet := .T.
 EndIf
 	
+Return lRet
+
+/*/{Protheus.doc} STVndPrPbm
+    Cópia da funação LjVendProdPbm para a venda de produto PBM no TOTVSPDV
+    @type  Function
+    @author Julio.Nery
+    @since 03/03/2021
+    @version 12
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+/*/
+Function STVndPrPbm( cCodBar, nQuant, nVlrUnit, lItemPbm,;
+                     nVlrDescIT, lPrioPbm, nVlrPercIT )
+Local lRet 		:= .F.	// Retorno da funcao
+Local nPercDesc := 0	// Percentual de desconto
+Local nValorAux := 0	// Utilizado para calcular o valor do desconto
+
+Default nVlrDescIT 	:= 0
+Default lPrioPbm 	:= .T.                                  	
+Default nVlrPercIT 	:= 0
+    
+If nVlrDescIT > 0 .AND. nVlrPercIT == 0
+    nPercDesc := (nVlrDescIT/(nVlrUnit*nQuant)) * 100
+Else
+    nPercDesc := nVlrPercIT
+EndIf
+
+lRet := oTPLPBM:VendProd( 	cCodBar		, nQuant	, nVlrUnit	, @nPercDesc, ;
+                            @lItemPbm	, lPrioPbm	)
+
+If lItemPbm
+    nVlrPercIT := nPercDesc
+Else
+    nValorLiq := NoRound(nVlrUnit - (nVlrUnit * (nPercDesc / 100)), 2)
+    nPercDesc := NoRound(((nVlrUnit - nValorLiq) * 100) / nVlrUnit, 2)
+    nVlrPercIT := nPercDesc
+EndIf
+
+nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
+nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
+		
 Return lRet
 
 /*/{Protheus.doc} STBPbmNDoc
@@ -265,7 +303,7 @@ Local oModelCesta:= STDGPBModel()	//Model da cesta
 oModelCesta := oModelCesta:GetModel("SL2DETAIL")
 nLength := oModelCesta:Length()
 
-If (HasTemplate("DRO")  .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) .And. (nLength > 0)
+If (ExistFunc("LjIsDro") .And. LjIsDro()) .And. (nLength > 0)
     // procura pelos itens controlados para pedir permissao do farmaceutico
     // se for remedio controlado verifica permissao do primeiro item controlado
 	For nX := 1 To nLength
@@ -351,7 +389,7 @@ Return lRet
     @param lLimpar, lógico, Limpar variaveis?
     @return aRet, array, contem os dados atuais das variáveis
 /*/
-Function STBDroVars(lLimpar, lSetVal, setUCliTPL, setUProdTPL)
+Function STBDroVars(lLimpar   , lSetVal, setUCliTPL, setUProdTPL)
 Local aRet := Array(2)
 
 Default lSetVal := .F.

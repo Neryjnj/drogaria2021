@@ -1309,13 +1309,7 @@ Return(.T.)
 Template Function DROVLPGet()
 Return(@aParamVL)
              
-
-
-
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLPVal ³ Autor ³ Vendas CRM                            ³ Data ³13/10/2008³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Verifica se o valor do item da venda do VidaLink e maior ou menor,         ³±±
@@ -1324,47 +1318,43 @@ Return(@aParamVL)
 ±±³          ³ do VidaLink                                                                ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Venda assistida e Front Loja com Template Drogarias                        ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLPVal(aVidaLinkD , aVidaLinkc , nVidaLink , cCodProd   ,;
                             nVlrDescIT , nTmpQuant  , nVlrItem  , nVlrPercIT ,;
                             nVlrUnit   , aVidaLinkD , nNumItem  , uProdTPL   ,;
-                            uCliTPL	, lImpOrc	   , cDoc		 , cSerie )
-                            
+                            uCliTPL	   , lImpOrc	, cDoc		, cSerie )
+
 Local aRetorno   := {}          									// Retorna  o Valor unitario e o Percentual de desconto
 Local nQuant     := nTmpQuant  										// Quantidade a ser Vendida pela Vida link
 Local nVlrPrVL   := aVidaLinkD[VL_DETALHE, nNumItem, VL_PRECO ]		// Valor do produto do Vida Link     
 Local aRet	 	 := {}               								// Array com os retornos dos campos da funcao de Desconto do Template de Droagria
-
 Local nVlrPrVdVl := aVidaLinkD[VL_DETALHE, nNumItem, VL_PRMAX ] 	// Bruto
 Local nVdlkPrcV  := aVidaLinkD[VL_DETALHE, nNumItem, VL_PRVENDA ] 	// Liquido
-
 Local nMoedaCor  := 1                                               // Moeda corrente
 Local nDecimais  := MsDecimais(nMoedaCor)							// Numero de casas decimais
 Local lVidaLink  := nVidaLink == 1
 
-Default cDoc		:= ""
+Default cDoc	:= ""
 Default cSerie	:= ""
+
 nVlrPercIT  := 0
 nVlrDescIT  := 0
                      
-aRet := ExecTemplate("FrtDescIT",.F.,.F.,{	cCodProd, nVlrPercIT, nVlrDescIT, nVlrItem,;
+aRet := ExecTemplate("FrtDescIT",.F.,.F.,{;
+							cCodProd, nVlrPercIT, nVlrDescIT, nVlrItem,;
 							uProdTPL, uCliTPL   , nQuant	, aParamVL[1][VLP_CCLIEN],;
 							aParamVL[1][VLP_CLOJAC],lImpOrc , cDoc , cSerie , ;
 							lVidaLink} )
-
 
 nVlrPercIT  := aRet[1]
 nVlrDescIT  := aRet[2] 
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³  Acerta o preco Dos Intens pela quantidade liberada para a  ³ 
+//³  Acerta o preco Dos Itens pela quantidade liberada para a  ³ 
 //³  Quantidade determinada pelo usuario                        ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 nVlrPrVdVl  := Round((nVlrPrVdVl) * nQuant,nDecimais)
-nVlrPrVL    :=Round(nVlrPrVL ,nDecimais)
+nVlrPrVL    := Round(nVlrPrVL ,nDecimais)
 
 DbSelectArea("SBI")  
 DbSetorder(1)    

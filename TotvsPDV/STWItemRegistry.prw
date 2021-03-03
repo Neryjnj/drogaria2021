@@ -2,6 +2,7 @@
 #INCLUDE "PARMTYPE.CH"
 #INCLUDE "STPOS.CH"
 #INCLUDE "STWITEMREGISTRY.CH"
+#INCLUDE "STBPBM.CH"
 
 Static lReceiptIsOpen	:= .F.		// Define se foi realizada abertura de cupom fiscal
 
@@ -50,7 +51,6 @@ Function Registra Item.
 @sample
 */
 //-------------------------------------------------------------------
-
 Function STWItemReg(	nItemLine		,	cItemCode		, cCliCode		,	cCliLoja	,;
 						nMoeda      	,	nDiscount   	, cTypeDesc 	,	lAddItem	,;
 						cItemTES 		,	cCliType		, lItemFiscal	,	nPrice		,;
@@ -71,7 +71,6 @@ Local lItemServFin		:= .F.														// Define ao serviço financeiro item NAO
 Local aAlqLeiTr			:= {0,0,0,0,}												// array utilizado para pegar as aliquotas das lei dos impostos
 Local oTotal	   		:= STFGetTot() 												// Totalizador
 Local cMsgErro			:= STR0003													// "Nao foi possivel a abertura do Cupom Fiscal"
-Local oModel    		:= iIf(ExistFunc("STDGPBModel"),STDGPBModel(),Nil) 			// Utilizada na busca de produtos na cesta de venda
 Local nVTotAfter		:= 0														// Valor total antes de passar pela rotina de calculo de imposto
 Local cDscPrdPAF		:= ""														// Descrição do produto segundo legislação do PAF CONVÊNIO ICMS 25, DE 8 DE ABRIL DE 2016 
 Local cITcEst			:= ""														// cEst retornado da MatxFis
@@ -92,10 +91,14 @@ Local cDesconto			:= ""
 Local cSitTrib			:= ""
 Local cVlrItem			:= ""
 Local aAux 				:= {}
+Local aDadoVLink		:= {}
+Local aDroVLPVal		:= {}
+Local aTPLFRTIT			:= {}
 Local aTPLCODB2			:= {}
 Local aTPLCODB3			:= {}
 Local lItemPbm			:= .F.
 Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
+Local lPrioPBM			:= SuperGetMV("MV_PRIOPBM" , .F., .T.) 	//Priorizacao da venda por PBM
 			
 Default nItemLine 		:= 0				   										// Linha do Item na Venda
 Default cItemCode 		:= ""														// Codigo do Item
@@ -140,6 +143,40 @@ EndIf
 //verifica se o item Fiscal/Não Fiscal Existe na Cesta
 lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 
+/*Tratamento VidaLINK*/
+If ExistFunc("STGDadosVL")
+	aDadoVLink := STGDadosVL()
+	If aDadoVLink[3] == 1
+		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
+		If aAux[ITEM_ENCONTRADO]
+			cItemCode := aAux[ITEM_CODIGO]
+		EndIf
+
+		cCliCode := aDadoVLink[2][VL_C_CODCL] 
+		cCliLoja := aDadoVLink[2][VL_C_LOJA]
+		cCliType := STDGPBasket("SL1","L1_TIPOCLI")			
+		
+		If nItemLine == 1 //Somente quando for o primeiro item que posiciona
+			SA1->(DbSetOrder(1))
+			If SA1->(DbSeek(xFilial("SA1")+cCliente+cLojaCli))
+				cCliType := SA1->A1_TIPO
+			EndIf
+			STDSPBasket("SL1","L1_TIPOCLI",cCliType) //Tipo do Cliente na Cesta
+			STDSPBasket("SL1","L1_CLIENTE",cCliCode) //Codigo do Cliente na Cesta
+			STDSPBasket("SL1","L1_LOJA",cCliLoja)	 //Loja do Cliente na Cesta
+		EndIf
+
+		If SuperGetMv("MV_LJCFID",,.F.) .AND. CrdxInt()
+			nPrice := aDadoVLink[1][VL_DETALHE, nItemLine, VL_PRECO ]
+
+		ElseIf !(cTypeItem == "IMP")
+			nPrice := aDadoVLink[1][VDLNK_DETALHE, nItemLine, VDLNK_PRECO ]
+		EndIf
+
+		STBSetQuant( aDadoVLink[1][VL_DETALHE, nItemLine, VL_QUANTID],1 )
+	EndIf
+EndIf
+
 /*/
 	Busca item na base de dados
 /*/
@@ -149,34 +186,112 @@ aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
 If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]    
 
 	LjGrvLog( cL1Num, "Registra Item - Item encontrado" )  //Gera LOG
-	//?P.E. Para Modificar a Quantidade e Valor Unitario 
-	
-	// Arredondamento
-	nItemTotal := STBArred( nPrice * STBGetQuant() )
+
+	//JULIOOOO - incluir aqui a chamada do PE TPL FrtDescIT
+	//olhar o fonte FRTA271A e prosseguir a implementação
+	If lTPLDrogaria
+		
+		/***** Busca preco do item caso nao tenha sido informada por parametro *********/
+		aAux := STBDroVars(.F.)
+		Aadd(aAux,0)
+		STWItRnPrice(@aAux[3], cL1Num, aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
+		
+		If ExistTemplate("FRTDESCIT")			
+			aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
+									aInfoItem[ITEM_CODIGO],Iif(cTypeDesc=="P",nDiscount,0),Iif(cTypeDesc=="V",nDiscount,0),aAux[3],;
+									aAux[2], aAux[1]   , STBGetQuant()	, cCliCode,;
+									cCliLoja, (cTypeItem == "IMP"), STDGPBasket('SL1','L1_DOC'), STFGetStation("SERIE") } )
 			
-	If lStQuant
-		LjGrvLog(cL1Num,"Antes da Chamada do Ponto de Entrada:STQUANT",{aInfoItem[ITEM_CODIGO], STBGetQuant() } )
-		aSTQuant := ExecBlock( "STQUANT",.F.,.F.,{STBGetQuant(),nPrice,nItemTotal,aInfoItem[ITEM_CODIGO] } )
-		LjGrvLog(cL1Num,"Apos a Chamada do Ponto de Entrada:STQUANT. Retorno:", aSTQuant )
-		
-		If ValType(aSTQuant) == "A" .AND. Len(aSTQuant) >= 2
-			STBSetQuant(aSTQuant[1]) 
-			nPrice := aSTQuant[2]
-			If Len(aSTQuant) == 3 
-				aInfoItem[ITEM_CODIGO] := aSTQuant[3]
-			Endif
-		Else
-			//?Caso o Retorno do lStQuant Nao Seja Array,       ?
-			//?Eh Interpretado Que Devera Abandonar a Validacao ?
-			//?Voltando Para o Get.                             ?
-			lRet := .F.
+			//Seta falso para cancelamento da tela de PBM
+			T_DrSScrExMC(.F.)
+
+			//Caso a tela de medicamento controlado seja cancelada, aborta a emissao do item.
+			If aTPLFRTIT[5]
+				MsgAlert("Medicamentos Controlados necessitam de Infomações do Paciente." +chr(10)+chr(13)+;
+						"Produto não será registrado") //"Medicamentos Controlados necessitam de Infomações do Paciente." ##"Produto não será registrado"
+				
+				//Seta se cancelou a tela da medicamento controlado para cancelar os produtos da PBM
+				T_DrSScrExMC(.T.)
+				lRet := .F.
+			Else
+				//nVlrPercIT := aTPLFRTIT[1]
+				nDiscount := aTPLFRTIT[2]
+				STBDroVars(.F., .T., aTPLFRTIT[4], aClone(aTPLFRTIT[3]))
+			EndIf
 		EndIf
-		
-		If !lRet			
-			LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Ponto de Entrada STQUANT não retornou array ")
-		EndIf
-	
+
+		If lRet .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+			If lPrioPBM
+				LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
+				nDiscount := 0
+			EndiF
+
+			If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), aAux[3], @lItemPbm,;
+							@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
+				LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM, o desconto da loja será zerado")
+				nDiscount := 0
+				lRet := .F.
+			EndIf
+		EndIF
 	EndIf
+
+	If lRet
+		If  Len(aDadoVLink) > 0 
+			If aDadoVLink[3] <> 1 .And. (nDiscount >= nPrice)
+				MsgAlert("O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
+						"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
+				nDiscount := 0
+			EndIf
+
+			If aDadoVLink[3] == 1
+				//--------------------------------------------------------------------
+                //|  Verifica se o preco do VidaLink eh maior que o preco do sistema | 
+                //|  com desconto.Vale o preco menor aValPerc  						 |
+                //--------------------------------------------------------------------
+				aAux := STBDroVars(.F.)
+                aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3]	, aInfoItem[ITEM_CODIGO],;
+											nDiscount	 , STBGetQuant(), STBArred( nPrice * STBGetQuant() ), 0/*nVlrPercIT*/,;
+											nPrice		 , aDadoVLink[1], nItemLine		, aAux[2],;
+											aAux[1]		 , (cTypeItem == "IMP") )
+				nItemTotal := aDroVLPVal[1]
+				nDiscount  := aDroVLPVal[2]
+				//aDroVLPVal[3] //Percentual do Desconto				
+				nPrice := aDroVLPVal[4]
+			EndIf
+		EndIf
+	EndIf
+	
+	If lRet
+		//Arredondamento
+		If Len(aDroVLPVal) == 0
+			nItemTotal := STBArred( nPrice * STBGetQuant() )
+		EndIf
+		
+		//|P.E. Para Modificar a Quantidade e Valor Unitario
+		If lStQuant
+			LjGrvLog(cL1Num,"Antes da Chamada do Ponto de Entrada:STQUANT",{aInfoItem[ITEM_CODIGO], STBGetQuant() } )
+			aSTQuant := ExecBlock( "STQUANT",.F.,.F.,{STBGetQuant(),nPrice,nItemTotal,aInfoItem[ITEM_CODIGO] } )
+			LjGrvLog(cL1Num,"Apos a Chamada do Ponto de Entrada:STQUANT. Retorno:", aSTQuant )
+			
+			If ValType(aSTQuant) == "A" .AND. Len(aSTQuant) >= 2
+				STBSetQuant(aSTQuant[1]) 
+				nPrice := aSTQuant[2]
+				If Len(aSTQuant) == 3 
+					aInfoItem[ITEM_CODIGO] := aSTQuant[3]
+				Endif
+			Else
+				//|Caso o Retorno do lStQuant Nao Seja Array,       |
+				//|Eh Interpretado Que Devera Abandonar a Validacao |
+				//|Voltando Para o Get.                             |
+				lRet := .F.
+			EndIf
+			
+			If !lRet			
+				LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Ponto de Entrada STQUANT não retornou array ")
+			EndIf
+		EndIf
+	EndIf
+
 	//Valida quantidade 
 	//Limite de qtde de 9999.99 somente para ECF
 	If lRet .AND. ((!(lEmitNFCe .OR. lUseSat) .AND.STBGetQuant() > 9999.99 ) .OR. STBGetQuant() == 0)
@@ -358,33 +473,16 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			lItemFiscal := .F.
 		EndIf
 
-		/*/
-			Busca preco do item caso nao tenha sido informada por parametro
-		/*/ 
-		If nPrice <= 0
-			LjGrvLog(cL1Num,"Item sem preco(Preco=0), sera realizado pesquisa de preco(STWFormPr).")
-			nPrice 	:= STWFormPr(	aInfoItem[ITEM_CODIGO], cCliCode	, Nil 	, cCliLoja	 , nMoeda , STBGetQuant() )
-			LjGrvLog(cL1Num,"Preco apos pesquisa:",nPrice)
-
-			If nPrice == -999		// Verifica se tabela de preço esta dentro da vigencia
-				LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Tabela de preço fora de vigência.")
-				lRet := .F.
-				STFMessage("ItemRegistered","STOP", STR0035 + CHR(13)+CHR(10) + STR0036 ) //"Tabela de preço fora de vigência."  "Verifique o código da tabela contido no parâmetro MV_TABPAD"
-
-			ElseIf nPrice <= 0		//Se nao achou preco
-				LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Nao possui preco")
-				lRet := .F.
-				STFMessage("ItemRegistered","STOP",STR0001) //"Preço não encontrado"
-			EndIf
-		EndIf
+		/***** Busca preco do item caso nao tenha sido informada por parametro *********/
+		STWItRnPrice(@nPrice, cL1Num, aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
 
 		// Busca TES que sera usada para calcular imposto do item
 		// Caso nao tenha sido informada por parametro
 		If lRet .AND. Empty( cItemTES )
 
-			cItemTES := STBTaxTES(	2	,	"01"		,	cCliCode		,	cCliLoja 							,;
-										"C"	,	aInfoItem[ITEM_CODIGO]	,	Nil				,  aInfoItem[ITEM_TES], ;
-										lListProd				)
+			cItemTES := STBTaxTES(	2	,	"01"					,	cCliCode		,	cCliLoja 		  ,;
+									"C"	,	aInfoItem[ITEM_CODIGO]	,	Nil				,  aInfoItem[ITEM_TES],;
+									lListProd				)
 			
 			LjGrvLog(cL1Num,"Nao recebeu a TES do item para impostos, entao foi realizado consulta(STBTaxTES/MaTesInt)", cItemTES)
 			
@@ -428,9 +526,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		// Total da venda antes do calculo dos impostos
 		nVTotAfter := oTotal:GetValue("L1_VLRTOT")
 		
-		/*/Atualiza totalizadores da Matxfis para evitar erro de diferença de valores entre sistema e impressora fiscal.
+		/*Atualiza totalizadores da Matxfis para evitar erro de diferença de valores entre sistema e impressora fiscal.
 		Necessário para quando registra um item com desconto e recebe negacao da permissão de superior ou quando 
-		caixa faz alguma operação na impressora. Ex. Troca de papel, queda de luz, etc. durante a inclusão do item./*/
+		caixa faz alguma operação na impressora. Ex. Troca de papel, queda de luz, etc. durante a inclusão do item. */
  		If lItemDel .And. STBTaxFoun("IT_ITEM", nItemLine)
 			conout("STIWtemRegister - Ajustando valor do item na MatxFis!")
 			LjGrvLog(cL1Num,"Ira ajustar valor do item na Matxfis")
@@ -443,11 +541,11 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		// Add item para calculo do imposto
 		If lRet
 			STBTaxIniL(	nItemLine		,	.F.			,	aInfoItem[ITEM_CODIGO]	, cItemTES 			, ;
-						STBGetQuant()	,	nPrice		, 	0							, nItemTotal			)
+						STBGetQuant()	,	nPrice		, 	0						, nItemTotal			)
 								
 			// Atualiza o preco pois apos passar pelas funcoes fiscais
 			// o preco pode ter sido alterado, arredondado etc..	devido aos impostos
-			nPrice := STBTaxRet(nItemLine,"IT_PRCUNI"		)
+			nPrice := STBTaxRet(nItemLine,"IT_PRCUNI")
 
 			//valores de impostos por ente tributario da lei dos impostos
 			 If lFLImpItem .And. (Len(aInfoItem) >= 23)
@@ -476,7 +574,6 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				   		LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Diferenca entre a Data/Hora do Sistema com a Impressora Fiscal.") 
 						lRet := .F.
 					EndIf
-
 				EndIf
 				
 				//Verifica se tem desconto no Item
@@ -541,7 +638,6 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
             	If lRet //Cupom Aberto com sucesso
 
-
 		 			// Indica se imprime codigo de barras no cupom ao inves do codigo do produto
 		 			// LjAnalisaLeg(39)[1] - A legislação exige que no cupom fiscal seja impresso o codigo EAN"
 		 			If ( cImpCodBar == "S" .AND. !Empty(aInfoItem[ITEM_CODBAR]) ) .OR. LjAnalisaLeg(39)[1]
@@ -586,51 +682,6 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 							cSitTrib		:= aRetLj7013[6]
 							cVlrItem		:= aRetLj7013[7]
 						EndIf
-					EndIf
-
-					//JULIOOOO - incluir aqui a chamada do PE TPL FrtDescIT
-					//olhar o fonte FRTA271A e prosseguir a implementação
-					If lTPLDrogaria .And. ExistTemplate("FRTDESCIT")
-						
-						//chama o FRTDESCIT
-						aRet := ExecTemplate("FRTDESCIT")
-						
-						If ExistTemplate("DrSScrExMC") //Seta falso para cancelamento da tela de PBM
-							T_DrSScrExMC(.F.)
-						EndIf
-
-						//Caso a tela de medicamento controlado seja cancelada, aborta a emissao do item.
-						If HasTemplate("DRO") .AND. aRet[5]
-							MsgAlert(STR0080 +chr(10)+chr(13)+ STR0081) //"Medicamentos Controlados necessitam de Infomações do Paciente." ##"Produto não será registrado"  
-							nVlrPercIT := 0
-							nVlrDescIT := 0
-							cCodProd := ''
-							cProduto := ''
-							nQuant   := 1
-							nVlrUnit := 0
-							nVlrItem := 0
-							nTotItens := 0
-							nVlrPercIT := 0
-							oProduto:Refresh()
-							oQuant:Refresh()
-							oVlrUnit:Refresh()
-							oVlrItem:Refresh()
-							oTotItens:Refresh()
-							oVlrTotal:Refresh()
-							oDesconto:Refresh()
-							
-							If ExistTemplate("DrSScrExMC") //Seta se cancelou a tela da medicamento controlado para cancelar os produtos da PBM
-								T_DrSScrExMC(.T.)
-							EndIf
-							
-							Return (.F.)
-						Else
-							nVlrPercIT := aRet[1]
-							nVlrDescIT := aRet[2]
-							uProdTPL   := aClone(aRet[3])
-							uCliTPL    := aRet[4]
-						EndIf
-
 					EndIf
 									
 					LjGrvLog(cL1Num,	"Registro do Item - Inicio"+; 
@@ -1037,4 +1088,35 @@ EndIf
 
 Return lRet
 
+/*/{Protheus.doc} STWItRnPrice
+	Retorna o preço do produto que esta sendo vendido
+	@type  Function
+	@author Julio.Nery
+	@since 03/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Function STWItRnPrice(nPrice, cL1Num, aInfoItem, cCliCode,;
+    				  cCliLoja, nMoeda, lRet )
+Local nRet := 0
 
+If nPrice <= 0
+	LjGrvLog(cL1Num,"Item sem preco(Preco=0), sera realizado pesquisa de preco(STWFormPr).")
+	nPrice 	:= STWFormPr( aInfoItem[ITEM_CODIGO], cCliCode	, Nil 	, cCliLoja	 , nMoeda , STBGetQuant() )
+	LjGrvLog(cL1Num,"Preco apos pesquisa:",nPrice)
+
+	If nPrice == -999		// Verifica se tabela de preço esta dentro da vigencia
+		LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Tabela de preço fora de vigência.")
+		lRet := .F.
+		STFMessage("ItemRegistered","STOP", STR0035 + CHR(13)+CHR(10) + STR0036 ) //"Tabela de preço fora de vigência."  "Verifique o código da tabela contido no parâmetro MV_TABPAD"
+
+	ElseIf nPrice <= 0		//Se nao achou preco
+		LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Nao possui preco")
+		lRet := .F.
+		STFMessage("ItemRegistered","STOP",STR0001) //"Preço não encontrado"
+	EndIf
+EndIf
+
+nRet := nPrice
+Return nRet

@@ -250,7 +250,8 @@ Local lLjLsPre		:= SuperGetMv("MV_LJLSPRE",, .F.) 	//Funcionalidade de Lista de 
 Local lLisPres		:= .F.
 Local lSaveOrc		:= IIF( ValType(STFGetCfg( "lSaveOrc" , .F. )) == "L" , STFGetCfg( "lSaveOrc" , .F. )  , .F. )   //Salva venda como orcamento
 Local lItemFiscal   := .T. 								//Valida se item fiscal
-Local lIsTPLDro		:= (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
+Local lIsTPLDro		:= (ExistFunc("LjIsDro") .And. LjIsDro())
+Local lL2_ITPBM		:= .F.
 
 Default nItem		:=	0
 Default oReasons	:=	Nil
@@ -381,18 +382,14 @@ If lRet
 		EndIf
 
 		//JULIOOOOOO - inserir uma validação como no front, que pergunta se o produto
-		//é de PBM mesm juntamente se esta numa venda PBM, conforme IF comentado abaixo
-
-		// If LjGetOPBM() <> Nil .AND. aItens[nI][AIT_PBM]
-		// 		LjCancProdPBM( cCodigo, aItens[nI][AIT_QUANT] )
-		// 	EndIf
-		
+		//é de PBM mesm juntamente se esta numa venda PBM
 		/* Tratamento para a venda PBM*/
-		If lIsTPLDro .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() //.And. 
+		lL2_ITPBM := oModelCesta:HasField("L2_ITPBM")
+		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() .And. lL2_ITPBM .And. oModelCesta:GetValue("L2_ITPBM")
 			STCnProPBM(aAux[3],oModelCesta:GetValue("L2_QUANT"))
 		EndIf
 
-		If lIsTPLDro .And. ExistTemplate("FRTCancela")
+		If ExistTemplate("FRTCancela")
 			aSTBDroVar := STBDroVars(.F.)
 			aSTBDroVar[2] := ExecTemplate("FRTCancela",.F.,.F.,{1,cSupervisor,uItem,aSTBDroVar[2]})
 			STBDroVars(.F.,.T.,aSTBDroVar[1],aSTBDroVar[2])

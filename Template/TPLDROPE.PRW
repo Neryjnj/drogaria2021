@@ -62,8 +62,8 @@ Local nDescPer    		:= 0
 Local nPercGrp	  		:= 0
 Local nValDesc    		:= ParamIxb[3]
 Local nVlrItem 	  		:= ParamIxb[4]//preco registrado na venda
-Local _uProdTPL	  		:= ParamIxb[5]//Variavel Static criada em FRTA010A	
-Local _uCliTPL	  		:= ParamIxb[6]//Variavel Static criada em FRTA010A	
+Local _uProdTPL	  		:= ParamIxb[5]//Variavel Static 
+Local _uCliTPL	  		:= ParamIxb[6]//Variavel Static 
 Local _nQuant 	  		:= ParamIxb[7]//Quantidade escolhida para a venda
 Local _lImpOrc 	  		:= ParamIxb[10] //Se o or็amento foi importado da Retaguarda
 Local _cDoc	 	  		:= Iif(Len(ParamIxb)>10,ParamIxb[11],"") //Doc
@@ -82,7 +82,7 @@ Local lAchouProd  		:= .F. 			// achou o codigo do produto na regra de desconto 
 Local lACOPercentual	:= .F.		// Verifica se o valor do campo ACO_PERDES esta' maior que zero
 Local lCancANVISA		:= .F.		// Verifica se a tela da ANVISA foi cancelada            
 Local nDescObr			:= 0			// Valor do Desconto Obrigatorio            
-Local lBIDescOrb		:= SBI->(ColumnPos("BI_DESCOBR") > 0)
+Local lBIDescOrb		:= .F.
 Local lTPLDRO01			:= ExistFunc("U_TPLDRO01()")			//Verifica se a funcao esta' compilada no rpo
 Local nAuxPDesc			:= 0								//Armazena o retorno do ponto de entrada TPLDRO01
 Local cClient           := ""          //Armazena o codigo do cliente
@@ -97,8 +97,17 @@ Local lJaAnvisa			:= .F. //Ja chamou a tela da anvisa
 Local _nPosItem			:= 0 //Item da Receita
 Local cSupervisor		:= Space(25)
 Local lPermTelAnv		:= .F.
+Local lTotvsPDV			:= STFIsPOS()
+Local aInfoItem			:= {}
+Local aAreaSB1			:= {}
 
-If FunName() == "FRTA271"
+If lTotvsPDV
+	lBIDescOrb := SB1->(ColumnPos("B1_DESCOBR") > 0)
+Else
+	lBIDescOrb := SBI->(ColumnPos("BI_DESCOBR") > 0)
+EndIf
+
+If (FunName() == "FRTA271") .Or. lTotvsPDV
 	cClient := ParamIxb[8] 
 	cLojaCl := ParamIxb[9]
 Else	 
@@ -110,35 +119,39 @@ Endif
  Integracao Protheus x SIAC ou de Template de Drogaria*/
 T_DROLCS()
 
-//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-//ณPegando o prece unitario do produto.                               ณ
-//ณO preco verificado no momento do desconto sempre sera' o           ณ
-//ณpreco unitario do produto e nao o preco vezes a quantidade de itensณ
-//ณna venda.                                                          ณ
-//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
-DbselectArea("SBI")
-DbSetOrder(1)
-If DbSeek(xFilial("SBI")+cCodProd)
-	nVlrItem 	 := SBI->BI_PRV    
-	If lBIDescOrb  
-		nDescObr := SBI->BI_DESCOBR
-	EndIf
-Endif
+//|Pegando o prece unitario do produto.                               |
+//|O preco verificado no momento do desconto sempre sera' o           |
+//|preco unitario do produto e nao o preco vezes a quantidade de itens|
+//|na venda.                                                          |
+If lTotvsPDV
+	aAreaSB1 := SB1->(GetArea()) //JULIOOOO - Continuar daqui capturando abaixo o conteudo do campo da B1 para TOTVSPDV
+	aInfoItem := STWFindItem( cCodProd , .F. , .F.)
+	STWItRnPrice(@nVlrItem, STDGPBasket('SL1','L1_NUM'), aInfoItem, cClient,cLojaCl, 1, .T. )
+	nDescObr := IIf(lBIDescOrb,  SB1->B1_DESCOBR,0)
 
-// Caso a variavel uCliTPL nใo exista aborta a execu็ใo da Template Function
-If ValType(_uCliTPL) == "U"
-	// Caso a variแvel _uProdTPL nใo exista, tipifica a variแvel como array
-	If ValType(_uProdTPL) == "U"
-		_uProdTPL := {}
+	If lBIDescOrb
+		nDescObr := Posicione("SB1",1,xFilial("SB1")+aInfoItem[ITEM_CODIGO],"B1_DESCOBR")
 	EndIf
-	AAdd(_uProdTPL,{0,cCodProd,0,0,.F.})
-	
-	_uCliTPL := Space(TamSx3("MHG_CODIGO")[1])
+Else
+	DbselectArea("SBI")
+	SBI->(DbSetOrder(1))
+	If SBI->(DbSeek(xFilial("SBI")+cCodProd))
+		nVlrItem 	 := SBI->BI_PRV
+		If lBIDescOrb  
+			nDescObr := SBI->BI_DESCOBR
+		EndIf
+	Endif
 EndIf
 
 // Caso a variavel _uProdTPL nใo exista, tipifica a variแvel como array
 If ValType(_uProdTPL) == "U"
 	_uProdTPL := {}
+EndIf
+
+// Caso a variavel uCliTPL nใo exista aborta a execu็ใo da Template Function
+If ValType(_uCliTPL) == "U"
+	AAdd(_uProdTPL,{0,cCodProd,0,0,.F.})	
+	_uCliTPL := Space(TamSx3("MHG_CODIGO")[1])
 EndIf
 
 // Caso a variavel lCupAberto nใo exista, tipifica a variแvel como boleana e .T., determinando que
@@ -149,30 +162,30 @@ EndIf
                      
 // Valoriza array com dados referentes ao desconto e aos pontos para o plano de fidelidade
 AAdd(_uProdTPL,{0,cCodProd,0,0,.F.})
-//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤ|
-//ณVenda realizada para cliente padrao.        ณ
-//ณIra verificar se o CLIENTE PADRAO contem um ณ
-//ณPlano de Fidelidade                         ณ
-//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤ|     
+
+//-------------------------------------------------------------------
+//|Venda realizada para cliente padrao.        						|
+//|Ira verificar se o CLIENTE PADRAO contem um Plano de Fidelidade  |
+//-------------------------------------------------------------------
 If Empty( _uCliTPL )
 	DbselectArea("SA1")
-	DbSetOrder(1)
-	DbSeek(xFilial("SA1")+SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAPAD"))
-	If (!Empty(SA1->A1_CODPLF1) .AND. (SA1->A1_SITUAP1 = "A"))
+	SA1->(DbSetOrder(1))
+	SA1->(DbSeek(xFilial("SA1")+SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAPAD")))
+	If !Empty(SA1->A1_CODPLF1) .AND. (AllTrim(SA1->A1_SITUAP1) == "A")
 		_cCodPlano := SA1->A1_CODPLF1
-		_uCliTPL    := Posicione("MHG",1,xFilial("MHG")+_cCodPlano,"MHG_CODREG")
+		_uCliTPL   := Posicione("MHG",1,xFilial("MHG")+_cCodPlano,"MHG_CODREG")
 	Endif
 Endif
 
 If !Empty(_uCliTPL)
-	//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-	//ณVerifica primeiro se o campo ACO_PERDES esta' com o valor maior que zero          ณ
-	//ณcaso isso seja verdadeiro, usa o percentual de desconto deste campo para todos os ณ
-	//ณprodutos escolhidos na venda.                                                     ณ
-	//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
+	//------------------------------------------------------------------------------------
+	//|Verifica primeiro se o campo ACO_PERDES esta' com o valor maior que zero          |
+	//|caso isso seja verdadeiro, usa o percentual de desconto deste campo para todos os |
+	//|produtos escolhidos na venda.                                                     |
+	//------------------------------------------------------------------------------------
 	DbselectArea("ACO")
-	DbSetOrder(1)
-	If DbSeek(xFilial("ACO") + _uCliTPL)
+	ACO->(DbSetOrder(1))
+	If ACO->(DbSeek(xFilial("ACO") + _uCliTPL))
 		If	ACO->ACO_PERDES > 0
 			nDescPer := ACO->ACO_PERDES
 			lACOPercentual := .T.
@@ -197,11 +210,15 @@ If !Empty(_uCliTPL)
 	Endif	
 EndIf    
 
-If !lACOPercentual .AND. !lAchouProd                    
-	DbselectArea("SBI")
-	SBI->(DbSetOrder(1))
-	SBI->(DbSeek(xFilial("SBI")+cCodProd))
-	cCodGrp := BI_GRUPO                                      
+If !lACOPercentual .AND. !lAchouProd
+	If lTotvsPDV
+
+	Else
+		DbselectArea("SBI")
+		SBI->(DbSetOrder(1))
+		SBI->(DbSeek(xFilial("SBI")+cCodProd))
+		cCodGrp := BI_GRUPO                                      
+	EndIf
 	
 	If Empty(cCodGrp)// caso nao exista grupo de produto associado ao produto
 		// Determina o % de desconto do produto
@@ -2076,25 +2093,17 @@ cCodRegra    	:= Nil
 lPesqDescGer 	:= Nil
 lCupAberto   	:= .F.
 lJaChamouANVISA := .F.
-                   
 
 //Atualiza o numero do documento fiscal l1_doc
+T_DroDocAnvisa(SL1->L1_DOC, SL1->L1_SERIE)
 
-If ExistFunc("T_DroDocAnvisa")
-	T_DroDocAnvisa(SL1->L1_DOC, SL1->L1_SERIE)
-EndIf
-
-//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
-//ณDepois de impresso o cupom, chama a funcaoณ
-//ณpara a gravacao na tabela Logs ANVISA     ณ
-//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
+//|Depois de impresso o cupom, chama a funcao|
+//|para a gravacao na tabela Logs ANVISA     |
 T_DroGrvANVISA()
 
 Return
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณDROPesqConบAutor  ณVendas Cliente      บ Data ณ  23/12/04   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณVerifica se ha algum registro no SA1 com a matricula infor- บฑฑ
@@ -2105,27 +2114,23 @@ Return
 ฑฑบChamada   ณTPLDROPE                                                    บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณTemplate Drogaria                                           บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Template Function DROPesqConv(_cMatricula)
-
 Local _lRet  := .T.
 
 If SuperGetMv("MV_PLSATIV",.F.,.F.)
 	_lRet := T_PLSTMatr(@_cMatricula)[1]
 Else
-DbselectArea("SA1")
-//DbSetOrder(8)
-DbOrderNickName("SA1DRO1")//indice criado p/ o Template de Drogaria
-_lRet  := DbSeek(xFilial("SA1")+_cMatricula)
-If !_lRet
-	MsgAlert(STR0074) //"Matrํcula nใo encontrada!"
+	DbselectArea("SA1")
+	//DbSetOrder(8)
+	DbOrderNickName("SA1DRO1")//indice criado p/ o Template de Drogaria
+	_lRet  := DbSeek(xFilial("SA1")+_cMatricula)
+	If !_lRet
+		MsgAlert(STR0074) //"Matrํcula nใo encontrada!"
 	EndIf
 EndIf
 
-Return (_lRet)
+Return _lRet
 
 /*
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
