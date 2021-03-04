@@ -1825,53 +1825,40 @@ Return cMsg
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
 Template Function FrtEntreg()
-Local oSvc          
-Local aAreaAtu     := GetArea()
-Local lRet         := .T.
-Local cSvcError    := ""
-Local cSoapFCode   := ""
-Local cSoapFDescr  := ""
-Local lWsGrvPtos   := .T.
-Local aAreaSL1     := {}
-                   
-Local cCodCli      := "" 					//Codigo do Cliente
-Local cNomeCli     := "" 					//Nome do Cliente
-Local cMatCli 	   := ""					//Matricula do Cliente
-Local cEndereco    := "" 					//Endereco do Cliente
-Local cCPF_CGC     := "" 					//CPF do Cliente
-Local cRG          := "" 					//RG do Cliente
-Local cFechaDia    := "" 					//Dia do Fechamento
-Local cVencDia     := "" 					//Dia do Vencimento
-Local cCodEmp	   := ""					//Codigo da EMPRESA em que o Cliente eh conveniado
-Local cNomeEmp     := "" 					//Nome da EMPRESA em que o Cliente eh conveniado
-Local cVlrTot	   := "" 					//Valor total da venda
-Local cAss         := STR0042 				//vai no Rodape do CUPOPM ##"Assinatura do cliente"
-Local nPtsTot      := 0  					//pontuacao anterior mais a pontuacao obtida na venda
-Local nCentroNome  := 0  					//posiciona no centro do CUPOM p/ a impressao do nome do cliente
-Local nCentroAss   := 20 - (Len(cAss)/2)   // centraliza o local onde o cliente devera assinar no CUPOM
-
-Local cCondicao    := ""
-Local cTexto       := ""
-Local nTotVenda    := 0  					//valor Total da venda
-
-Local cTexPontos   := ""
-Local aDados	   := {}					//array com a opcao de escolha do cliente e a numeracao do cartao
-Local lAtivo	   := .F. 					// variavel que ira validar se achou cartao ATIVO ou NAO
-
-Local cNumCartVend := ParamIxb[1]			// Numero do cartao para qual foi realizada a VENDA  
-Local cCodDep 	   := ParamIxb[2]			// Codigo do DEPENDENTE
-Local cNomeDep     := ParamIxb[3]			// Nome do DEPENDENTE
-Local nI 		   := 0						// Controle de loop
-Local nVlrTot      := 0						// Valor do total das parcelas com forma de pagamento 'FI'
-Local cForm		   := ""					// sigla da Forma de Pagamento
-Local nParcelas    := 0						// numero de parcelas que sera realizada a venda - impresso no CUPOM NAO FISCAL
-Local aPgto        := {}                   // Grava o array de pagamentos
-Local cTotalizNFis := GetPvProfString("Totalizadores", "DROFRTENT", "01", GetClientDir()+"SIGALOJA.INI" )
+Local aAreaAtu     	:= GetArea()
+Local cCodCli      	:= "" 					// Codigo do Cliente
+Local cNomeCli     	:= "" 					// Nome do Cliente
+Local cMatCli 	   	:= ""					// Matricula do Cliente
+Local cEndereco    	:= "" 					// Endereco do Cliente
+Local cCPF_CGC     	:= "" 					// CPF do Cliente
+Local cRG          	:= "" 					// RG do Cliente
+Local cFechaDia    	:= "" 					// Dia do Fechamento
+Local cVencDia     	:= "" 					// Dia do Vencimento
+Local cCodEmp	   	:= ""					// Codigo da EMPRESA em que o Cliente eh conveniado
+Local cNomeEmp     	:= "" 					// Nome da EMPRESA em que o Cliente eh conveniado
+Local cVlrTot	   	:= "" 					// Valor total da venda
+Local cAss         	:= STR0042 				// vai no Rodape do CUPOPM ##"Assinatura do cliente"
+Local nPtsTot      	:= 0  					// Pontuacao anterior mais a pontuacao obtida na venda
+Local nCentroNome  	:= 0  					// Posiciona no centro do CUPOM p/ a impressao do nome do cliente
+Local cCondicao    	:= ""
+Local cTexto       	:= ""
+Local aDados	   	:= {}					// Array com a opcao de escolha do cliente e a numeracao do cartao
+Local cNumCartVend 	:= ParamIxb[1]			// Numero do cartao para qual foi realizada a VENDA  
+Local cCodDep 	   	:= ParamIxb[2]			// Codigo do DEPENDENTE
+Local cNomeDep     	:= ParamIxb[3]			// Nome do DEPENDENTE
+Local nI 		   	:= 0					// Controle de loop
+Local nVlrTot      	:= 0					// Valor do total das parcelas com forma de pagamento 'FI'
+Local cForm		   	:= ""					// sigla da Forma de Pagamento
+Local nParcelas    	:= 0					// numero de parcelas que sera realizada a venda - impresso no CUPOM NAO FISCAL
+Local aPgto        	:= {}                   // Grava o array de pagamentos
+Local cTotalizNFis 	:= GetPvProfString("Totalizadores", "DROFRTENT", "01", GetClientDir()+"SIGALOJA.INI" )
 // Se nao existir o SIGALOJA.INI mantem sempre o totalizador "01" como default porque temos um legado que sempre utilizou desta forma
+Local lTotvsPDV	  	:= STFIsPOS()
 
-If FunName() == "FRTA271"
+If lTotvsPDV
+	aPgto := TPLRetPg(SL1->L1_NUM)
+ElseIf FunName() == "FRTA271"
 	aPgto := aclone(ParamIxb[4]) 	
-	
 Else
 	aPgto := aclone(aPgtos)	
 Endif
@@ -1879,12 +1866,6 @@ Endif
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/
 T_DROLCS()
-
-If FunName() == "FRTA010"   //Front Loja
-	nTotVenda  := nDinheiro + nCheques + nCartao + nFinanciado + nConvenio + nVales + nValorDebi + nOutros
-ElseIf FunName() == "LOJA701" .AND. Len(aTotais) > 0   //Venda Assistida
-	nTotVenda  := aTotais[4, 2]
-EndIf
 
 If ( nModulo == 12 ) 
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -1905,17 +1886,6 @@ Endif
 
 // Realiza gravação do histórico de movimentação.
 If (SL1->L1_CLIENTE+SL1->L1_LOJA <> SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAPAD"))
-	If _nEscolha = 3 .OR. _nEscolha = 5 // Escolha do cliente pelo CPF ou Numero de Matricula
-		Posicione("MA6",2,xFilial("MA6")+SL1->L1_CLIENTE+SL1->L1_LOJA,"MA6_CODCLI+MA6_LOJA")
-	   	While (!lAtivo .AND. SL1->L1_CLIENTE+SL1->L1_LOJA = MA6->MA6_CODCLI+MA6->MA6_LOJA ;
-	   	      .AND. Empty(MA6->MA6_CODDEP))
-		   	If  MA6->MA6_SITUA = "1"
-			   	lAtivo := .T.
-			Else
-				MA6->(DbSkip())   	
-		   	Endif   	
-	   	End
-	Endif
 	DbselectArea("LHG")
 	RecLock("LHG",.T.)
 	LHG->LHG_FILIAL := xFilial("LHG")
@@ -3816,3 +3786,38 @@ If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
 Endif
 
 Return lRet
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} TPLRetPg
+Retorna array com informações do pagamento da venda.
+
+@type       Function
+@author     Alberto Deviciente
+@since      04/03/2021
+@version    12.1.27
+
+@param cNumOrc, Caractere, Número do orçamento.
+
+@return aRet, Array, Informações do pagamento da venda.
+/*/
+//-------------------------------------------------------------------------------------
+Static Function TPLRetPg(cNumOrc)
+Local aRet 		:= { { cTod("  /  /  "), 0, "" } }
+Local aArea 	:= GetArea()
+Local aAreaSL4 	:= SL4->(GetArea())
+
+DbSelectArea("SL4")
+SL4->(DbSetOrder(1)) //L4_FILIAL + L4_NUM + L4_ORIGEM
+If SL4->( DbSeek(xFilial("SL4") + cNumOrc) )
+	While SL4->( !Eof() ) .AND. SL4->(L4_FILIAL + L4_NUM) == (xFilial("SL4") + cNumOrc)
+		If !Empty(SL4->L4_FORMA)
+			aAdd( aRet, { SL4->L4_DATA, SL4->L4_VALOR, AllTrim(SL4->L4_FORMA) } )
+		EndIf
+		SL4->( DbSkip() )
+	EndDo
+EndIf
+
+RestArea(aAreaSL4)
+RestArea(aArea)
+
+Return aRet
