@@ -60,6 +60,8 @@ Local cMVLOJANF		:= AllTrim( SuperGetMV("MV_LOJANF", .F. ,"UNI") )
 Local lMVFISNOTA	:= SuperGetMV("MV_FISNOTA", .F., .F.) .and. !Empty(cMVLOJANF) .and. cMVLOJANF <> "UNI"
 Local lLjDNota		:= .F.
 Local nRetLJ7087	:= 0
+Local aDadosCli		:= Iif(ExistFunc("STBGetCrdIdent"),STBGetCrdIdent(),{}) //Dados do Cartão/CPF do cliente (Integração CRD)
+Local cNumCartao 	:= Iif(Len(aDadosCli) > 0, aDadosCli[1], "") //Numero do cartao
 
 Default lPendSale	:= .F.								//Em caso de erro, indica se a venda fica pendente para ser finalizada de novo 
 
@@ -536,6 +538,7 @@ LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Venda ficara pendente?", lPen
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Fim - Workflow de finalizacao de venda.", lRet )
 
 If !lPendSale
+<<<<<<< HEAD
 
 	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STGDadosVL")
 		aDROVLImp := STGDadosVL()
@@ -544,6 +547,13 @@ If !lPendSale
 		aDROVLImp := STGDadosVL()
 		aDROVLImp[3] := nRet
 		STBDadosVL(aDROVLImp)
+=======
+	//Executa Template Function de Drogaria na finalização da venda
+	If lRet
+		If ExistFunc("LJIsDro") .And. LJIsDro() .And. ExistTemplate('FRTEntreg') //Verifica se usa o Template de Drogaria
+			ExecTemplate('FRTEntreg', .F., .F., { cNumCartao , Nil , Nil, Nil })
+		EndIf
+>>>>>>> 0adc5023e0d186e8f7e4476a19a954731f8372a2
 	EndIf
 
 	//Gravo o doc e a série antes do STFRestart(). Útil para o Ponto de Entrada STFinishSale() em STBPayment.prw. 
