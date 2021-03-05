@@ -1856,6 +1856,9 @@ Local aPgto        	:= {}                   // Grava o array de pagamentos
 Local cTotalizNFis 	:= GetPvProfString("Totalizadores", "DROFRTENT", "01", GetClientDir()+"SIGALOJA.INI" )
 // Se nao existir o SIGALOJA.INI mantem sempre o totalizador "01" como default porque temos um legado que sempre utilizou desta forma
 Local lTotvsPDV	  	:= STFIsPOS()
+Local lImpNotFisc   := LjUseSat() .Or. LjEmitNFCe() //Verifica se usa Impressora Não fiscal
+Local lImprimiu    	:= .F.
+Local lGuilho		:= SuperGetMV("MV_FTTEFGU",, .T.) // Ativa guilhotina
 
 If lTotvsPDV
 	aPgto := TPLRetPg(SL1->L1_NUM)
@@ -2043,14 +2046,29 @@ If (SL1->L1_CLIENTE+SL1->L1_LOJA <> SuperGetmv("MV_CLIPAD")+SuperGetmv("MV_LOJAP
 			cVlrTot := StrTran(cVlrTot,",",".") // Nao manda a virgula para a impressora, pois senao ela pensa que eh parametro
 			
 			LJGrvLog(Nil, "Indice do totalizador Nao-Fiscal utilizado", cTotalizNFis)
-			
-			//Abre a chamada do cupom nao fiscal		
-			IFAbrCNFis( nHdlEcf, cCondicao, cVlrTot, cTotalizNFis, "", nParcelas )
 
-			//Imprime o texto do cupom nao fiscal e o numero de vias
-			LjMsgRun(STR0073,, {|| IFTxtNFis( nHdlEcf, cTexto, 1 )})	// "... Agurade, imprimindo o CUPOM NÃO-FISCAL ..."			
-			//Fecha a chamada do cupom nao fiscal
-			IFFchCNFis( nHdlEcf )
+			If lTotvsPDV
+				If lImpNotFisc
+					//Impressora Não Fiscal (NFC-e ou SAT)
+					lImprimiu := STWPrintTextNotFiscal(cTexto) == 0
+						
+					If lGuilho .AND. lImprimiu
+						STWPrintTextNotFiscal(TAG_GUIL_INI+TAG_GUIL_FIM)
+					EndIf
+				Else
+					//Impressora Fiscal
+					//Abre cupom fiscal não vinculado
+					lImprimiu := STBIAPrinReceipt(cCondicao, nVlrTot, cTotalizNFis, cTexto, nParcelas)
+				EndIf
+			Else
+				//Abre a chamada do cupom nao fiscal		
+				IFAbrCNFis( nHdlEcf, cCondicao, cVlrTot, cTotalizNFis, "", nParcelas )
+
+				//Imprime o texto do cupom nao fiscal e o numero de vias
+				LjMsgRun(STR0073,, {|| IFTxtNFis( nHdlEcf, cTexto, 1 )})	// "... Agurade, imprimindo o CUPOM NÃO-FISCAL ..."			
+				//Fecha a chamada do cupom nao fiscal
+				IFFchCNFis( nHdlEcf )
+			EndIf
 		Endif	
 				
 	EndIf
