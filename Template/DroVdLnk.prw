@@ -886,10 +886,7 @@ oTEF:Operacoes("PHARMASYSTEM_CANCELAMENTO", aVidaLinkD, , ,"")	//PharmaSystem
 
 Return .T.
 
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLImp  ³ Autor ³ VENDAS CRM		                    ³ Data ³26/04/2005³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Após a conclusão da venda imprime o comprovante de venda Vidalink no ECF   ³±±
@@ -900,73 +897,62 @@ Return .T.
 ±±³          ³      junto com o cupom TEF.                                                ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                    				      ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
-Template Function DROVLImp( )
+-------------------------------------------------------------------------------------------*/
+Template Function DROVLImp()
 Local _nVidaLink := ParamIxb[1] // nVidalink
 Local aRet := {}				// Retorno da Funcao
+Local lTotvsPDV := STFIsPOS()
 
 If _nVidaLink = 2  				// Gravou VidaLink, por isto imprimo cupom vidalink
-	oTEF:ImpCupTef()
+	If lTotvsPDV
+		//JULIOOOOOOO - inserir a chamada para o TotvsPDV
+	Else
+		oTEF:ImpCupTef()
+	EndIf
 	_nVidaLink := 0				// Zera variavel após a impressão do cupom
 EndIf 
 
 aAdd(aRet,_nVidaLink)
-Return (aRet)
+Return aRet
 
-
-
-
-
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLBPro ³ Autor ³ VENDAS CRM				            ³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Rotina de busca de produtos na chamada da DLL. 							  ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLBPro(cCodBarra, lIncProd)
-	Local cRet          := ""  	// Retorno da funcao
-	Local cDescrProd	:= ""  	// Descricao do produto
-	Local nPrecoPMC		:= 0   	// Preco Maximo Consumidor
-	Local nPrecoPromo	:= 0   	// Preco de venda do estabelecimento
-	Local lEncontrou	:= .F. 	// Encontrou o produto?
-	Local cCodProd	:= ""
-	
-	Default lIncProd := .F.
-	
-	DbSelectArea("SBI")
-	SBI->(DbSetorder(5))
-	             
-	If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, 13)))
-		cDescrProd	:= SBI->BI_DESC
-		nPrecoPMC	:= SBI->BI_PRV
-		nPrecoPromo	:= SBI->BI_PRV
-		cCodProd	:= SBI->BI_COD
-		lEncontrou	:= .T.
-	EndIf
-	
-	If lEncontrou
-		cPrecoPMC	:= PadR(AllTrim(Str(nPrecoPMC,14,2)), 11)
-		cPrecoPMC	:= StrTran(cPrecoPMC, '.', '', 1)
-		cPrecoPromo	:= PadR(AllTrim(Str(nPrecoPromo,14,2)), 11)
-		cPrecoPromo	:= StrTran(cPrecoPromo, '.', '', 1)
-		cRet := Space(7) + PadR(cDescrProd, 35) + Space(12) + cPrecoPMC + cPrecoPromo + IIF( !lIncProd, Space(1), Space(1) + cCodProd)
-	Else
-		cRet := ""
-   EndIf
-Return cRet
-         
-                                    
+Local cRet          := ""  	// Retorno da funcao
+Local cDescrProd	:= ""  	// Descricao do produto
+Local nPrecoPMC		:= 0   	// Preco Maximo Consumidor
+Local nPrecoPromo	:= 0   	// Preco de venda do estabelecimento
+Local lEncontrou	:= .F. 	// Encontrou o produto?
+Local cCodProd	:= ""
 
+Default lIncProd := .F.
+
+DbSelectArea("SBI")
+SBI->(DbSetorder(5))
+				
+If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, 13)))
+	cDescrProd	:= SBI->BI_DESC
+	nPrecoPMC	:= SBI->BI_PRV
+	nPrecoPromo	:= SBI->BI_PRV
+	cCodProd	:= SBI->BI_COD
+	lEncontrou	:= .T.
+EndIf
+
+If lEncontrou
+	cPrecoPMC	:= PadR(AllTrim(Str(nPrecoPMC,14,2)), 11)
+	cPrecoPMC	:= StrTran(cPrecoPMC, '.', '', 1)
+	cPrecoPromo	:= PadR(AllTrim(Str(nPrecoPromo,14,2)), 11)
+	cPrecoPromo	:= StrTran(cPrecoPromo, '.', '', 1)
+	cRet := Space(7) + PadR(cDescrProd, 35) + Space(12) + cPrecoPMC + cPrecoPromo + IIF( !lIncProd, Space(1), Space(1) + cCodProd)
+Else
+	cRet := ""
+EndIf
+Return cRet
 
 /*/
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
@@ -1060,8 +1046,6 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 	EndIf	
 	
 Return cRet
-         
-
 
 /*/
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
@@ -1333,6 +1317,7 @@ Local nVdlkPrcV  := aVidaLinkD[VL_DETALHE, nNumItem, VL_PRVENDA ] 	// Liquido
 Local nMoedaCor  := 1                                               // Moeda corrente
 Local nDecimais  := MsDecimais(nMoedaCor)							// Numero de casas decimais
 Local lVidaLink  := nVidaLink == 1
+Local nPrcTab	 := 0
 
 Default cDoc	:= ""
 Default cSerie	:= ""
@@ -1349,33 +1334,59 @@ aRet := ExecTemplate("FrtDescIT",.F.,.F.,{;
 nVlrPercIT  := aRet[1]
 nVlrDescIT  := aRet[2] 
 
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³  Acerta o preco Dos Itens pela quantidade liberada para a  ³ 
-//³  Quantidade determinada pelo usuario                        ³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//----------------------------------------------------------------
+//|  Acerta o preco Dos Itens pela quantidade liberada para a   |
+//|  Quantidade determinada pelo usuario                        |
+//----------------------------------------------------------------
 nVlrPrVdVl  := Round((nVlrPrVdVl) * nQuant,nDecimais)
-nVlrPrVL    := Round(nVlrPrVL ,nDecimais)
+nVlrPrVL    := Round(nVlrPrVL,nDecimais)
 
-DbSelectArea("SBI")  
-DbSetorder(1)    
+If lTotvsPDV
+	If ExistFunc("STWItRnPrice")
+		cCodProd := AllTrim(cCodProd)
+		nPrcTab := 0
+		STWItRnPrice(@nPrcTab, STDGPBasket('SL1','L1_NUM'), /*aInfoItem*/,aParamVL[1][VLP_CCLIEN],;
+					aParamVL[1][VLP_CLOJAC], 0, .T.,cCodProd)
+		
+		If Round(nPrcTab,nDecimais ) >= Round(nVdlkPrcV ,nDecimais)
+			nVlrDescIT := Round((nPrcTab)*nQuant  - (nVdlkPrcV * nQuant),nDecimais)
+			nVlrPercIT := Round((nVlrDescIT / (nPrcTab * nQuant) ) * 100 ,nDecimais) 
+					
+			nVlrItem   := Round(nVdlkPrcV *nQuant,nDecimais)
+		Else    	    
+			nVlrItem := Round((nPrcTab * nQuant) - nVlrDescIT,nDecimais)   	          
+			MsgAlert(STR0015) //#"Os Valores da Loja São menores que os do VidaLink"
+		EndIf
+		
+		nVlrUnit := nPrcTab
+		
+	Else	
+		LjGrvLog(STDGPBasket('SL1','L1_NUM'),"Atualize o fonte STWItemRegistry - função STWItRnPrice não encontrada no RPO " +;
+											"Portanto não será possivel efetuar os calculos sobre valores de desconto")
+		
+	EndIf
+Else
+	DbSelectArea("SBI")  
+	DbSetorder(1)
 
-If DbSeek(xFilial("SBI") + cCodProd )
-	If Round((SBI->BI_PRV),nDecimais ) >= Round(nVdlkPrcV ,nDecimais)
-   		nVlrDescIT := Round((SBI->BI_PRV)* nQuant  - (nVdlkPrcV * nQuant),nDecimais)
-   		nVlrPercIT := Round((nVlrDescIT / (SBI->BI_PRV * nQuant) ) * 100 ,nDecimais) 
-   		    	
-		nVlrItem   := Round(nVdlkPrcV *nQuant,nDecimais)
-   	Else    	    
-   	    nVlrItem := Round((SBI->BI_PRV * nQuant) - nVlrDescIT,nDecimais)   	          
-   	    MsgAlert  (STR0015) //("Os Valores da Loja São menores que os do VidaLink")// (STR0015) 
-	EndIf       
-	
-	nVlrUnit := SBI->BI_PRV                        		
+	If DbSeek(xFilial("SBI") + cCodProd )
+		If Round((SBI->BI_PRV),nDecimais ) >= Round(nVdlkPrcV ,nDecimais)
+			nVlrDescIT := Round((SBI->BI_PRV)* nQuant  - (nVdlkPrcV * nQuant),nDecimais)
+			nVlrPercIT := Round((nVlrDescIT / (SBI->BI_PRV * nQuant) ) * 100 ,nDecimais) 
+					
+			nVlrItem   := Round(nVdlkPrcV *nQuant,nDecimais)
+		Else    	    
+			nVlrItem := Round((SBI->BI_PRV * nQuant) - nVlrDescIT,nDecimais)   	          
+			MsgAlert(STR0015) //#"Os Valores da Loja São menores que os do VidaLink"
+		EndIf       
+		
+		nVlrUnit := SBI->BI_PRV
+	EndIf
 EndIf
        
 aRetorno := {nVlrItem,nVlrDescIT,nVlrPercIT,nVlrunit }  
-Return(aRetorno)
 
+Return aRetorno
 
 /*/{Protheus.doc} RetPharma
 Retorna codigo PBM PharmaSys
@@ -1391,9 +1402,9 @@ Retorna codigo PBM PharmaSys
 //-------------------------------------------------------------------
 Function RetPharma()
 
-	T_DROVLGet(540)
+T_DROVLGet(540)
 	
-Return(.T.)
+Return .T.
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} DroAddProd

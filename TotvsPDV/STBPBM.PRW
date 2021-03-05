@@ -203,6 +203,24 @@ nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
 		
 Return lRet
 
+/*/{Protheus.doc} STBFimVdPB
+    (long_description)
+    @type  Function
+    @author user
+    @since date
+    @version version
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+/*/
+Function STBFimVdPB(cDoc, cSerie, cKeyDoc)
+Local lRet := .F.	// Retorno da funcao
+
+lRet := oTPLPBM:FinalVend(cDoc, cSerie, cKeyDoc)
+
+//LjMsgRodaP (bkp_oDlgFrt, bkp_oFntGet, STR0001) //"Protheus Front Loja"
+
+Return lRet
+
 /*/{Protheus.doc} STBPbmNDoc
     Numeração da PBM
     @type  Function
@@ -328,7 +346,7 @@ Return lRet
 Function STBDadosVL(aVidaLink)
 Default aVidaLink := {}
 
-If Len (aVidaLink) > 2 
+If Len(aVidaLink) > 2
 	aVidaLinkD := aVidaLink[1]
 	aVidaLinkC := aVidaLink[2] 
 	nVidaLink  := aVidalink[3]
@@ -389,7 +407,7 @@ Return lRet
     @param lLimpar, lógico, Limpar variaveis?
     @return aRet, array, contem os dados atuais das variáveis
 /*/
-Function STBDroVars(lLimpar   , lSetVal, setUCliTPL, setUProdTPL)
+Function STBDroVars(lLimpar, lSetVal, setUCliTPL, setUProdTPL)
 Local aRet := Array(2)
 
 Default lSetVal := .F.

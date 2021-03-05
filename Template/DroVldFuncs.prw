@@ -3530,18 +3530,16 @@ Template Function DroAnviDad(cCliente,cLoja)
 Local cLojP  := SuperGetMv("MV_LOJAPAD") //LOJA PADRAO
 Local cCliP  := SuperGetMv("MV_CLIPAD")  //CLIENTE PADRAO
 Local lAchou := .F.
-Local lTotvsPDV:= STFIsPOS()
 
 Default cCliente := ""
 Default cloja    := ""
-
 
 If nModulo == 12 .AND. AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) <> cClip + cLojP
 	SA1->(DbSetOrder(1))
 	If SA1->(DbSeek(xFilial("SA1") + AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) ) ) .AND. cCliP+cLojP <> AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA)
 		lAchou := .T.
 	Endif
-ElseIf (nModulo == 23 .Or. lTotvsPDV) .AND. cCliente + cLoja  <> cClip + CLojP
+ElseIf nModulo == 23 .AND. cCliente + cLoja  <> cClip + CLojP
 	SA1->(DbSetOrder(1))
 	If SA1->(DbSeek(xFilial("SA1") + AllTrim(cCliente)+ AllTrim(cLoja) ) ) .AND. cCliP+cLojP <> AllTrim(cCliente)+ AllTrim(cLoja)
 		lAchou := .T.
@@ -5356,9 +5354,9 @@ Local nLinha 	:= 0
 Local nI		:= 0
 
 Default cProd	:= ""
-Default lInfoAnvisa := .F. //Solicita replicar intem anterior
-Default lCopyAnvisa := .F. //Ja informou anvisa e permite a copia do dado
-Default _nPosItem := 0 //Posicao do item
+Default lInfoAnvisa := .F.	//Solicita replicar intem anterior
+Default lCopyAnvisa := .F.	//Ja informou anvisa e permite a copia do dado
+Default _nPosItem	:= 0 	//Posicao do item
 
 If !Empty(cProd)		//Se vier produto, veio da tela de alteração da aprovação de medicamentos. Eu passo o produto e recebo o número da linha correto.
 	nLinha := T_DroProdAnvisa(cProd)

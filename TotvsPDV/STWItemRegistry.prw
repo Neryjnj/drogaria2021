@@ -81,6 +81,7 @@ Local nTamArray			:= 0
 Local lItemGarEst		:= .F.														// Define a Garantia Estendida item NAO fiscal caso for avulso
 Local cProdVend			:= ""														// Produto que será vinculado à Garantia Estendida
 Local nPrProd			:= 0														// Preço do produto que será impresso no Cupom Gerencial de Garantia Estendida
+Local nDroPrProd		:= 0														//Preço do produto segundo as verificações do TPL DRO
 Local cSerieProd		:= ""														// Série do produto que será impresso no Cupom Gerencial de Garantia Estendida
 Local aRetLj7013		:= {}														// Retorno do PE Lj7013 para ser adicionado a descricao do produto
 Local lEmitNFCe			:= STBGetNFCE()												//valida se é NFC-e ou não
@@ -190,15 +191,14 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	//JULIOOOO - incluir aqui a chamada do PE TPL FrtDescIT
 	//olhar o fonte FRTA271A e prosseguir a implementação
 	If lTPLDrogaria
-		
+		nDroPrProd := nPrice
 		/***** Busca preco do item caso nao tenha sido informada por parametro *********/
 		aAux := STBDroVars(.F.)
-		Aadd(aAux,0)
-		STWItRnPrice(@aAux[3], cL1Num, aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
+		STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
 		
 		If ExistTemplate("FRTDESCIT")			
 			aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
-									aInfoItem[ITEM_CODIGO],Iif(cTypeDesc=="P",nDiscount,0),Iif(cTypeDesc=="V",nDiscount,0),aAux[3],;
+									aInfoItem[ITEM_CODIGO],Iif(cTypeDesc=="P",nDiscount,0),Iif(cTypeDesc=="V",nDiscount,0),nDroPrProd,;
 									aAux[2], aAux[1]   , STBGetQuant()	, cCliCode,;
 									cCliLoja, (cTypeItem == "IMP"), STDGPBasket('SL1','L1_DOC'), STFGetStation("SERIE") } )
 			
@@ -226,7 +226,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				nDiscount := 0
 			EndiF
 
-			If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), aAux[3], @lItemPbm,;
+			If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
 							@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
 				LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM, o desconto da loja será zerado")
 				nDiscount := 0
@@ -236,8 +236,8 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	EndIf
 
 	If lRet
-		If  Len(aDadoVLink) > 0 
-			If aDadoVLink[3] <> 1 .And. (nDiscount >= nPrice)
+		If Len(aDadoVLink) > 0 
+			If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1).And. (nDiscount >= nDroPrProd)
 				MsgAlert("O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
 						"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
 				nDiscount := 0
@@ -250,22 +250,25 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
                 //--------------------------------------------------------------------
 				aAux := STBDroVars(.F.)
                 aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3]	, aInfoItem[ITEM_CODIGO],;
-											nDiscount	 , STBGetQuant(), STBArred( nPrice * STBGetQuant() ), 0/*nVlrPercIT*/,;
-											nPrice		 , aDadoVLink[1], nItemLine		, aAux[2],;
+											nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
+											nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
 											aAux[1]		 , (cTypeItem == "IMP") )
 				nItemTotal := aDroVLPVal[1]
 				nDiscount  := aDroVLPVal[2]
 				//aDroVLPVal[3] //Percentual do Desconto				
-				nPrice := aDroVLPVal[4]
+				nDroPrProd := aDroVLPVal[4]
 			EndIf
 		EndIf
+	EndIf
+
+	//Faz o ajuste por meio da variável do Template pois ela altera os valores
+	If lRet .And. (nDroPrProd > 0)
+		nPrice := nDroPrProd
 	EndIf
 	
 	If lRet
 		//Arredondamento
-		If Len(aDroVLPVal) == 0
-			nItemTotal := STBArred( nPrice * STBGetQuant() )
-		EndIf
+		nItemTotal := STBArred( nPrice * STBGetQuant() )
 		
 		//|P.E. Para Modificar a Quantidade e Valor Unitario
 		If lStQuant
@@ -852,14 +855,12 @@ EndIf
 
 If lRet .And. lTPLDrogaria
 	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
-	aTPLCODB2 := {cValToChar(nItemLine), AllTrim(STDGPBasket("SL2","L2_PRODUTO")),;
-					 AllTrim(STDGPBasket("SL2","L2_CODBAR")), AllTrim(STDGPBasket("SL2","L2_DESC")),;
-					 cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),;
-					 "", cValToChar(STDGPBasket("SL2","L2_VLRITEM")),;
-					 "", "", .F.,""}
+	aTPLCODB2 := 	{nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO")), AllTrim(STDGPBasket("SL2","L2_CODBAR")),;
+					 AllTrim(STDGPBasket("SL2","L2_DESC")), cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),;
+					 "", cValToChar(STDGPBasket("SL2","L2_VLRITEM")), "", "", .F.,""}
 	aAux := STBDroVars(.F.)
-	AADD(aTPLCODB2,aAux[2]) //uProdCli
-	AADD(aTPLCODB2,aAux[1]) //uCliTPL
+	AADD(aTPLCODB2,aAux[2]) //13- uProdCli
+	AADD(aTPLCODB2,aAux[1]) //14 - uCliTPL
 	
 	aTPLCODB3 := aClone(aTPLCODB2)
 
@@ -1098,10 +1099,15 @@ Return lRet
 	@return return, return_type, return_description
 /*/
 Function STWItRnPrice(nPrice, cL1Num, aInfoItem, cCliCode,;
-    				  cCliLoja, nMoeda, lRet )
+    				  cCliLoja, nMoeda, lRet   , cCodProd)
 Local nRet := 0
 
+Default aInfoItem := Array(ITEM_TOTAL_ARRAY)
+
 If nPrice <= 0
+	If ValType(aInfoItem[ITEM_CODIGO]) <> "C"
+		aInfoItem[ITEM_CODIGO] := cCodProd
+	EndIf
 	LjGrvLog(cL1Num,"Item sem preco(Preco=0), sera realizado pesquisa de preco(STWFormPr).")
 	nPrice 	:= STWFormPr( aInfoItem[ITEM_CODIGO], cCliCode	, Nil 	, cCliLoja	 , nMoeda , STBGetQuant() )
 	LjGrvLog(cL1Num,"Preco apos pesquisa:",nPrice)

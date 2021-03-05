@@ -356,8 +356,8 @@ If lRet
 		If ExistTemplate("FRTCODB2")
 		
 			STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
-			aTPLCODB2 := {uItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
-						"", "", "", "", "", "", .F.,/*Valor de Solidário*/}
+			aTPLCODB2 := {nItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
+							"", "", "", "", "", "", .F.,/*Valor de Solidário*/}
 			aSTBDroVar := STBDroVars(.F.)
 			Aadd(aTPLCODB2, aSTBDroVar[2]) 	//Produto TPL
 			Aadd(aTPLCODB2, aSTBDroVar[1]) 	//Cliente TPL
@@ -391,7 +391,7 @@ If lRet
 
 		If ExistTemplate("FRTCancela")
 			aSTBDroVar := STBDroVars(.F.)
-			aSTBDroVar[2] := ExecTemplate("FRTCancela",.F.,.F.,{1,cSupervisor,uItem,aSTBDroVar[2]})
+			aSTBDroVar[2] := ExecTemplate("FRTCancela",.F.,.F.,{1,cSupervisor,nItem,aSTBDroVar[2]})
 			STBDroVars(.F.,.T.,aSTBDroVar[1],aSTBDroVar[2])
 		EndIf
 	EndIf	

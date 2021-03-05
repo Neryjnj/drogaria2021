@@ -57,7 +57,7 @@ Return aRet
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FrtDescIT()
-Local cCodProd    		:= ParamIxb[1]
+Local cCodProd    		:= AllTrim(ParamIxb[1])
 Local nDescPer    		:= 0
 Local nPercGrp	  		:= 0
 Local nValDesc    		:= ParamIxb[3]
@@ -98,8 +98,8 @@ Local _nPosItem			:= 0 //Item da Receita
 Local cSupervisor		:= Space(25)
 Local lPermTelAnv		:= .F.
 Local lTotvsPDV			:= STFIsPOS()
-Local aInfoItem			:= {}
 Local aAreaSB1			:= {}
+Local aProfile42		:= {}
 
 If lTotvsPDV
 	lBIDescOrb := SB1->(ColumnPos("B1_DESCOBR") > 0)
@@ -115,31 +115,32 @@ Else
 	cLojaCl := cLojaCli
 Endif
 
-/*verificamos se o sistema possui a licenca de
- Integracao Protheus x SIAC ou de Template de Drogaria*/
+/*verificamos se o sistema possui a licenca de Integracao Protheus x SIAC ou de Template de Drogaria*/
 T_DROLCS()
-
-//|Pegando o prece unitario do produto.                               |
+//---------------------------------------------------------------------
+//|Pegando o preço unitario do produto.                               |
 //|O preco verificado no momento do desconto sempre sera' o           |
 //|preco unitario do produto e nao o preco vezes a quantidade de itens|
 //|na venda.                                                          |
+//---------------------------------------------------------------------
 If lTotvsPDV
 	aAreaSB1 := SB1->(GetArea()) //JULIOOOO - Continuar daqui capturando abaixo o conteudo do campo da B1 para TOTVSPDV
-	aInfoItem := STWFindItem( cCodProd , .F. , .F.)
-	STWItRnPrice(@nVlrItem, STDGPBasket('SL1','L1_NUM'), aInfoItem, cClient,cLojaCl, 1, .T. )
-	nDescObr := IIf(lBIDescOrb,  SB1->B1_DESCOBR,0)
-
-	If lBIDescOrb
-		nDescObr := Posicione("SB1",1,xFilial("SB1")+aInfoItem[ITEM_CODIGO],"B1_DESCOBR")
+	If ExistFunc("STWItRnPrice")
+		STWItRnPrice(@nVlrItem, STDGPBasket('SL1','L1_NUM'), /*aInfoItem*/, cClient,cLojaCl, 0, .T.,cCodProd)
+	Else
+		LjGrvLog(STDGPBasket('SL1','L1_NUM'),"Atualize o fonte STWItemRegistry - função STWItRnPrice não encontrada no RPO")
 	EndIf
+	SB1->(DbSetOrder(1)) //B1_FILIAL + B1_COD
+	SB1->(DBSeek(xFilial("SB1") + cCodProd))
+	nDescObr := IIf(lBIDescOrb,  SB1->B1_DESCOBR,0)
+	cCodGrp  := SB1->B1_GRUPO
 Else
 	DbselectArea("SBI")
 	SBI->(DbSetOrder(1))
 	If SBI->(DbSeek(xFilial("SBI")+cCodProd))
-		nVlrItem 	 := SBI->BI_PRV
-		If lBIDescOrb  
-			nDescObr := SBI->BI_DESCOBR
-		EndIf
+		nVlrItem := SBI->BI_PRV
+		nDescObr := IIf(lBIDescOrb,SBI->BI_DESCOBR,0)
+		cCodGrp  := BI_GRUPO
 	Endif
 EndIf
 
@@ -150,7 +151,7 @@ EndIf
 
 // Caso a variavel uCliTPL não exista aborta a execução da Template Function
 If ValType(_uCliTPL) == "U"
-	AAdd(_uProdTPL,{0,cCodProd,0,0,.F.})	
+	// AAdd(_uProdTPL,{0,cCodProd,0,0,.F.})	
 	_uCliTPL := Space(TamSx3("MHG_CODIGO")[1])
 EndIf
 
@@ -193,9 +194,9 @@ If !Empty(_uCliTPL)
 	Endif
 	If !lACOPercentual
 		DbselectArea("ACP")
-		aAreaACP := GetArea()
-		dbOrderNickName("ACPDRO1")
-		If DbSeek(xFilial("ACP")+_uCliTPL+cCodProd)
+		aAreaACP := ACP->(GetArea())
+		ACP->(dbOrderNickName("ACPDRO1"))
+		If ACP->(DbSeek(xFilial("ACP")+_uCliTPL+cCodProd))
 			// Determina o % de desconto do produto
 			nDescPer  := ACP->ACP_PERDES
 			// Determina os pontos de fidelização do produto
@@ -211,14 +212,6 @@ If !Empty(_uCliTPL)
 EndIf    
 
 If !lACOPercentual .AND. !lAchouProd
-	If lTotvsPDV
-
-	Else
-		DbselectArea("SBI")
-		SBI->(DbSetOrder(1))
-		SBI->(DbSeek(xFilial("SBI")+cCodProd))
-		cCodGrp := BI_GRUPO                                      
-	EndIf
 	
 	If Empty(cCodGrp)// caso nao exista grupo de produto associado ao produto
 		// Determina o % de desconto do produto
@@ -227,9 +220,9 @@ If !lACOPercentual .AND. !lAchouProd
 		nPtosGrp  := 0
 	Else                        
 		DbselectArea("ACP")
-		aAreaACP := GetArea()
-		DbSetOrder(2)		
-		If DbSeek(xFilial("ACP")+_uCliTPL +AllTrim(cCodGrp))
+		aAreaACP := ACP->(GetArea())
+		ACP->(DbSetOrder(2))
+		If ACP->(DbSeek(xFilial("ACP")+_uCliTPL +AllTrim(cCodGrp)))
 			If ( ACP->ACP_FAIXDE == 0 .AND. ACP->ACP_FAIATE == 0 .AND. nPercGrp == 0 ) .OR. ;
 			   ( nVlrItem >= ACP->ACP_FAIXDE .AND. nVlrItem <= ACP->ACP_FAIATE )			
 				// Determina o % de desconto do produto
@@ -238,17 +231,17 @@ If !lACOPercentual .AND. !lAchouProd
 				nPtosGrp := ACP->ACP_PONTOS				   	
 			Endif   
 		Else
-			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-			//³Verifica se existe o grupo pai                                   ³
-			//³OBS: GRUPO PAI contem somente um digito, como por exemplo:       ³
-			//³GRUPO MEDICAMENTOS = 1                                           ³
-			//³                                                                 ³
-			//³Grupos que sao compostos por mais de um digito, eh definido como ³
-			//³SUBGRUPO, como por exemplo:                                      ³
-			//³GRUPO MEDICAMENTOS CONTROLADOS = 1C                              ³
-			//³eh um SUBGRUPO do grupo "1"                                      ³
-			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ			
-			If DbSeek(xFilial("ACP")+_uCliTPL +AllTrim(Left(cCodGrp,1)))		
+			//-------------------------------------------------------------------
+			//|Verifica se existe o grupo pai                                   |
+			//|OBS: GRUPO PAI contem somente um digito, como por exemplo:       |
+			//|GRUPO MEDICAMENTOS = 1                                           |
+			//|                                                                 |
+			//|Grupos que sao compostos por mais de um digito, eh definido como |
+			//|SUBGRUPO, como por exemplo:                                      |
+			//|GRUPO MEDICAMENTOS CONTROLADOS = 1C                              |
+			//|eh um SUBGRUPO do grupo "1"                                      |
+			//-------------------------------------------------------------------			
+			If ACP->(DbSeek(xFilial("ACP")+_uCliTPL +AllTrim(Left(cCodGrp,1))))
 				If ( ACP->ACP_FAIXDE == 0 .AND. ACP->ACP_FAIATE == 0 .AND. nPercGrp == 0 ) .OR. ;
 				   ( nVlrItem >= ACP->ACP_FAIXDE .AND. nVlrItem <= ACP->ACP_FAIATE )			
 					// Determina o % de desconto do produto
@@ -405,6 +398,10 @@ If !Empty(aAreaMHG)
 	RestArea(aAreaMHG)
 EndIf
 
+If Len(aAreaSB1) > 0
+	RestArea(aAreaSB1)
+EndIf
+
 // Restaura área original
 RestArea(aAreaAtu)
 
@@ -413,7 +410,13 @@ Verifica se o produto eh do tipo CONTROLADO e já não foi registrado pelo vidalin
 */
 If T_DroVerCont( cCodProd ) .And. !lVidaLink
 	
-	lPermTelAnv := LjProfile(42,@cSupervisor)
+	If lTotvsPDV
+		aProfile42 := STFPROFILE(42)
+		lPermTelAnv := aProfile42[1]
+		cSupervisor := aProfile42[2]
+	Else
+		lPermTelAnv := LjProfile(42,@cSupervisor)
+	EndIf
 	
 	If lPermTelAnv
 		/* Verifica se a tela de Controle da ANVISA ja' foi solicitada anteriormente
@@ -455,22 +458,22 @@ aAdd(aRet, lCancANVISA)
 
 Return aRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*---------------------------------------------------------------------------
 ±±ºPrograma  ³FrtCodB2  ºAutor  ³Vendas Cliente      º Data ³  10/17/05   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³ 					                                          º±±
 ±±º          ³                                                            º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³Template Drogaria                                           º±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+---------------------------------------------------------------------------*/
 Template Function FrtCodB2()
 Local aAreaAtu  := GetArea()
 Local _aAux		:= aClone(ParamIxb[1])
-Local _uProdTPL := aClone(ParamIxb[2])					// Variavel Static criada em FRTA010A
-Local _uCliTPL  := ParamIxb[3]							// Variavel Static criada em FRTA010A
+Local _uProdTPL := aClone(ParamIxb[2])					// Variavel Static
+Local _uCliTPL  := ParamIxb[3]							// Variavel Static
 Local lTotvsPDV	:= STFIsPos()
-Local oModelCesta:= Iif(lTotvsPDV,_aAux[15],NIL)		//Para TOTVSPDV enviar o model
-Local nItemModel := Iif(lTotvsPDV,_aAux[16],0)			//Para TOTVSPDV enviar o nItem
+Local oModelCesta:= Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[15],NIL)		//Para TOTVSPDV enviar o model
+Local nItemModel := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[16],0)			//Para TOTVSPDV enviar o nItem
 
 /*verificamos se o sistema possui a licenca de
  Integracao Protheus x SIAC ou de Template de Drogaria*/
@@ -497,8 +500,12 @@ If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] 
 		//Verificar se os campos L2_PONTOS/L2_DESC vem no model para funcionar o comando do TOTVSPDV
 		//Verificar se não desposiciona o item do model
 		If lTotvsPDV
-			oModelCesta:GoLine(nItemModel)
-			AAdd(_uProdTPL,{_aAux[1],_aAux[2],oModelCesta:GetValue("L2_DESC"),oModelCesta:GetValue("L2_PONTOS"),.F.})
+			If oModelCesta == NIL
+				AAdd(_uProdTPL,{_aAux[1],_aAux[2],STDGPBasket("SL2","L2_DESC"),STDGPBasket("SL2","L2_PONTOS"),.F.})
+			Else
+				oModelCesta:GoLine(nItemModel)
+				AAdd(_uProdTPL,{_aAux[1],_aAux[2],oModelCesta:GetValue("L2_DESC"),oModelCesta:GetValue("L2_PONTOS"),.F.})
+			EndIf
 		Else
 			DbselectArea("SL2")
 			AAdd(_uProdTPL,{_aAux[1],_aAux[2],SL2->L2_DESC,SL2->L2_PONTOS,.F.})
@@ -549,7 +556,7 @@ Local _uProdTPL := aClone(ParamIxb[2])	//Variavel Static criada em FRTA010A
 Local _uCliTPL  := ParamIxb[3]			//Variavel Static criada em FRTA010A
 Local aAreaAtu  := GetArea()
 Local lTotvsPDV := STFIsPOS()
-Local nItemLine := Iif(lTotvsPDV,ParamIXB[4],0)
+Local nItemLine := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[15],0)
 Local lCliente  := .F.
 
 /*verificamos se o sistema possui a licenca de
@@ -580,7 +587,6 @@ If (ValType(_uProdTPL) == "A") .AND. !Empty(_uProdTPL) .AND.;
 	
 	// Realiza Gravação do código do plano de fidelidade utilizado e dos pontos adquiridos
 	If lTotvsPDV
-		STDGPBasket("SL1","L1_CPLFIDE")
 		lCliente := STDGPBasket("SL1","L1_CLIENTE") + STDGPBasket("SL1","L1_LOJA") <> ;
 						SuperGetmv("MV_CLIPAD") + SuperGetmv("MV_LOJAPAD")
 	Else
@@ -609,8 +615,6 @@ If (ValType(_uProdTPL) == "A") .AND. !Empty(_uProdTPL) .AND.;
 			REPLACE L2_PONTOS WITH _uProdTPL[Len(_uProdTPL)][4]
 			SL2->(MsUnLock())
 		EndIf
-		
-		
 	EndIf
 	_aAux[13] := aClone(_uProdTPL)
 	_aAux[14] := _uCliTPL	
@@ -1231,7 +1235,6 @@ Return lRet
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FrtKit()
-
 Local aRet     := {}
 Local cCodProd := ParamIxb[1]
 Local aAreaAtu := GetArea()

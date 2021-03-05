@@ -369,7 +369,7 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroVSNGPC(lF12		, lTela		, cCliente	, cLoja			,;
 							cClassTe	, nItem		, cProd		, lInfoAnvisa	,;
-							lJaAnvisa	, _nPosItem	, lAcessoLib, lTotvsPDV		)
+							lJaAnvisa	, _nPosItem	, lAcessoLib)
 Local nI			:= 0
 Local nX			:= 0
 Local lRet			:= .F.	    // Retorno da funcao
@@ -383,9 +383,12 @@ Local nTamArray     := 0		//Tamanho do array aCamposAux
 Local lDrVlApro		:= IsInCallStack("T_DroVlApr")	//Ver se veio da função da Aprovação de Medicamentos
 Local aDroPELK9		:= {}		// retorno do ponto de entrada DROPELK9 [1] campos do template [2] campos do usuario
 Local aCposNObr     := {}
+Local aProfile42	:= {}
 Local lAntM			:= .F. 		//Medicamento antimicrobiano
 Local cSupervisor	:= Space(25)
 Local lContinua		:= .T.
+Local lTotvsPDV		:= STFIsPOS()
+Local lProfile42	:= .F.
 
 Default cCliente	:= ""
 Default cLoja		:= ""
@@ -396,11 +399,20 @@ Default lInfoAnvisa := .F.
 Default lJaAnvisa	:= .F.
 Default _nPosItem	:= 0
 Default lAcessoLib	:= .F.
-Default lTotvsPDV	:= .F.
 
-If !lAcessoLib .And. !LjProfile(42,@cSupervisor)
-	MsgStop("Usuário não tem permissão para venda de medicamentos controlados")
-	lContinua := .F.
+If !lAcessoLib
+	If lTotvsPDV
+		aProfile42 := STFPROFILE(42)
+		lProfile42 := aProfile42[1]
+		cSupervisor:= aProfile42[2]
+	Else
+ 		lProfile42 := LjProfile(42,@cSupervisor)
+	EndIf
+
+	If !lProfile42
+		MsgStop("Usuário não tem permissão para venda de medicamentos controlados")
+		lContinua := .F.
+	EndIf
 EndIf
 
 If lContinua
@@ -494,7 +506,7 @@ If lContinua
 				M->&( SX3->X3_CAMPO ) := CriaVar( SX3->X3_CAMPO )
 			Endif
 			If   !(RTrim(SX3->X3_CAMPO) $ "LK9_NOMEP/LK9_IDADEP/LK9_UNIDAP/LK9_SEXOPA/LK9_CONPRO") .AND.;
-				 !(RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. (nModulo == 12 .Or. lTotvsPDV) .AND. lF12 .AND. lTela)
+				 !(RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. nModulo == 12 .AND. lF12 .AND. lTela)
 				 
 				 	ADD FIELD aCampos TITULO  X3TITULO()  ;
 								  CAMPO   SX3->X3_CAMPO   ;
@@ -505,10 +517,10 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX  
 	
-			ElseIf ( RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. (nModulo == 12 .Or. lTotvsPDV) .AND. lF12 .AND. lTela) .OR.;
+			ElseIf ( RTrim(SX3->X3_CAMPO) == "LK9_LOTE" .AND. nModulo == 12 .AND. lF12 .AND. lTela) .OR.;
 					( AllTrim(SX3->X3_CAMPO) $ "LK9_LOTE|LK9_USOPRO" .AND. lInfoAnvisa .AND. _nPosItem > 0)
 					
 					ADD FIELD aCampos TITULO  X3TITULO()      ;
@@ -520,7 +532,7 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX ;
 								  WHEN { || .F. }
 	
@@ -534,7 +546,7 @@ If lContinua
 								  VALID   T_DROVldInfo();
 								  NIVEL 1 ;   
 								  INITPAD &(SX3->X3_RELACAO);
-								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If((nModulo == 12 .Or. lTotvsPDV) .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
+								  F3 If(SX3->X3_CAMPO == PadR("LK9_LOTE",10),If(nModulo == 12 .AND. !lMvLjPdvPa, SX3->X3_F3, ),SX3->X3_F3) ;
 								  BOX SX3->X3_CBOX ;
 								  WHEN { || RTrim(M->LK9_TIPUSO) <> '2'}
 			Endif
@@ -592,7 +604,7 @@ If lContinua
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//³ Define os blocos de codigo para os botoes "Ok" e "Cancel" da dialog ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		bOk		:= {|| lRet := .T., If(T_DroVldTela(lRet, aCampos,@cClassTe,lTotvsPDV), If(T_DroTempLK9(lRet, aCampos, lTela, lF12), oDlgLoja:End(),),.F.)}
+		bOk		:= {|| lRet := .T., If(T_DroVldTela(lRet, aCampos,@cClassTe), If(T_DroTempLK9(lRet, aCampos, lTela, lF12), oDlgLoja:End(),),.F.)}
 		bCancel	:= {|| lRet := .F., oDlgLoja:End()}
 		
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -622,10 +634,10 @@ Local bCancel				// Botao Cancel da Enchoice Bar
 Local aLote	 	 := {}		// Array com os campos para o Msmget
 Local aLoteAux   := {"LK9_LOTE"}
 Local cRastro	 := SuperGetMV("MV_RASTRO")											// Verifica se a rastreabilidade esta' habilitada
-Local nPosProd	 := Ascan(aHeaderDet,{|x| AllTrim(Upper(x[2])) == "LR_PRODUTO"}) 	// Guarda posicao do campo LR_PRODUTO para procura no aColsDet
 Local lAutoExB	 := IsBlind()														// Verifica se a rotina sera executada via execauto ou nao
 Local aRet		 := {}
 Local lContrLote := .F.
+Local nPosProd	 := Ascan(aHeaderDet,{|x| AllTrim(Upper(x[2])) == "LR_PRODUTO"}) 	// Guarda posicao do campo LR_PRODUTO para procura no aColsDet
 
 LjGrvLog( Nil, "Função Lote Anvisa")
 
@@ -680,7 +692,7 @@ If cRastro == "S" .AND. Len(aColsDet) > 0
 EndIf
 
 bOk		:= {|| lRet := .T., If(If(lContrLote,T_DroVldTela(lRet, aLote) ;
-                                  .AND.Lj7Lote( Nil,Alltrim(M->LK9_LOTE),Nil,Nil),.T.), oDlgLoja:End(),)}
+                                  .AND. Lj7Lote( Nil,Alltrim(M->LK9_LOTE),Nil,Nil),.T.), oDlgLoja:End(),)}
 
 bCancel	:= {|| lRet := .F., oDlgLoja:End()}
 ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, NIL, NIL )
