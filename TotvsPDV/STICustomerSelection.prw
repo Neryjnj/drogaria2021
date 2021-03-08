@@ -462,6 +462,7 @@ If nPos > 0 .AND. !Empty(nRecno)
 					lRet := aFRT010CL[1]
 					If lRet
 						If ExistFunc("STBDroVars")
+							//Seta o (Código do Plano) na variável estática usada nos Fontes do Template de Drogaria
 							STBDroVars(.F., .T., aFRT010CL[2], Nil)
 						EndIf
 					EndIf
