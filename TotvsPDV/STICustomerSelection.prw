@@ -465,6 +465,9 @@ If nPos > 0 .AND. !Empty(nRecno)
 							//Seta o (Código do Plano) na variável estática usada nos Fontes do Template de Drogaria
 							STBDroVars(.F., .T., aFRT010CL[2], Nil)
 						EndIf
+					Else
+						STFMessage(ProcName(),"STOP","Cliente " + SA1->A1_COD + " não validado - TPL Drogaria")  // "Cliente Selecionado"
+						STFShowMessage(ProcName())
 					EndIf
 				EndIf
 			EndIf
