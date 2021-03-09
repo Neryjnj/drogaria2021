@@ -466,7 +466,7 @@ If nPos > 0 .AND. !Empty(nRecno)
 							STBDroVars(.F., .T., aFRT010CL[2], Nil)
 						EndIf
 					Else
-						STFMessage(ProcName(),"STOP","Cliente " + SA1->A1_COD + " não validado - TPL Drogaria")  // "Cliente Selecionado"
+						STFMessage(ProcName(),"STOP","Cliente " + AllTrim(SA1->A1_COD) + " não validado - TPL Drogaria")  // "Cliente Selecionado"
 						STFShowMessage(ProcName())
 					EndIf
 				EndIf
