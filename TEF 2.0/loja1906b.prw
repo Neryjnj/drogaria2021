@@ -145,7 +145,7 @@ Method Salvar(cAlias) Class LJCCfgTefSitef
 		REPLACE (cAlias)->MDG_PBMSIT	WITH IIf(Self:lPBM,"1","2")
 		REPLACE (cAlias)->MDG_EPHARM	WITH IIf(Self:lEpharma,"1","2")		
 		REPLACE (cAlias)->MDG_TRNCEN	WITH IIf(Self:lTrnCentre,"1","2")
-		If FieldPos("MDG_CIELOP") > 0
+		If ColumnPos("MDG_CIELOP") > 0
 			REPLACE (cAlias)->MDG_CIELOP 	WITH IIf(Self:lCieloPrem,"1","2")
 		EndIf	
 		lRet := .T.
