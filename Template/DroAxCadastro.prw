@@ -574,6 +574,10 @@ If lContinua
 			Next nX
 		Endif
 	Endif
+
+	If lTotvsPDV //Deve desativar os atalhos para que não dê problema nas teclas
+		STIBtnDeActivate()
+	EndIf
 	                                                            
 	DEFINE MSDIALOG oDlgLoja FROM 40,5 TO 430,640 TITLE "SNGPC - Venda de Medicamentos Controlados (ANVISA)" PIXEL STYLE DS_MODALFRAME
 	
@@ -614,6 +618,9 @@ If lContinua
 	
 	ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, Nil, Nil )
 
+	If lTotvsPDV //Deve ativar os atalhos para que não dê problema nas teclas
+		STIBtnActivate()
+	EndIf
 EndIf
 
 Return lRet             

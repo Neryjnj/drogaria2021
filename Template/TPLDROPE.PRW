@@ -420,7 +420,6 @@ If T_DroVerCont( cCodProd ) .And. !lVidaLink
 	If lPermTelAnv
 		/* Verifica se a tela de Controle da ANVISA ja' foi solicitada anteriormente
 			e se não é importado da retaguarda. */
-
 		/* verifica no array aAnvisa se tem dados digitados de algum remedio ja vendido anteriormente 
 		 retirada a verificacao que havia acima, porque em um segundo medicamento , tem que informar todos os dados novamente.*/
 		lJaChamouANVISA := .F. 

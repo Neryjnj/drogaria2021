@@ -1040,10 +1040,10 @@ Return
 ±±ºRetorno   ³                                                             º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroGrvANVISA(nTipo)   
-
 Local nCont   	:= 0 	// Controle de loop
 Local cStatus 	:= "3"	// Status no qual sera' gravado o registro (1 - Orcamento; 2 - Venda; 3 - Venda Front Loja)
 Local nI		:= 0	// Contador
+Local lTotvsPDV := STFIsPOS()
 
 DEFAULT nTipo := 0	//Usando somente para o SIGALOJA
 
@@ -1100,10 +1100,15 @@ If T_DroLenANVISA() > 0
 		REPLACE LK9_CIDPA	WITH aANVISA[nCont][CIDPA] 
 		REPLACE LK9_QUANTP  WITH aANVISA[nCont][QUANTP]
 		REPLACE LK9_TPCAD	WITH "2"
-		//campos de seguranca
-		REPLACE LK9_USVEND  WITH IIF(!Empty(SL1->L1_USVENDA),SL1->L1_USVENDA,cUserName)	//No F4, não preciso mais digitar usuário e a senha do supervisor, somente o login do usuário.		
-		//campos de seguranca
-		REPLACE LK9_USAPRO  WITH SL1->L1_USAPROV	//cCaixaSup
+		
+		//campos de seguranca - L1_USVENDA e L1_USAPROV
+		If lTotvsPDV
+			REPLACE LK9_USVEND  WITH IIF(!Empty(STDGPBasket("SL1","L1_USVENDA")),STDGPBasket("SL1","L1_USVENDA"),cUserName)	//No F4, não preciso mais digitar usuário e a senha do supervisor, somente o login do usuário.
+			REPLACE LK9_USAPRO  WITH STDGPBasket("SL1","L1_USAPROV")	//cCaixaSup
+		Else
+			REPLACE LK9_USVEND  WITH IIF(!Empty(SL1->L1_USVENDA),SL1->L1_USVENDA,cUserName)	//No F4, não preciso mais digitar usuário e a senha do supervisor, somente o login do usuário.
+			REPLACE LK9_USAPRO  WITH SL1->L1_USAPROV	//cCaixaSup
+		EndIf
 
 		//Gravação de Campos de Usuario
 		If Len(aLK9Usr) > 0
@@ -1115,11 +1120,8 @@ If T_DroLenANVISA() > 0
 		LK9->( MsUnLock() )
 	Next nCont
 Endif
-
                                                 
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Inicializacao das variaveis do tipo STATIC para a proxima venda³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//Inicializacao das variaveis do tipo STATIC para a proxima venda
 aSize(aANVISA,0)						//Array que armazena os Logs da ANVISA
 aSize(aAuxANVISA,0)						//Array Auxiliar que armazena os Logs da ANVISA
 
@@ -1370,7 +1372,8 @@ Return lRet
 Template Function DROVldInfo()
 Local cCampo 	:= AllTrim(Substr(ReadVar(),4))    //Campo a ser validado
 Local cX3_VALID := ""								//Validacao a ser executada
-Local lMvLjPdvPa:= LjxBGetPaf()[2] //Indica se é pdv
+Local lTotvsPDV := STFIsPOS()
+Local lMvLjPdvPa:= IIf(lTotvsPDV,STBIsPAF(),LjxBGetPaf()[2]) //Indica se é pdv
 Local xRet		:= NIL  
 
 SX3->( DbSetOrder( 2 ) )
@@ -1482,11 +1485,28 @@ Local nIndex    := 0		//Indice a ser utilizado
 Local nTamLK9DOC:= 0        // Tamanho do campo LK9_DOC
 Local cChaveSL1 := ""		//Expressao para chave SL1
 Local cChaveLK9 := ""		//Expressao para chave LK9
+Local dL1Emissao:= CtoD("")
+Local cL1Num	:= ""
+Local cL1Doc	:= ""
+Local cL1Serie  := ""
+Local lTotvsPDV := STFIsPOS()
 
 DEFAULT lExecuta := .T.
 DEFAULT lJob	 := .F.	   
 
-If AliasIndic("LK9")
+If TableInDic("LK9")
+	If lTotvsPDV
+		dL1Emissao := STDGPBasket('SL1','L1_EMISSAO')
+		cL1Num     := STDGPBasket('SL1','L1_NUM')
+		cL1Doc     := STDGPBasket('SL1','L1_DOC')
+		cL1Serie   := STDGPBasket('SL1','L1_SERIE')
+	Else
+		dL1Emissao := SL1->L1_EMISSAO
+		cL1Num     := SL1->L1_NUM
+		cL1Doc     := SL1->L1_DOC
+		cL1Serie   := SL1->L1_SERIE
+	EndIf
+
 	If lExecuta      
 
 		nTamLK9DOC:= TamSx3("LK9_DOC")[1]
@@ -1494,16 +1514,16 @@ If AliasIndic("LK9")
 		If nModulo == 12
 			If lJob
 				nIndex := 1
-				cChaveSL1 := xFilial("LK9")+DtoS(SL1->L1_EMISSAO)+Subs(SL1->L1_DOC,1,nTamLK9DOC)+SL1->L1_SERIE
+				cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+Subs(cL1Doc,1,nTamLK9DOC)+cL1Serie
 				cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_DOC+LK9_SERIE'		
 			Else
 				nIndex := 4
-				cChaveSL1 := xFilial("LK9")+DtoS(SL1->L1_EMISSAO)+SL1->L1_NUM
+				cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+cL1Num
 				cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_NUMORC'
 			Endif	
 		ElseIf nModulo == 23
 			nIndex := 1
-			cChaveSL1 := xFilial("LK9")+DtoS(SL1->L1_EMISSAO)+Subs(SL1->L1_DOC,1,nTamLK9DOC)+SL1->L1_SERIE
+			cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+Subs(cL1Doc,1,nTamLK9DOC)+cL1Serie
 			cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_DOC+LK9_SERIE'
 		Endif
 	 	DbSelectArea("LK9")
@@ -1519,12 +1539,12 @@ If AliasIndic("LK9")
 					ElseIf LK9->LK9_STATUS == "1" .OR. LK9->LK9_STATUS == "3"
 						LK9->(DbDelete())
 					Endif
-                                                                                    // Sem Venda
-				ElseIf FunName()=="RPC:JOB"  .AND. Alltrim(SL1->L1_DOC) <> "" .AND. LK9->LK9_STATUS == "1"
+                                                                              // Sem Venda
+				ElseIf FunName()=="RPC:JOB"  .AND. Alltrim(cL1Doc) <> "" .AND. LK9->LK9_STATUS == "1"
 					REPLACE LK9->LK9_STATUS WITH "2"
-					REPLACE LK9->LK9_DOC    WITH SL1->L1_DOC
-					REPLACE LK9->LK9_SERIE  WITH SL1->L1_SERIE                      // Com Venda
-				ElseIf FunName()=="RPC:JOB"  .AND. Alltrim(SL1->L1_DOC) <> "" .AND. LK9->LK9_STATUS == "2"
+					REPLACE LK9->LK9_DOC    WITH cL1Doc
+					REPLACE LK9->LK9_SERIE  WITH cL1Serie                      // Com Venda
+				ElseIf FunName()=="RPC:JOB"  .AND. Alltrim(cL1Doc) <> "" .AND. LK9->LK9_STATUS == "2"
 					REPLACE LK9->LK9_STATUS WITH "1"
 					REPLACE LK9->LK9_DOC    WITH ""
 					REPLACE LK9->LK9_SERIE  WITH ""
@@ -1841,6 +1861,9 @@ Template Function DroRestANVISA()
 Local nLinha	:= 0			//Linha do array a ser utilizada
 Local nI		:= 0
 Local aDroPELK9 := {}
+Local cL1Num	:= ""
+Local dL1Emissao:= ""
+Local lTotvsPDV := STFIsPOS()
 
 // verifica se possui campo de usuario
 If ExistBlock("DROPELK9")
@@ -1854,23 +1877,29 @@ EndIf
 
 aANVISA	   := {}			//Inicializa o array aANVISA
 aAuxANVISA := {}			//Inicializa o array Auxiliar aANVISA
-
 aLK9Usr	   := {}
 aAuxLK9Usr := {}
 
+//JULIOOOOO - tratar aqui para capturar o Basket no TOTVSPDV
+If lTotvsPDV
+	dL1Emissao := STDGPBasket("SL1","L1_EMISSAO")
+	cL1Num	   := STDGPBasket("SL1","L1_NUM")
+Else
+	dL1Emissao := SL1->L1_EMISSAO
+	cL1Num     := SL1->L1_NUM
+EndIf
+
 DbSelectArea("LK9")
-LK9->( DbSetOrder(4) )	//FILIAL+DATA+NUMORC
-If LK9->( DbSeek(xFilial("SL1") + DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM) )
-	While LK9->(!EoF()) .AND. (LK9_FILIAL + DtoS(LK9_DATA) + LK9_NUMORC == xFilial("SL1")+DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM)
+LK9->( DbSetOrder(4) )	//LK9_FILIAL + LK9_DATA + LK9_NUMORC
+If LK9->( DbSeek(xFilial("SL1") + DtoS(dL1Emissao) + cL1Num) )
+	While LK9->(!EoF()) .AND. (LK9_FILIAL + DtoS(LK9_DATA) + LK9_NUMORC == xFilial("SL1")+DtoS(dL1Emissao) + cL1Num)
 
 		aAdd(aANVISA, ARRAY(TAMANVISA))
 		aAdd(aLK9Usr, {})
 
 		nLinha := T_DroLenANVISA()
 
-		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-		//³Restaurando o array aANVISA³
-		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		//***** Restaurando o array aANVISA *****//
 		aANVISA[nLinha][NUMORC]     := LK9->LK9_NUMORC
 		aANVISA[nLinha][NUMDOC]     := LK9->LK9_DOC
 		aANVISA[nLinha][SERIE]      := LK9->LK9_SERIE
@@ -1914,10 +1943,9 @@ If LK9->( DbSeek(xFilial("SL1") + DtoS(SL1->L1_EMISSAO) + SL1->L1_NUM) )
 	End
 
 	aAuxANVISA := {ARRAY(TAMAUXANVISA)}
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³Restaurando o array aAuxANVISA (refente a informacoes do cliente, medico, receita)³
-	//³Sempre restaura com as informacoes do ultimo item informado na venda              |
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	
+	/*Restaurando o array aAuxANVISA (refente a informacoes do cliente, medico, receita)
+	  Sempre restaura com as informacoes do ultimo item informado na venda            */
 	aAuxANVISA[1][NOME]			:= aANVISA[nLinha][NOME]      //1		Nome do cliente
 	aAuxANVISA[1][TIPOID]		:= aANVISA[nLinha][TIPOID]    //2		Tipo de identificacao do cliente
 	aAuxANVISA[1][NUMID]		:= aANVISA[nLinha][NUMID]     //3		Numero de identificacao do cliente
@@ -3536,12 +3564,12 @@ Default cloja    := ""
 
 If nModulo == 12 .AND. AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) <> cClip + cLojP
 	SA1->(DbSetOrder(1))
-	If SA1->(DbSeek(xFilial("SA1") + AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA) ) ) .AND. cCliP+cLojP <> AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA)
+	If SA1->(DbSeek(xFilial("SA1") + PadR(AllTrim(M->LQ_CLIENTE),TamSx3("A1_COD")[1])+ AllTrim(M->LQ_LOJA) ) ) .AND. cCliP+cLojP <> AllTrim(M->LQ_CLIENTE)+ AllTrim(M->LQ_LOJA)
 		lAchou := .T.
 	Endif
 ElseIf nModulo == 23 .AND. cCliente + cLoja  <> cClip + CLojP
 	SA1->(DbSetOrder(1))
-	If SA1->(DbSeek(xFilial("SA1") + AllTrim(cCliente)+ AllTrim(cLoja) ) ) .AND. cCliP+cLojP <> AllTrim(cCliente)+ AllTrim(cLoja)
+	If SA1->(DbSeek(xFilial("SA1") + PadR(AllTrim(cCliente),TamSx3("A1_COD")[1])+ AllTrim(cLoja) ) ) .AND. cCliP+cLojP <> AllTrim(cCliente)+ AllTrim(cLoja)
 		lAchou := .T.
 	EndIf	
 EndIf
@@ -3632,18 +3660,12 @@ EndIf
 
 Return lRet
 
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*---------------------------------------------------------------------------
 ±±³Fun‡„o    ³LjLogDro  ³ Autor ³ Vendas Clientes       ³ Data ³ 13/07/12 ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Verifica se existe orcamento em aberto vencido para       ³±±
-±±³            limpeza do log anvisa                                     ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+±±³Descricao ³ Verifica se existe orcamento em aberto vencido para        ³±±
+±±³            limpeza do log anvisa                                      ³±±
+---------------------------------------------------------------------------*/
 Function LjLogDro()
 Local cQuery	:= ""				// Variavel a ser utilizada na query
 Local lUsaQuery	:= .F.				// Verifica se o sistema esta trabalhando com Query
@@ -3728,14 +3750,11 @@ If Len(aLogDro) > 0
 
         SL1->(dbGoTo(aLogDro[nX][1]))
 		
-		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-		//³Chama funcao para cancelamento dos Logs Anvisa³
-		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-        If (ExistTemplate("LJ140EXC"))
+		//|Chama funcao para cancelamento dos Logs Anvisa|
+        If ExistTemplate("LJ140EXC")
 			ExecTemplate("LJ140EXC",.F.,.F.,{.F.})
-        EndIf 
-		
-	Next
+        EndIf
+	Next nX
 
     If lUsaQuery
 	   EndTran()
@@ -3925,11 +3944,15 @@ Template Function DroGrvUs()
 Local lRet		:= .T.
 Local lProfile42:= .F.
 Local lTotvsPDV := STFIsPOS()
-Local cMsg := "Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro."
+Local cMsg 		:= "Usuário não é um Farmaceutico. Não poderá efetuar manutenção neste cadastro."
+Local aProfile42:= {}
 
 // permissao para manupilar remedios controlados (template drogaria)
 If lTotvsPDV
-	lProfile42 := STFPROFILE(42)
+	cCaixaSup := Space(25)  // limpa a variavel estatica
+	aProfile42 := STFPROFILE(42)
+	lProfile42 := aProfile42[1]
+	cCaixaSup  := aProfile42[2]
 Else
 	cCaixaSup := Space(25)  // limpa a variavel estatica
 	lProfile42 := LJProfile(42,@cCaixaSup)
@@ -4028,10 +4051,8 @@ Return lRet
 ±±ºRetorno   ³.T.                    	                                      º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroXmlANVISA(cTipXml,cCpf,cCaixaSup)
-
 Local aArea   	:= GetArea()	  			//Area Atual
-Local cDesc		:= "" 
-Local cUsuario	:= "" 
+Local cDesc		:= ""
 
 DEFAULT cTipXml	:= ""
 DEFAULT cCpf	:= ""
@@ -5340,7 +5361,6 @@ Return
 Restaura as informações referentes a ANVISA para dar continuidade a venda
 
 @owner  	Varejo
-
 @author  	Varejo
 @version 	V12
 @since   	06/04/2017 
@@ -5428,7 +5448,6 @@ If lRet
 			M->&(aLK9Usr[nLinha][nI][1]) := aLK9Usr[nLinha][nI][2]
 		Next
 	EndIf
-
 EndIf
 
 Return lRet

@@ -202,10 +202,16 @@ If lRet
 		aSL1 := {{"L1_SITUA",	"00"}}
 		STFSaveTab( "SL1" , aSL1 )
 
-		If (ExistFunc("LjIsDro") .And. LjIsDro()) .And. ExistTemplate("FRTCancela")
-			aSTBDroVar := STBDroVars(.T.)
-			aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,cSupervisor,,aSTBDroVar[1]})
-			STBDroVars(.F.,.T.,aSTBDroVar[1],NIL)
+		If (ExistFunc("LjIsDro") .And. LjIsDro())			
+			If ExistTemplate("FRTCancela")
+				aSTBDroVar := STBDroVars(.T.)
+				aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,cSupervisor,,aSTBDroVar[1]})
+				STBDroVars(.F.,.T.,aSTBDroVar[1],NIL)
+			EndIf
+
+			//JULIOOOOO - continuar daqui validando se terá exclusão da LK9
+			//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
+			T_DROCancANVISA()
 		EndIf
 		
 		If !STbIsPaf() // o PAF grava a SLX no comando do cancelamento do ECF
