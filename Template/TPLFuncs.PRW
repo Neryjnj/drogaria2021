@@ -180,16 +180,16 @@ Endif
 
 Return
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบPrograma  ณTPLConPad บAutor  ณCarlos A. Gomes Jr. บ Data ณ  01/04/04   บฑฑ
-ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDesc.     ณ Funcao de pesquisa de dados na tabela especial.            บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+/*-----------------------------------------------------------------------
+|Programa  |TPLConPad |Autor  |Carlos A. Gomes Jr. | Data |  01/04/04   |
+|-----------------------------------------------------------------------|
+|Desc.     | Funcao de pesquisa de dados na tabela especial.            |
+-----------------------------------------------------------------------*/
 Template Function TPLConPad(cCampo)
 Local oTplCon, oBtn1, oBtn2, oBtn3, oBtn4, oBtn5, oBrw
 Local lTotvsPDV := STFIsPOS()
 Local cTabela	:= Space(2)
-Local cReturn	:= IIf(lTotvsPDV,"",&(ReadVar())) //JULIOOOOO - validar aqui
+Local cReturn	:= &(ReadVar()) //IIf(lTotvsPDV,"",&(ReadVar())) //JULIOOOOO - validar aqui
 Local cFind		:= Space(55)
 Local cTitulo	:= Space(55)
 Local cOrdem	:= "Chave"

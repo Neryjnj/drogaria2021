@@ -347,7 +347,9 @@ EndIf
 //³Ponto de entrada para calculo do % de desconto a ser aplicado³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 If lTPLDRO01
+	LjGrvLog("TPL_DRO","Antes da execução do PE TPLDRO01", {cCodProd, nDescPer, _uCliTPL})
 	nAuxPDesc := U_TPLDRO01( cCodProd, nDescPer, _uCliTPL ) //Produto, % Desconto, Regra de Desconto
+	LjGrvLog("TPL_DRO","Depois da execução do PE TPLDRO01", nAuxPDesc)
 	If ValType(nAuxPDesc) == "N"
 		nDescPer := nAuxPDesc
 	Endif
@@ -430,20 +432,18 @@ If T_DroVerCont( cCodProd ) .And. !lVidaLink
 		EndIf
 		
 		If  !lJaChamouANVISA .AND. !_lImpOrc   
-			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-			//³Chamada a tela para acrescentar informacoes³
-			//³do medicamento controlado                  ³
-			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			//---------------------------------------------
+			//|Chamada a tela para acrescentar informacoes|
+			//|do medicamento controlado                  |
+			//---------------------------------------------
 			If !T_DroVSNGPC( .F.		, .T.	,cClient	,cLojaCl	,;
 							@cClassTe	,nItem	, 			,  lInfoAnvisa, ;
 							lJaAnvisa, _nPosItem,lPermTelAnv)
 				lCancANVISA := .T.	
 			Endif	
 			lJaChamouANVISA := .F.
-		Else 
-			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-			//³Acrescenta informacoes do item no array temporario da ANVISA³
-			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		Else
+			//| Acrescenta informacoes do item no array temporario da ANVISA |
 			T_DroAddANVISA( .F., NIL, .F. )
 		Endif
 	Else
@@ -473,8 +473,7 @@ Local lTotvsPDV	:= STFIsPos()
 Local oModelCesta:= Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[15],NIL)		//Para TOTVSPDV enviar o model
 Local nItemModel := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[16],0)			//Para TOTVSPDV enviar o nItem
 
-/*verificamos se o sistema possui a licenca de
- Integracao Protheus x SIAC ou de Template de Drogaria*/
+/*verificamos se o sistema possui a licenca de Integracao Protheus x SIAC ou de Template de Drogaria*/
 T_DROLCS()
 
 If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] > Len(_uProdTPL))

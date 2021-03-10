@@ -925,32 +925,32 @@ Return
 ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
 Template Function DroAltANVISA( cCodProd  , nQuant, cDoc, cSerie,;
 								nCodANVISA  )   
-Local nLinha     := 0						//Posicao do array a ser utilizada
-Local cAlias     := ""						//Alias
-Local cUM	     := ""						//Unidade de Medida do produto		
-Local cDescProd  := ""						//Descricao do produto	
-Local cRegMS     := ""						//Registro do Ministerio da Saude
+Local nLinha    := 0						//Posicao do array a ser utilizada
+Local cAlias    := ""						//Alias
+Local cUM	    := ""						//Unidade de Medida do produto		
+Local cDescProd := ""						//Descricao do produto	
+Local cRegMS    := ""						//Registro do Ministerio da Saude
 Local cClassTer := ""						//Classe Terapeutica
+Local lTotvsPDV := STFIsPOS()
 
 If ValType(nCodANVISA) == "C"
 	nCodANVISA := Val(nCodANVISA)
 Endif
 
 If T_DroLenANVISA() > 0 
-	If nModulo == 23
+	If nModulo == 23 .And. !lTotvsPDV
 		cAlias := "SBI"
 	Else
 		cAlias := "SB1"
 	Endif
 	
-	DbSelectArea(cAlias)                 
+	DbSelectArea(cAlias)    
 	DbSetOrder(1)
-	If DbSeek(xFilial(cAlias) + cCodProd)  
+	If DbSeek(xFilial(cAlias) + cCodProd)
 		cUM 	  := &(Substr(cAlias,2,2)+"_UM")
 		cDescProd := &(Substr(cAlias,2,2)+"_DESC")
 		cRegMS    := &(Substr(cAlias,2,2)+"_REGMS")
 		cClassTer := &(Substr(cAlias,2,2)+"_CLASSTE")
-		
 	Endif
 	
 	If AllTrim(cClassTer) == ""
@@ -962,11 +962,8 @@ If T_DroLenANVISA() > 0
 	//ฺฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฟ
 	//ณAdiciona informacoes do produto registradoณ
 	//ภฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤู
-	
-	aANVISA[nLinha][PRODUTO]  := cCodProd	  		//Codigo do produto 
-	
-	aANVISA[nLinha][REGMS]    := cRegMS	    		//Registro do produto no Ministerio da Saude
-		
+	aANVISA[nLinha][PRODUTO]  := cCodProd	  		//Codigo do produto
+	aANVISA[nLinha][REGMS]    := cRegMS	    		//Registro do produto no Ministerio da Saude		
 	aANVISA[nLinha][QTDEPROD] := nQuant	 		 	//Quantidade 
 	aANVISA[nLinha][NUMDOC]   := cDoc		 		//Numero do Documento
 	aANVISA[nLinha][SERIE]    := cSerie	 			//Serie do Documeto
@@ -1497,6 +1494,7 @@ DEFAULT lJob	 := .F.
 If TableInDic("LK9")
 	If lTotvsPDV
 		dL1Emissao := STDGPBasket('SL1','L1_EMISSAO')
+		dL1Emissao := Iif(ValType(dL1Emissao) == "C", CtoD(dL1Emissao) , dL1Emissao )
 		cL1Num     := STDGPBasket('SL1','L1_NUM')
 		cL1Doc     := STDGPBasket('SL1','L1_DOC')
 		cL1Serie   := STDGPBasket('SL1','L1_SERIE')
@@ -1586,6 +1584,7 @@ Local nLinha	 := 0		//Linha do aANVISA
 Local cRegMS     := ""		//Registro do Ministerio da Saude
 Local cClassTer	 := ""      // Classe Terapeutica
 Local nI		 := 0
+Local lTotvsPDV  := STFIsPOS()
 
 Default lF12 := .F.
 
@@ -1593,7 +1592,7 @@ If ValType(nItem) == "C"
 	nItem := Val(nItem)
 Endif
 
-If NMODULO == 12
+If NMODULO == 12 .Or. lTotvsPDV
 	DbSelectArea("SB1")                 
 	SB1->( DbSetOrder(1) )
 	SB1->( DbSeek(xFilial("SB1") + cCodProd) )
@@ -1709,7 +1708,9 @@ If lTela .OR. lAtalho
 	
 	// verifica se possui campo de usuario
 	If ExistBlock("DROPELK9")
+		LjGrvLog("TPL_DRO", "Antes de executar o PE DROPELK9")
 		aDroPELK9 := ExecBlock("DROPELK9",.F.,.F.,{{}})
+		LjGrvLog("TPL_DRO", "Depois de executar o PE DROPELK9",aDroPELK9)
 		If ValType(aDroPELK9) <> "A"
 			aDroPELK9 := {}
 		EndIf
@@ -1773,10 +1774,8 @@ If nPosId > 0
 Endif 
 
 Return lRet
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออออออหอออออออัออออออออออออออออออออหออออออัออออออออออออปฑฑ
+
+/*------------------------------------------------------------------------------
 ฑฑบPrograma  ณDroPosANVISA  บAutor  ณVendas Clientes     บ Data ณ  20/12/06  บฑฑ
 ฑฑฬออออออออออุออออออออออออออสอออออออฯออออออออออออออออออออสออออออฯออออออออออออนฑฑ
 ฑฑบDesc.     ณRetorna a posicao do ID no array ANVISA                        บฑฑ
@@ -1788,10 +1787,7 @@ Return lRet
 ฑฑบParametrosณExpN1 - Codigo do item                                         บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณExpN1 - Posicao do item no array aANVISA	                     บฑฑ
-ฑฑศออออออออออฯอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+------------------------------------------------------------------------------*/
 Template Function DroPosANVISA(nItem)
 Local nPosId	:= 0		//Posicao do item no array aANVISA	
 
@@ -1867,9 +1863,9 @@ Local lTotvsPDV := STFIsPOS()
 
 // verifica se possui campo de usuario
 If ExistBlock("DROPELK9")
-	LjGrvLog("DROVLDFUNCS","Antes da execu็ใo do PE DROPELK9")
+	LjGrvLog("TPL_DRO","Antes da execu็ใo do PE DROPELK9")
 	aDroPELK9 := ExecBlock("DROPELK9",.F.,.F.,{{}})
-	LjGrvLog("DROVLDFUNCS","Depois da execu็ใo do PE DROPELK9",aDroPELK9)
+	LjGrvLog("TPL_DRO","Depois da execu็ใo do PE DROPELK9",aDroPELK9)
 	If ValType(aDroPELK9) <> "A"
 		aDroPELK9 := {}
 	EndIf
@@ -1880,7 +1876,6 @@ aAuxANVISA := {}			//Inicializa o array Auxiliar aANVISA
 aLK9Usr	   := {}
 aAuxLK9Usr := {}
 
-//JULIOOOOO - tratar aqui para capturar o Basket no TOTVSPDV
 If lTotvsPDV
 	dL1Emissao := STDGPBasket("SL1","L1_EMISSAO")
 	cL1Num	   := STDGPBasket("SL1","L1_NUM")
@@ -4310,17 +4305,24 @@ Efetua altera็๕es do dicionแrio para essa release
 Template Function LjDrAjSX()
 Local lExecFunc	:= ExistFunc("EngSX3117")
 Local aDadosDic	:= {}
-Local cUsadoOpc	:= "€€€€€€€€€€€€€€ "
-Local cAUsado	:= "€€€€€€€€€€€€€€ฐ"
-Local cX3aRESERV:= "þภ"
-Local cX3bRESERV:= "“€"
-Local cX3cRESERV:= "’ภ"
-Local cX3dRESERV:= "€€"
-Local cX3eRESERV:= "–ภ"
-Local cX3fRESERV:= "€"
+Local cUsadoOpc	:= ""//"€€€€€€€€€€€€€€ "
+Local cAUsado	:= "" //"€€€€€€€€€€€€€€ฐ"
+Local cX3aRESERV:= "" //"þภ"
+Local cX3bRESERV:= "" //"“€"
+Local cX3cRESERV:= "" //"’ภ"
+Local cX3dRESERV:= "" //"€€"
+Local cX3eRESERV:= "" //"–ภ"
+Local cX3fRESERV:= "" //"€"
 Local cAux		:= ""
 
 If lExecFunc
+	cUsadoOpc := GetSx3Cache("A1_CEP","X3_USADO")	
+	cAUsado   := GetSx3Cache("A1_COD","X3_USADO")	
+	cX3aRESERV:= GetSx3Cache("A1_CBO","X3_RESERV")
+	cX3bRESERV:= GetSx3Cache("A1_NOME","X3_RESERV")
+	cX3cRESERV:= GetSx3Cache("A1_CEP","X3_RESERV")
+	cX3fRESERV:= GetSx3Cache("A1_COD","X3_RESERV")
+
 	LjGrvLog( Nil,"Fun็ใo de Ajuste de Dicionแrio do Template")
 	
 	If AliasInDic("MHA")

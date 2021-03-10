@@ -558,7 +558,7 @@ If lContinua
 		EndIf 
 	Next nX
 	
-	If lDrVlApro 		//Se veio da tela de aprovação de medicamentos, eu passo para o array aAnvisa. O SL1 está ponteirado de acordo com o orçamento
+	If lDrVlApro //Se veio da tela de aprovação de medicamentos, eu passo para o array aAnvisa. O SL1 está ponteirado de acordo com o orçamento
 		T_DroRestAnvisa()
 		T_DroItemAnvisa(1,cProd)
 	EndIf 
