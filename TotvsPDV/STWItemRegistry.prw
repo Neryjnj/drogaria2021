@@ -318,12 +318,12 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		EndIf
 	EndIf
 
-	//Identifica se o item encontrado eh um Item Agrupador,
+	//Identifica se o item encontrado eh um Item Agrupador (Kit de Produtos),
 	//onde somente seus filhos serao inclusos na venda.
 	If lRet
 		lRet := STWItemClustered(aInfoItem)
 		If !lRet
-			LjGrvLog(cL1Num,"Item de KIT (B1_TIPO = KT)")
+			LjGrvLog(cL1Num,"Registro de KIT")
 			lKitMaster := .T.
 		EndIf
 	EndIf

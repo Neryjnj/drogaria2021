@@ -1239,19 +1239,26 @@ Local cCodProd := ParamIxb[1]
 Local aAreaAtu := GetArea()
 Local aAreaMHD := {}
 Local aAreaMHE := {}
+Local lTotvsPDV:= STFIsPOS() //Verifica se é Totvs PDV
 
 DbselectArea("MHD")
-aAreaMHD := GetArea()
+aAreaMHD := MHD->(GetArea())
 DbSetOrder(1)
 If DbSeek(xFilial("MHD")+cCodProd)
 	DbselectArea("MHE")
-	If Empty(aAreaMHE)
-		aAreaMHE := GetArea()
-	EndIf
+	aAreaMHE := MHE->(GetArea())
 	DbSetOrder(1)
 	DbSeek(xFilial("MHE")+MHD->MHD_PRODUT)
 	While !Eof() .AND. (MHE->MHE_FILIAL+MHE->MHE_PRODUT == xFilial("MHE")+MHD->MHD_PRODUT)
-		AAdd(aRet,{MHE->MHE_CODCOM,MHE->MHE_QUANT})
+		//Para o Totvs PDV a estrutura de retorno do Array é diferente
+		If lTotvsPDV
+			AAdd(aRet,	{ MHE->MHE_CODCOM,;		//01-Codigo do Componente/Produto
+										0,;		//02-Desconto no Item do Kit
+						   MHE->MHE_QUANT})		//03-Quantidade
+		Else
+			AAdd(aRet,	{ MHE->MHE_CODCOM,;		//01-Codigo do Componente/Produto
+						   MHE->MHE_QUANT})		//02-Quantidade
+		EndIf
 		dbSkip()
 	End
 EndIf
