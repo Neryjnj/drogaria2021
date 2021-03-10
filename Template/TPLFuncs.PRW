@@ -180,21 +180,19 @@ Endif
 
 Return
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±ºPrograma  ³TPLConPad ºAutor  ³Carlos A. Gomes Jr. º Data ³  01/04/04   º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºDesc.     ³ Funcao de pesquisa de dados na tabela especial.            º±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+/*-----------------------------------------------------------------------
+|Programa  |TPLConPad |Autor  |Carlos A. Gomes Jr. | Data |  01/04/04   |
+|-----------------------------------------------------------------------|
+|Desc.     | Funcao de pesquisa de dados na tabela especial.            |
+-----------------------------------------------------------------------*/
 Template Function TPLConPad(cCampo)
-
 Local oTplCon, oBtn1, oBtn2, oBtn3, oBtn4, oBtn5, oBrw
+Local lTotvsPDV := STFIsPOS()
 Local cTabela	:= Space(2)
-Local cReturn	:= &(ReadVar())
+Local cReturn	:= &(ReadVar()) //IIf(lTotvsPDV,"",&(ReadVar())) //JULIOOOOO - validar aqui
 Local cFind		:= Space(55)
 Local cTitulo	:= Space(55)
 Local cOrdem	:= "Chave"
-Local aColsLXB	:= {}
-Local aHeadLXB	:= {}
 Local cSeek		:= ""
 Local cWhile	:= ""
 Local cBline	:= ""
@@ -204,7 +202,6 @@ Local aLin		:= {}
 Local aTam		:= {}
 Local aCpo		:= {}
 Local cFiltro	:= ""
-Local cFiltro2	:= Space(60)
 Local lBotInc	:= .F.
 Local nI		:= 0
 
@@ -254,25 +251,25 @@ Next nI
 
 DEFINE MSDIALOG oTplCon TITLE STR0020+cTitulo FROM 4,3 TO 20,60 //"Consulta Template - "
 
-oBrw := TWBrowse():New( 12, 12, 170, 70,,aCab,aTam,oTPLCon,,,,,,,,,,,,,,.T.)
-oBrw:SetArray(aLin)
-oBrw:bLine:=&("{ ||" + cBLine + "} }")
-oBrw:bLDblClick :={|| cReturn := ConRet(oBrw,aLin), oTplCon:End() }
+	oBrw := TWBrowse():New( 12, 12, 170, 70,,aCab,aTam,oTPLCon,,,,,,,,,,,,,,.T.)
+	oBrw:SetArray(aLin)
+	oBrw:bLine:=&("{ ||" + cBLine + "} }")
+	oBrw:bLDblClick :={|| cReturn := ConRet(oBrw,aLin), oTplCon:End() }
 
-oBtn1  := SButton():New(10,190, 1, {|| cReturn := ConRet(oBrw,aLin), oTplCon:End() },,)
-oBtn2  := SButton():New(23,190, 2, {|| oTplCon:End() },,)
-oBtn3  := SButton():New(36,190, 4, {|| LX5->(DbSeek(xFilial()+"00"+cTabela)), T_TelaLx5(,,4) },,lBotInc)
-oBtn4  := SButton():New(49,190,15, {|| LX5->(DbSeek(xFilial()+"00"+cTabela)), T_TelaLx5(,,2) },,)
-oBtn5  := SButton():New(62,190,17, {|| .T. },,.F.)
+	oBtn1  := SButton():New(10,190, 1, {|| cReturn := ConRet(oBrw,aLin), oTplCon:End() },,)
+	oBtn2  := SButton():New(23,190, 2, {|| oTplCon:End() },,)
+	oBtn3  := SButton():New(36,190, 4, {|| LX5->(DbSeek(xFilial()+"00"+cTabela)), T_TelaLx5(,,4) },,lBotInc)
+	oBtn4  := SButton():New(49,190,15, {|| LX5->(DbSeek(xFilial()+"00"+cTabela)), T_TelaLx5(,,2) },,)
+	oBtn5  := SButton():New(62,190,17, {|| .T. },,.F.)
 
-oCbox  := TComboBox():New(7,6,,{STR0009,STR0021}, 130, 10, oTplCon) //"Chave"###"Descrição"
-oCbox:bSetGet := {|u| If(PCount()>0,cOrdem:=u,cOrdem) }
-oCbox:bChange:={|| Ordena(cOrdem,@oBrw,aLin) }
+	oCbox  := TComboBox():New(7,6,,{STR0009,STR0021}, 130, 10, oTplCon) //"Chave"###"Descrição"
+	oCbox:bSetGet := {|u| If(PCount()>0,cOrdem:=u,cOrdem) }
+	oCbox:bChange:={|| Ordena(cOrdem,@oBrw,aLin) }
 
-oSay1  := IW_Say( 92,12,STR0022,,,,,) //"Pesquisa por:"
-oSay2  := IW_Say(104,12,STR0023,,,,,) //"Localizar"
-oGet1  := IW_Edit(104,48,cFind,"@!",130,10,,,,,,{|x| Iif(PCount()>0,cFind := x,cFind)} )
-oGet1:bChange := {|| ConPesq(@oBrw,cFind,aLin,cOrdem) }
+	oSay1  := IW_Say( 92,12,STR0022,,,,,) //"Pesquisa por:"
+	oSay2  := IW_Say(104,12,STR0023,,,,,) //"Localizar"
+	oGet1  := IW_Edit(104,48,cFind,"@!",130,10,,,,,,{|x| Iif(PCount()>0,cFind := x,cFind)} )
+	oGet1:bChange := {|| ConPesq(@oBrw,cFind,aLin,cOrdem) }
 
 ACTIVATE MSDIALOG oTplCon
 

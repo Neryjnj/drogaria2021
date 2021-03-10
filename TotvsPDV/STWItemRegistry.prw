@@ -145,7 +145,7 @@ EndIf
 lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 
 /*Tratamento VidaLINK*/
-If ExistFunc("STGDadosVL")
+If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
 	If aDadoVLink[3] == 1
 		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
@@ -195,7 +195,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		/***** Busca preco do item caso nao tenha sido informada por parametro *********/
 		aAux := STBDroVars(.F.)
 		STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
-		
+		//JULIOOOOOOO - enviar o DOC da venda de outra forma pois não tem no basket
 		If ExistTemplate("FRTDESCIT")			
 			aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
 									aInfoItem[ITEM_CODIGO],Iif(cTypeDesc=="P",nDiscount,0),Iif(cTypeDesc=="V",nDiscount,0),nDroPrProd,;
@@ -632,7 +632,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					Else
 						//Se Conseguiu Abrir Cupom atualiza Cesta de Venda
 						LjGrvLog(cL1Num,"Abertura de Cupom Fiscal realizada com sucesso" )
-						STDSPBasket( "SL1" , "L1_SITUA"			, "02" 							)  // "02" - Impresso a Abertura do Cupom
+						STDSPBasket( "SL1" , "L1_SITUA"			, "02" )  // "02" - Impresso a Abertura do Cupom
 					EndIf
 				ElseIf lReceiptIsOpen
 					LjGrvLog(cL1Num,"Abertura do Cupom Fiscal já realizada" )
@@ -855,9 +855,9 @@ EndIf
 
 If lRet .And. lTPLDrogaria
 	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
-	aTPLCODB2 := 	{nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO")), AllTrim(STDGPBasket("SL2","L2_CODBAR")),;
-					 AllTrim(STDGPBasket("SL2","L2_DESC")), cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),;
-					 "", cValToChar(STDGPBasket("SL2","L2_VLRITEM")), "", "", .F.,""}
+	aTPLCODB2 := {nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO")), AllTrim(STDGPBasket("SL2","L2_CODBAR")),AllTrim(STDGPBasket("SL2","L2_DESC")),;
+				 cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),"", cValToChar(STDGPBasket("SL2","L2_VLRITEM")),;
+				 "", "", .F.,""}
 	aAux := STBDroVars(.F.)
 	AADD(aTPLCODB2,aAux[2]) //13- uProdCli
 	AADD(aTPLCODB2,aAux[1]) //14 - uCliTPL
@@ -888,8 +888,15 @@ If lRet .And. lTPLDrogaria
 		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]) )
 	EndIf
 
+	//JULIOOOOO - Validar daqui para gravar o dado da anvisa - parte presente no FRTA271A
+	If T_DroVerCont( AllTrim(STDGPBasket("SL2","L2_PRODUTO")) )
+		T_DroAltANVISA( AllTrim(STDGPBasket("SL2","L2_PRODUTO")), STBGetQuant(), cDoc, STFGetStation("SERIE"),;
+						nCodANVISA  )
+	Endif
+
 	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
-		STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR")), STDGPBasket("SL2","L2_QUANT"), .T., lItemPbm)
+		lRet := STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR")), STBGetQuant(), .T., lItemPbm)
+		LjGrvLog()
 	EndIf
 EndIf
 
