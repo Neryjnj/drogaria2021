@@ -124,11 +124,13 @@ T_DROLCS()
 //|na venda.                                                          |
 //---------------------------------------------------------------------
 If lTotvsPDV
-	aAreaSB1 := SB1->(GetArea()) //JULIOOOO - Continuar daqui capturando abaixo o conteudo do campo da B1 para TOTVSPDV
-	If ExistFunc("STWItRnPrice")
-		STWItRnPrice(@nVlrItem, STDGPBasket('SL1','L1_NUM'), /*aInfoItem*/, cClient,cLojaCl, 0, .T.,cCodProd)
-	Else
-		LjGrvLog(STDGPBasket('SL1','L1_NUM'),"Atualize o fonte STWItemRegistry - função STWItRnPrice não encontrada no RPO")
+	aAreaSB1 := SB1->(GetArea())
+	If nVlrItem <= 0
+		If ExistFunc("STWItRnPrice")
+			STWItRnPrice(@nVlrItem, STDGPBasket('SL1','L1_NUM'), /*aInfoItem*/, cClient,cLojaCl, 0, .T.,cCodProd)
+		Else
+			LjGrvLog(STDGPBasket('SL1','L1_NUM'),"Atualize o fonte STWItemRegistry - função STWItRnPrice não encontrada no RPO")
+		EndIf
 	EndIf
 	SB1->(DbSetOrder(1)) //B1_FILIAL + B1_COD
 	SB1->(DBSeek(xFilial("SB1") + cCodProd))
@@ -492,10 +494,7 @@ If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] 
 				_uCliTPL := SL1->L1_CPLFIDE
 			EndIf
 		EndIf
-		
-		//JULIOOOOOOOOOOOOOOOOO - continuar daqui
-		//Verificar se os campos L2_PONTOS/L2_DESC vem no model para funcionar o comando do TOTVSPDV
-		//Verificar se não desposiciona o item do model
+
 		If lTotvsPDV
 			If oModelCesta == NIL
 				AAdd(_uProdTPL,{_aAux[1],_aAux[2],STDGPBasket("SL2","L2_DESC",nItemModel),STDGPBasket("SL2","L2_PONTOS",nItemModel),.F.})

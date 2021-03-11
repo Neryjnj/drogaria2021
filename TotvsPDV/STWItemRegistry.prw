@@ -175,7 +175,6 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	EndIf
 EndIf
 
-
 //verifica se o item Fiscal/Não Fiscal Existe na Cesta
 lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 

@@ -381,8 +381,6 @@ If lRet
 			STBDroVars(.F.,.T.,aAux[1],aAux[2])
 		EndIf
 
-		//JULIOOOOOO - inserir uma validação como no front, que pergunta se o produto
-		//é de PBM mesm juntamente se esta numa venda PBM
 		/* Tratamento para a venda PBM*/
 		lL2_ITPBM := oModelCesta:HasField("L2_ITPBM")
 		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() .And. lL2_ITPBM .And. oModelCesta:GetValue("L2_ITPBM")

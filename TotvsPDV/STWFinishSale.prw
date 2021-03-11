@@ -645,6 +645,9 @@ If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 		lCancCup := .T.
 		oPBM := STBGetVPBM()
 		oPbm:ConfVend( .F. )
+		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM não confirmada - Venda será cancelada")
+		STFMessage("STFSCfmPBM", "ALERT", "PBM não confirmada portanto a venda será cancelada") //#"PBM não confirmada portanto a venda será cancelada"
+		STFShowMessage("STFSCfmPBM")
 	EndIf
 EndIf
 

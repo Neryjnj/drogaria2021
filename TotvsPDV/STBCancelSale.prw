@@ -1151,21 +1151,28 @@ RestArea(aArea)
 
 Return lRet
 
-/*/{Protheus.doc} STFimVnDro
-	Execução do PE Template e Cancelamento de Log da Anvisa (LK9)
+/*/{Protheus.doc} STCSCanDro
+	Execução do PE Template,Cancelamento de Log da Anvisa (LK9) e Cancelamento da PBM
 	@type  Function
 	@author Julio.Nery
 	@since 10/03/2021
 	@version 12
-	@param param, param_type, param_descr
+	@param aDados, array, {L1_DOC,L1_SERIE,L1_EMISSAO,L1_NUM}
 	@return NIL
 /*/
 Function STCSCanDro(aDados)
 Local aSTBDroVar := {}
+Local oPBM		 := NIL
 
 Default aDados := {}
 
 If ExistFunc("LjIsDro") .And. LjIsDro()
+	//Cancelamento da venda PBM, se houver
+	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+		oPBM := STBGetVPBM()
+		oPbm:ConfVend( .F. )
+	EndIf
+
 	If ExistFunc("STBDroVars") .And. ExistTemplate("FRTCancela")
 		aSTBDroVar := STBDroVars(.T.)
 		aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,STFProfile(42)[2],,aSTBDroVar[1]})
@@ -1174,6 +1181,9 @@ If ExistFunc("LjIsDro") .And. LjIsDro()
 	
 	//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
 	T_DROCancANVISA(,,aDados)
+	//JULIOOOO - achar no front aonde esta a limpeza do Array, por isso pus essa função mas não
+	//se deve continuar com essa função
+	T_DroDelANVISA(.T., NIL)
 EndIf
 
 Return NIL
