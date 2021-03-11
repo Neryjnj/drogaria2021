@@ -827,7 +827,7 @@ Local aInfCanSAT:= {}
 Local aCancel	:= STIGetCancel() 	//Retornar o array com as informacoes da venda a ser cancelada
 Local lDocNf	:= .F. 				//Indica se a venda que esta sendo cancelada eh nao fiscal
 Local aProfile	:= {} //Recebe o retorno do STFProfile
-Local aSTCSCanDro:= Array(2)
+Local aSTCSCanDro:= {}
 
 Default cGetCanc := ""
 Default cGetSerie := STFGetStation("SERIE")
@@ -873,7 +873,7 @@ If lRet .And. lEmitNFCe .And. !STBCSIsProgressSale() .And. !lUseSat
 	If STBSitCanc(cGetCanc, cGetSerie)
 		If !lDocNf
 			STICancelSale(cGetCanc, cGetSerie)
-			aSTCSCanDro := {cGetCanc , cGetSerie}
+			aSTCSCanDro := {cGetCanc , cGetSerie, STDGPBasket("SL1","L1_EMISSAO"), STDGPBasket("SL1","L1_NUM")}
 		Else
 			If ExistFunc('STWCancNF')
 				aProfile := STFProfile( 8 )
@@ -895,7 +895,7 @@ If lRet .And. lEmitNFCe .And. !STBCSIsProgressSale() .And. !lUseSat
 ElseIf lRet .And. lEmitNFCe .And. STBCSIsProgressSale()
 	/*Cancela venda quando configurado com nfc-e e esta em andamento*/
 	cDoc := STDGPBasket("SL1","L1_DOC")
-	aSTCSCanDro := {cDoc ,cGetSerie}
+	aSTCSCanDro := {cDoc ,cGetSerie, STDGPBasket("SL1","L1_EMISSAO"), STDGPBasket("SL1","L1_NUM")}
 	STWCancelSale(.T.,,,cDoc, "L1_NUM",,)
 	STIGridCupRefresh()
 	STIRegItemInterface()	
@@ -907,10 +907,9 @@ Else
 		DbSelectArea("SL1")
 		SL1->( DbSetOrder(2) )	//L1_FILIAL+L1_SERIE+L1_DOC+L1_PDV
 		If SL1->( DbSeek(xFilial("SL1") + STFGetStation("SERIE") + cGetCanc + STFGetStation("PDV")) )
-			aSTCSCanDro := {cGetCanc,cGetSerie}
+			aSTCSCanDro := {cGetCanc,cGetSerie,SL1->L1_EMISSAO, SL1->L1_NUM}
 			aInfCanSAT := STBCSCanCancel(cGetCanc)
-			STISetCancel( aInfCanSAT )
-			
+			STISetCancel( aInfCanSAT )			
 			lRet :=  aInfCanSAT[1]
 			
 			If lRet
@@ -940,14 +939,15 @@ Else
 	If lRet
 		If lUseSat
 			STICancel(cGetCanc,cNFisCanc)
-		Else	
+		Else
+			aSTCSCanDro := {STDGPBasket("SL1","L1_DOC"),STDGPBasket("SL1","L1_SERIE"),STDGPBasket("SL1","L1_EMISSAO"), STDGPBasket("SL1","L1_NUM")}
 			STICancel()
 		EndIf	
 	EndIf
 EndIf
 
 If lRet
-	STCSCanDro(aSTCSCanDro[1],aSTCSCanDro[2])
+	STCSCanDro(aSTCSCanDro)
 EndIf
 
 // Limpa variavel de verificação de regra de desconto por item
@@ -1160,11 +1160,10 @@ Return lRet
 	@param param, param_type, param_descr
 	@return NIL
 /*/
-Function STCSCanDro(cDoc,cSerie)
+Function STCSCanDro(aDados)
 Local aSTBDroVar := {}
 
-Default cDoc   := ""
-Default cSerie := ""
+Default aDados := {}
 
 If ExistFunc("LjIsDro") .And. LjIsDro()
 	If ExistFunc("STBDroVars") .And. ExistTemplate("FRTCancela")
@@ -1174,7 +1173,7 @@ If ExistFunc("LjIsDro") .And. LjIsDro()
 	EndIf
 	
 	//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
-	T_DROCancANVISA(cDoc,cSerie)
+	T_DROCancANVISA(,,aDados)
 EndIf
 
 Return NIL

@@ -471,7 +471,7 @@ Local _uProdTPL := aClone(ParamIxb[2])					// Variavel Static
 Local _uCliTPL  := ParamIxb[3]							// Variavel Static
 Local lTotvsPDV	:= STFIsPos()
 Local oModelCesta:= Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[15],NIL)		//Para TOTVSPDV enviar o model
-Local nItemModel := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[16],0)			//Para TOTVSPDV enviar o nItem
+Local nItemModel:= Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[16],0)			//Para TOTVSPDV enviar o nItem
 
 /*verificamos se o sistema possui a licenca de Integracao Protheus x SIAC ou de Template de Drogaria*/
 T_DROLCS()
@@ -498,7 +498,7 @@ If (ValType(_uProdTPL) == "U") .OR. (ValType(_uProdTPL) == "A") .AND. (_aAux[1] 
 		//Verificar se não desposiciona o item do model
 		If lTotvsPDV
 			If oModelCesta == NIL
-				AAdd(_uProdTPL,{_aAux[1],_aAux[2],STDGPBasket("SL2","L2_DESC"),STDGPBasket("SL2","L2_PONTOS"),.F.})
+				AAdd(_uProdTPL,{_aAux[1],_aAux[2],STDGPBasket("SL2","L2_DESC",nItemModel),STDGPBasket("SL2","L2_PONTOS",nItemModel),.F.})
 			Else
 				oModelCesta:GoLine(nItemModel)
 				AAdd(_uProdTPL,{_aAux[1],_aAux[2],oModelCesta:GetValue("L2_DESC"),oModelCesta:GetValue("L2_PONTOS"),.F.})

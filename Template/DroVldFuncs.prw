@@ -1477,7 +1477,7 @@ Return nLenArray
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³                       	                                     º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Template Function DROCancANVISA(lExecuta, lJob)
+Template Function DROCancANVISA(lExecuta, lJob, aDadoSL1)
 Local nIndex    := 0		//Indice a ser utilizado
 Local nTamLK9DOC:= 0        // Tamanho do campo LK9_DOC
 Local cChaveSL1 := ""		//Expressao para chave SL1
@@ -1489,15 +1489,23 @@ Local cL1Serie  := ""
 Local lTotvsPDV := STFIsPOS()
 
 DEFAULT lExecuta := .T.
-DEFAULT lJob	 := .F.	   
+DEFAULT lJob	 := .F.
+DEFAULT aDadoSL1 := {}
 
 If TableInDic("LK9")
 	If lTotvsPDV
-		dL1Emissao := STDGPBasket('SL1','L1_EMISSAO')
-		dL1Emissao := Iif(ValType(dL1Emissao) == "C", CtoD(dL1Emissao) , dL1Emissao )
-		cL1Num     := STDGPBasket('SL1','L1_NUM')
-		cL1Doc     := STDGPBasket('SL1','L1_DOC')
-		cL1Serie   := STDGPBasket('SL1','L1_SERIE')
+		If Len(aDadoSL1) > 0
+			dL1Emissao := Iif(ValType(aDadoSL1[3]) == "C", CtoD(aDadoSL1[3]) , aDadoSL1[3] )
+			cL1Num     := aDadoSL1[4]
+			cL1Doc     := aDadoSL1[1]
+			cL1Serie   := aDadoSL1[2]
+		Else
+			dL1Emissao := STDGPBasket('SL1','L1_EMISSAO')
+			dL1Emissao := Iif(ValType(dL1Emissao) == "C", CtoD(dL1Emissao) , dL1Emissao )
+			cL1Num     := STDGPBasket('SL1','L1_NUM')
+			cL1Doc     := STDGPBasket('SL1','L1_DOC')
+			cL1Serie   := STDGPBasket('SL1','L1_SERIE')
+		EndIf
 	Else
 		dL1Emissao := SL1->L1_EMISSAO
 		cL1Num     := SL1->L1_NUM
@@ -1505,23 +1513,25 @@ If TableInDic("LK9")
 		cL1Serie   := SL1->L1_SERIE
 	EndIf
 
+	cL1Doc := AllTrim(cL1Doc)
+
 	If lExecuta      
 
 		nTamLK9DOC:= TamSx3("LK9_DOC")[1]
 	
 		If nModulo == 12
 			If lJob
-				nIndex := 1
-				cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+Subs(cL1Doc,1,nTamLK9DOC)+cL1Serie
+				nIndex := 1 //LK9_FILIAL + LK9_DATA + LK9_DOC + LK9_SERIE + LK9_TIPMOV
+				cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+PadR(cL1Doc,nTamLK9DOC)+cL1Serie
 				cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_DOC+LK9_SERIE'		
 			Else
-				nIndex := 4
+				nIndex := 4 //LK9_FILIAL + LK9_DATA + LK9_NUMORC
 				cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+cL1Num
 				cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_NUMORC'
 			Endif	
 		ElseIf nModulo == 23
-			nIndex := 1
-			cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+Subs(cL1Doc,1,nTamLK9DOC)+cL1Serie
+			nIndex := 1 //LK9_FILIAL + LK9_DATA + LK9_DOC + LK9_SERIE + LK9_TIPMOV
+			cChaveSL1 := xFilial("LK9")+DtoS(dL1Emissao)+PadR(cL1Doc,nTamLK9DOC)+cL1Serie
 			cChaveLK9 := 'xFilial("LK9")+DtoS(LK9_DATA)+LK9_DOC+LK9_SERIE'
 		Endif
 	 	DbSelectArea("LK9")

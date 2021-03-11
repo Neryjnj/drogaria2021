@@ -141,20 +141,23 @@ Return lRet
     @since 02/03/2021
     @version 12
     @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @return lRet, lógico, Item Validado ?
 /*/
-Function STCnfPrPBM( cCodBarra	, nQtde, lOk, lItemPbm )
-Local lRet := .F. // Retorno da funcao
+Function STCnfPrPBM( cCodBarra, nQtde, lOk, lItemPbm,;
+                    nItemLine )
+Local lRet := .F.
 
 If lItemPbm
     lRet := oTPLPBM:ConfProd( cCodBarra, nQtde, lOk )
     If !lRet        
         MsgAlert("Produto não confirmado na PBM. Cupom fiscal sera cancelado.")
-        
         //Cancela o Cupom Fiscal e PBM
-        FrtCancCup( .T. )
+        //JULIOOOO - validar se cancela o cupom mesmo no TOTVSPDV
+        //avaliando o fluxo do frontloja, o item ja foi registrado e por isso há o cancelamento
+        //no totvspdv eu consigo somente cancelar o registro do item
+        FrtCancCup( .T. ) 
     Else
-        STDSPBasket("SL2","L2_ITPBM",lItemPbm)
+        STDSPBasket("SL2","L2_ITPBM",lItemPbm,nItemLine)
     EndIf
 Else
     lRet := .T.

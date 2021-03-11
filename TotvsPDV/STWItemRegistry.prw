@@ -141,9 +141,6 @@ If !lRecovery
 	STFShowMessage("ItemRegistered")
 EndIf
 
-//verifica se o item Fiscal/Não Fiscal Existe na Cesta
-lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
-
 /*Tratamento VidaLINK*/
 If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
@@ -178,6 +175,10 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	EndIf
 EndIf
 
+
+//verifica se o item Fiscal/Não Fiscal Existe na Cesta
+lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
+
 /*/
 	Busca item na base de dados
 /*/
@@ -187,84 +188,6 @@ aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
 If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]    
 
 	LjGrvLog( cL1Num, "Registra Item - Item encontrado" )  //Gera LOG
-
-	//JULIOOOO - incluir aqui a chamada do PE TPL FrtDescIT
-	//olhar o fonte FRTA271A e prosseguir a implementação
-	If lTPLDrogaria
-		nDroPrProd := nPrice
-		/***** Busca preco do item caso nao tenha sido informada por parametro *********/
-		aAux := STBDroVars(.F.)
-		STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
-		//JULIOOOOOOO - enviar o DOC da venda de outra forma pois não tem no basket
-		If ExistTemplate("FRTDESCIT")			
-			aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
-									aInfoItem[ITEM_CODIGO],Iif(cTypeDesc=="P",nDiscount,0),Iif(cTypeDesc=="V",nDiscount,0),nDroPrProd,;
-									aAux[2], aAux[1]   , STBGetQuant()	, cCliCode,;
-									cCliLoja, (cTypeItem == "IMP"), STDGPBasket('SL1','L1_DOC'), STFGetStation("SERIE") } )
-			
-			//Seta falso para cancelamento da tela de PBM
-			T_DrSScrExMC(.F.)
-
-			//Caso a tela de medicamento controlado seja cancelada, aborta a emissao do item.
-			If aTPLFRTIT[5]
-				MsgAlert("Medicamentos Controlados necessitam de Infomações do Paciente." +chr(10)+chr(13)+;
-						"Produto não será registrado") //"Medicamentos Controlados necessitam de Infomações do Paciente." ##"Produto não será registrado"
-				
-				//Seta se cancelou a tela da medicamento controlado para cancelar os produtos da PBM
-				T_DrSScrExMC(.T.)
-				lRet := .F.
-			Else
-				//nVlrPercIT := aTPLFRTIT[1]
-				nDiscount := aTPLFRTIT[2]
-				STBDroVars(.F., .T., aTPLFRTIT[4], aClone(aTPLFRTIT[3]))
-			EndIf
-		EndIf
-
-		If lRet .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
-			If lPrioPBM
-				LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
-				nDiscount := 0
-			EndiF
-
-			If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
-							@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
-				LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM, o desconto da loja será zerado")
-				nDiscount := 0
-				lRet := .F.
-			EndIf
-		EndIF
-	EndIf
-
-	If lRet
-		If Len(aDadoVLink) > 0 
-			If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1).And. (nDiscount >= nDroPrProd)
-				MsgAlert("O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
-						"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
-				nDiscount := 0
-			EndIf
-
-			If aDadoVLink[3] == 1
-				//--------------------------------------------------------------------
-                //|  Verifica se o preco do VidaLink eh maior que o preco do sistema | 
-                //|  com desconto.Vale o preco menor aValPerc  						 |
-                //--------------------------------------------------------------------
-				aAux := STBDroVars(.F.)
-                aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3]	, aInfoItem[ITEM_CODIGO],;
-											nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
-											nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
-											aAux[1]		 , (cTypeItem == "IMP") )
-				nItemTotal := aDroVLPVal[1]
-				nDiscount  := aDroVLPVal[2]
-				//aDroVLPVal[3] //Percentual do Desconto				
-				nDroPrProd := aDroVLPVal[4]
-			EndIf
-		EndIf
-	EndIf
-
-	//Faz o ajuste por meio da variável do Template pois ela altera os valores
-	If lRet .And. (nDroPrProd > 0)
-		nPrice := nDroPrProd
-	EndIf
 	
 	If lRet
 		//Arredondamento
@@ -341,8 +264,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	
 	//So deixa vender com caixa aberto
 	If lRet
-		lRet := STBCaixaVld()
-			
+		lRet := STBCaixaVld()			
 		If !lRet
 			LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Caixa Fechado")
 		EndIf			
@@ -521,6 +443,91 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			//Apos encontrar o preco verifica se altera quantidade
 			//com os dados do codigo de barras e o preco
 			STBQtdEtq( cCodIniIT , nPrice , aInfoItem[ITEM_BALANCA] )
+		EndIf
+
+		If lRet .And. lTPLDrogaria
+			nDroPrProd := nPrice
+			/***** Busca preco do item caso nao tenha sido informada por parametro *********/
+			aAux := STBDroVars(.F.)
+			STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
+			//JULIOOOOOOO - enviar o DOC da venda de outra forma pois não tem no basket
+			If ExistTemplate("FRTDESCIT")
+				aTPLFRTIT := { aInfoItem[ITEM_CODIGO],;
+							   Iif(cTypeDesc=="P",nDiscount,0),;
+							   Iif(cTypeDesc=="V",nDiscount,0),;
+							   nDroPrProd,;
+							   (cTypeItem == "IMP"),;
+							   STDGPBasket('SL1','L1_DOC'),;
+							   STDGPBasket('SL1','L1_SERIE')  ; //STFGetStation("SERIE")	
+							}
+
+				aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
+										aTPLFRTIT[1],aTPLFRTIT[2],aTPLFRTIT[3],aTPLFRTIT[4],;
+										aAux[2], aAux[1]   , STBGetQuant()	, cCliCode,;
+										cCliLoja, aTPLFRTIT[5], aTPLFRTIT[6], aTPLFRTIT[7] } )
+				
+				//Seta falso para cancelamento da tela de PBM
+				T_DrSScrExMC(.F.)
+
+				//Caso a tela de medicamento controlado seja cancelada, aborta a emissao do item.
+				If aTPLFRTIT[5]
+					MsgAlert("Medicamentos Controlados necessitam de Infomações do Paciente." +chr(10)+chr(13)+;
+							"Produto não será registrado") //"Medicamentos Controlados necessitam de Infomações do Paciente." ##"Produto não será registrado"
+					
+					//Seta se cancelou a tela da medicamento controlado para cancelar os produtos da PBM
+					T_DrSScrExMC(.T.)
+					lRet := .F.
+				Else
+					//nVlrPercIT := aTPLFRTIT[1]
+					nDiscount := aTPLFRTIT[2]
+					STBDroVars(.F., .T., aTPLFRTIT[4], aClone(aTPLFRTIT[3]))
+				EndIf
+			EndIf
+
+			If lRet .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+				If lPrioPBM .And. nDiscount > 0
+					LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
+					nDiscount := 0
+				EndiF
+
+				If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
+								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
+					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM, o desconto da loja será zerado")
+					nDiscount := 0
+					lRet := .F.
+				EndIf
+			EndIF
+
+			If lRet
+				If Len(aDadoVLink) > 0 
+					If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1).And. (nDiscount >= nDroPrProd)
+						MsgAlert("VIDALINK - O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
+								"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
+						nDiscount := 0
+					EndIf
+
+					If aDadoVLink[3] == 1
+						//--------------------------------------------------------------------
+						//|  Verifica se o preco do VidaLink eh maior que o preco do sistema | 
+						//|  com desconto.Vale o preco menor aValPerc  						 |
+						//--------------------------------------------------------------------
+						aAux := STBDroVars(.F.)
+						aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3]	, aInfoItem[ITEM_CODIGO],;
+													nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
+													nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
+													aAux[1]		 , (cTypeItem == "IMP") )
+						nItemTotal := aDroVLPVal[1]
+						nDiscount  := aDroVLPVal[2]
+						//aDroVLPVal[3] //Percentual do Desconto				
+						nDroPrProd := aDroVLPVal[4]
+					EndIf
+				EndIf
+			EndIf
+
+			//Faz o ajuste por meio da variável do Template pois ela altera os valores
+			If lRet .And. (nDroPrProd > 0)
+				nPrice := nDroPrProd
+			EndIf		
 		EndIf
 		
 		// Arredondamento
@@ -789,24 +796,33 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	EndIf
 
 Else
-
 	LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Item nao localizado ou indisponivel no cadastro do PDV.")
 	LjGrvLog(cL1Num,"Status Codigo do Item:" + cItemCode + " - Localizado:"+IIF(aInfoItem[ITEM_ENCONTRADO],"Sim","Nao")+" - Bloqueado:"+IIF(aInfoItem[ITEM_BLOQUEADO],"Sim","Nao") + " - Tipo GE(B1_TIPO):"+ IIF(aInfoItem[ITEM_TIPO] == 'GE',"Sim","Nao") )
 	lRet := .F.			// Item nao encontrado
-
 EndIf
 
-If !lRet .AND. !lKitMaster 
-    //Se ocorreu problemas na Impressão do item
-	//Chama a função que deleta o item na MatxFis, e não somente o marca como deletado
-	
-	If STBTaxFoun(	"", nItemLine	)	
-		STBTaxDel(	nItemLine	, .T. )
+If !lKitMaster
+	If lRet .And. lTPLDrogaria
+		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+			If !STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)), STBGetQuant(), .T., lItemPbm, nItemLine)
+				lRet := .F.
+				LjGrvLog(cL1Num,"Item não confirmado na PBM, não será registrado",lRet)
+				STFMessage("ItemRegistered","STOP","PBM - Produto " + AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) +;
+													"Inválido - Não registrado" ) //"PBM - Produto " + + "Inválido - Não registrado"
+			EndIf
+		EndIf
 	EndIf
 
-	// Seta controle de item deletado como True
-	lItemDel := .T.
-EndIf	
+	If !lRet
+		//Se ocorreu problemas na Impressão do item - chama a função que deleta o item na MatxFis e não somente o marca como deletado	
+		If STBTaxFoun(	"", nItemLine	)	
+			STBTaxDel(	nItemLine	, .T. )
+		EndIf
+
+		// Seta controle de item deletado como True
+		lItemDel := .T.
+	EndIf
+EndIf
 
 If lRet
 
@@ -832,7 +848,7 @@ EndIf
 
 // Limpa Objetos variaveis e restaura padrao
 
-STBSetDefQuant()									// Seta quantidade padrao apos o registro de item
+STBSetDefQuant()								// Seta quantidade padrao apos o registro de item
 STBDefItDiscount()								// Seta desconto padrao apos registro de item
 
 //Mostra mensagens referente ao registro de itens
@@ -855,9 +871,9 @@ EndIf
 
 If lRet .And. lTPLDrogaria
 	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
-	aTPLCODB2 := {nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO")), AllTrim(STDGPBasket("SL2","L2_CODBAR")),AllTrim(STDGPBasket("SL2","L2_DESC")),;
-				 cValToChar(STDGPBasket("SL2","L2_QUANT")), cValToChar(STDGPBasket("SL2","L2_VRUNIT")),"", cValToChar(STDGPBasket("SL2","L2_VLRITEM")),;
-				 "", "", .F.,""}
+	aTPLCODB2 := {nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)), AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),;
+				AllTrim(STDGPBasket("SL2","L2_DESC",nItemLine)),cValToChar(STDGPBasket("SL2","L2_QUANT",nItemLine)), cValToChar(STDGPBasket("SL2","L2_VRUNIT",nItemLine)),;
+				"", cValToChar(STDGPBasket("SL2","L2_VLRITEM",nItemLine)),"", "", .F.,""}
 	aAux := STBDroVars(.F.)
 	AADD(aTPLCODB2,aAux[2]) //13- uProdCli
 	AADD(aTPLCODB2,aAux[1]) //14 - uCliTPL
@@ -889,15 +905,10 @@ If lRet .And. lTPLDrogaria
 	EndIf
 
 	//JULIOOOOO - Validar daqui para gravar o dado da anvisa - parte presente no FRTA271A
-	If T_DroVerCont( AllTrim(STDGPBasket("SL2","L2_PRODUTO")) )
-		T_DroAltANVISA( AllTrim(STDGPBasket("SL2","L2_PRODUTO")), STBGetQuant(), cDoc, STFGetStation("SERIE"),;
-						nCodANVISA  )
+	If T_DroVerCont( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) )
+		T_DroAltANVISA( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)), STDGPBasket("SL2","L2_QUANT",nItemLine),;
+						 STDGPBasket("SL1","L1_DOC"), STDGPBasket("SL1","L1_SERIE")/*STFGetStation("SERIE")*/, nItemLine )
 	Endif
-
-	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
-		lRet := STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR")), STBGetQuant(), .T., lItemPbm)
-		LjGrvLog()
-	EndIf
 EndIf
 
 Return lRet
