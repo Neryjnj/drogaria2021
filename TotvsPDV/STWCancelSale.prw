@@ -64,7 +64,7 @@ Do Case
 	Case lIsProgressSale  		// Venda em Andamento
 
 		LjGrvLog( "Cancela venda","NumOrc: "+cNumSale+"/DOC: "+cDoc+" - Venda em Andamento(lForceCancel = .T.)")
-		lRet := STWCSProgressSale( cSuperior , cDoc, @cNome, @cCGCCli, , /*"StiPosMain"*/ ,cSerie )
+		lRet := STWCSProgressSale( cSuperior , cDoc, @cNome, @cCGCCli, cSerie )
 
 	Case !lIsProgressSale		// Venda Finalizada
 

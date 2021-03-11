@@ -450,14 +450,14 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			/***** Busca preco do item caso nao tenha sido informada por parametro *********/
 			aAux := STBDroVars(.F.)
 			STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
-			//JULIOOOOOOO - enviar o DOC da venda de outra forma pois não tem no basket
+			
 			If ExistTemplate("FRTDESCIT")
 				aTPLFRTIT := { aInfoItem[ITEM_CODIGO],;
 							   Iif(cTypeDesc=="P",nDiscount,0),;
 							   Iif(cTypeDesc=="V",nDiscount,0),;
 							   nDroPrProd,;
 							   (cTypeItem == "IMP"),;
-							   STDGPBasket('SL1','L1_DOC'),;
+							   STDGPBasket('SL1','L1_DOC'),; //No Primeiro item não tem essa informação
 							   STDGPBasket('SL1','L1_SERIE')  ; //STFGetStation("SERIE")	
 							}
 
@@ -871,12 +871,16 @@ EndIf
 
 If lRet .And. lTPLDrogaria
 	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
-	aTPLCODB2 := {nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)), AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),;
-				AllTrim(STDGPBasket("SL2","L2_DESC",nItemLine)),cValToChar(STDGPBasket("SL2","L2_QUANT",nItemLine)), cValToChar(STDGPBasket("SL2","L2_VRUNIT",nItemLine)),;
+	aTPLCODB2 := { ;
+				nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)),;
+				AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),AllTrim(STDGPBasket("SL2","L2_DESC",nItemLine)),;
+				cValToChar(STDGPBasket("SL2","L2_QUANT",nItemLine)), cValToChar(STDGPBasket("SL2","L2_VRUNIT",nItemLine)),;
 				"", cValToChar(STDGPBasket("SL2","L2_VLRITEM",nItemLine)),"", "", .F.,""}
 	aAux := STBDroVars(.F.)
 	AADD(aTPLCODB2,aAux[2]) //13- uProdCli
 	AADD(aTPLCODB2,aAux[1]) //14 - uCliTPL
+	AADD(aTPLCODB2,NIL) //15 - oModelCesta
+	AADD(aTPLCODB2,nItemLine) //16 - nItemLine - Linha do Basket de itens
 	
 	aTPLCODB3 := aClone(aTPLCODB2)
 
@@ -904,10 +908,9 @@ If lRet .And. lTPLDrogaria
 		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]) )
 	EndIf
 
-	//JULIOOOOO - Validar daqui para gravar o dado da anvisa - parte presente no FRTA271A
 	If T_DroVerCont( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) )
 		T_DroAltANVISA( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)), STDGPBasket("SL2","L2_QUANT",nItemLine),;
-						 STDGPBasket("SL1","L1_DOC"), STDGPBasket("SL1","L1_SERIE")/*STFGetStation("SERIE")*/, nItemLine )
+						 STDGPBasket("SL1","L1_DOC"), STDGPBasket("SL1","L1_SERIE"), nItemLine )
 	Endif
 EndIf
 
