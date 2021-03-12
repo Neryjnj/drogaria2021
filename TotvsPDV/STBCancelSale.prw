@@ -1181,8 +1181,9 @@ If ExistFunc("LjIsDro") .And. LjIsDro()
 	
 	//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
 	T_DROCancANVISA(,,aDados)
-	//JULIOOOO - achar no front aonde esta a limpeza do Array, por isso pus essa função mas não
-	//se deve continuar com essa função
+	
+	//no FrontLoja não tem a limpeza da variável aANVISA mas aqui insiro a limpeza
+	//para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
 	T_DroDelANVISA(.T., NIL)
 EndIf
 

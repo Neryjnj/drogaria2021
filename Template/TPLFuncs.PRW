@@ -187,9 +187,8 @@ Return
 -----------------------------------------------------------------------*/
 Template Function TPLConPad(cCampo)
 Local oTplCon, oBtn1, oBtn2, oBtn3, oBtn4, oBtn5, oBrw
-Local lTotvsPDV := STFIsPOS()
 Local cTabela	:= Space(2)
-Local cReturn	:= &(ReadVar()) //IIf(lTotvsPDV,"",&(ReadVar())) //JULIOOOOO - validar aqui
+Local cReturn	:= &(ReadVar())
 Local cFind		:= Space(55)
 Local cTitulo	:= Space(55)
 Local cOrdem	:= "Chave"

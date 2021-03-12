@@ -442,7 +442,7 @@ If T_DroVerCont( cCodProd ) .And. !lVidaLink
 							@cClassTe	,nItem	, 			,  lInfoAnvisa, ;
 							lJaAnvisa, _nPosItem,lPermTelAnv)
 				lCancANVISA := .T.	
-			Endif	
+			Endif
 			lJaChamouANVISA := .F.
 		Else
 			//| Acrescenta informacoes do item no array temporario da ANVISA |
@@ -552,7 +552,7 @@ Local _uProdTPL := aClone(ParamIxb[2])	//Variavel Static criada em FRTA010A
 Local _uCliTPL  := ParamIxb[3]			//Variavel Static criada em FRTA010A
 Local aAreaAtu  := GetArea()
 Local lTotvsPDV := STFIsPOS()
-Local nItemLine := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[15],0)
+Local nItemLine := Iif(lTotvsPDV .And. (Len(_aAux) > 14),_aAux[16],0)
 Local lCliente  := .F.
 
 /*verificamos se o sistema possui a licenca de
@@ -911,14 +911,9 @@ Local cRet    	:= ""
 Local lRet    	:= .F.
 Local cSeek   	:= ""
 Local cWhile  	:= ""
-Local aAreaAtu	:= GetArea()
 Local cAlias  	:= ""
 Local aCpos   	:= {}
 Local cCodPag  	:= ""
-Local nPosTip	:= 0	
-Local nPosOper 	:= 0	
-Local cAtual	:= ""	
-Local cOpera	:= ""
 Local _uCliTPL 	:= ParamIxb[1]
 Local cCliVenda	:= AllTrim(ParamIxb[2])
 Local cLojVenda	:= AllTrim(ParamIxb[3])
@@ -2926,7 +2921,7 @@ Local oTef20	:= NIL
 //|70 a 99                             |
 If lTotvsPDV
 	If T_DroLenANVISA() > 0
-		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC( .T., .T.,,,,,,,,,,.T.)" , "", cValToChar(++nNumMenu)})
+		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
 	EndIf
 
 	oTEF20 := STBGetTEF()

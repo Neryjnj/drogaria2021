@@ -251,7 +251,6 @@ Local lLisPres		:= .F.
 Local lSaveOrc		:= IIF( ValType(STFGetCfg( "lSaveOrc" , .F. )) == "L" , STFGetCfg( "lSaveOrc" , .F. )  , .F. )   //Salva venda como orcamento
 Local lItemFiscal   := .T. 								//Valida se item fiscal
 Local lIsTPLDro		:= (ExistFunc("LjIsDro") .And. LjIsDro())
-Local lL2_ITPBM		:= .F.
 
 Default nItem		:=	0
 Default oReasons	:=	Nil
@@ -354,8 +353,6 @@ If lRet
 	aAux[3] := AllTrim(oModelCesta:GetValue("L2_CODBAR"))
 	If lIsTPLDro /* Tratamento para o Template de Drogarias*/
 		If ExistTemplate("FRTCODB2")
-		
-			STCIRetUit(oModelCesta,lFinServ,lItFiscNFi,aEstrItSF,@uItem)
 			aTPLCODB2 := {nItem, AllTrim(oModelCesta:GetValue("L2_PRODUTO")), AllTrim(oModelCesta:GetValue("L2_CODBAR")), "",;
 							"", "", "", "", "", "", .F.,/*Valor de Solidário*/}
 			aSTBDroVar := STBDroVars(.F.)
@@ -382,8 +379,7 @@ If lRet
 		EndIf
 
 		/* Tratamento para a venda PBM*/
-		lL2_ITPBM := oModelCesta:HasField("L2_ITPBM")
-		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() .And. lL2_ITPBM .And. oModelCesta:GetValue("L2_ITPBM")
+		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM() .And. oModelCesta:HasField("L2_ITPBM") .And. oModelCesta:GetValue("L2_ITPBM")
 			STCnProPBM(aAux[3],oModelCesta:GetValue("L2_QUANT"))
 		EndIf
 

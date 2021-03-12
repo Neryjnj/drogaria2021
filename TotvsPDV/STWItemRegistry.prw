@@ -901,8 +901,7 @@ If lRet .And. lTPLDrogaria
 	EndIf
 
 	If ExistTemplate("FRTCODB3")
-		aAux := STBDroVars(.F.)
-		Aadd(aTPLCODB3,nItemLine)
+		aAux := STBDroVars(.F.)		
 		aTPLCODB3 := ExecTemplate("FRTCODB3",.F.,.F.,{aTPLCODB3,aAux[2],aAux[1]})
 		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]) )
 	EndIf
