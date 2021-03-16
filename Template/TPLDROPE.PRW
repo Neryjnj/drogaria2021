@@ -2914,15 +2914,12 @@ Template Function FRTFuncoes()
 Local _aFuncoes := ParamIxb[1]	//Conteudo o array aFuncoes
 Local nOption   := IIf(Len(ParamIxb) > 1, ParamIxb[2],69)	//nOpção do Menu
 Local nNumMenu  := IIf(Len(ParamIxb) > 1, Val(ParamIxb[3]),30)	//nOpção do Menu
-Local lTotvsPDV := IIf(Len(ParamIxb) > 1, ParamIxb[4],.F.)	//Origem da chamada
+Local lTotvsPDV := STFIsPOS()	//Origem da chamada
 Local oTef20	:= NIL
 
-//|Intervalo utilizado pelos templates:|
-//|70 a 99                             |
 If lTotvsPDV
-	If T_DroLenANVISA() > 0
-		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
-	EndIf
+	
+	AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
 
 	oTEF20 := STBGetTEF()
 	// If STFGetCfg("lUsaTef") .And. ValType(oTef20:oConfig:oCfgTef) == "O" .And. ;
@@ -2934,6 +2931,8 @@ If lTotvsPDV
 		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
 	EndIf
 Else
+	//|Intervalo utilizado pelos templates:|
+	//|70 a 99                             |
 	If T_DroLenANVISA() > 0
 		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
 	Endif

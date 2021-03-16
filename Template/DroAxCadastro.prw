@@ -400,7 +400,18 @@ Default lJaAnvisa	:= .F.
 Default _nPosItem	:= 0
 Default lAcessoLib	:= .F.
 
-If !lAcessoLib
+//No TotvsPDV o menu será incluido normalmente pois o menu é diferente do Front porem devo tratar 
+//se tem informação da ANVISA para não mostrar a tela vazia de LK9
+If lTotvsPDV
+	lContinua := T_DroLenANVISA() > 0
+
+	If !lContinua
+		MsgAlert("Não há dados de Medicamentos Controlados")
+		LjGrvLog("DroVSNGPC", "Não há dados de Medicamentos Controlados")
+	EndIf
+EndIf
+
+If lContinua .And. !lAcessoLib
 	If lTotvsPDV
 		aProfile42 := STFPROFILE(42)
 		lProfile42 := aProfile42[1]

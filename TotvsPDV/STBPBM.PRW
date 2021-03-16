@@ -235,7 +235,7 @@ Return lRet
     @param lSomaCup, lógico, soma numero no cupom ?
     @return cDoc, string, numero do doc
 /*/
-Static Function STBPbmNDoc(nTamCupPBM, cSerie, lSomaCup)
+Function STBPbmNDoc(nTamCupPBM, cSerie, lSomaCup)
 Local aLastSat	:= {}
 Local cDoc	    := ""
 

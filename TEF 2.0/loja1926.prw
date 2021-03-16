@@ -263,7 +263,7 @@ Method ConfSitef(cEndIp, cLoja, cTerminal) Class LJCComClisitef
 		//Prepara os parametros de envio no Clisitef
   
 		//Se usa Cielo Premia chama outro inicializador
-		If STFGetStat( "CIELOP" , .T. ) == "1"  
+		If STFGetStat( "CIELOP" , .T. ) == "1"
 			oParamsApi := ::PrepParam({CLISITEF, "ConfiguraIntSiTefInterativoEx", cEndIp, cLoja, cTerminal, "0" , "[VersaoAutomacaoCielo=TOTVSPOS10]"})			
 		Else
 			oParamsApi := ::PrepParam({CLISITEF, "ConfiguraIntSiTefInterativoEx", cEndIp, cLoja, cTerminal, "0" , cParamAdic})

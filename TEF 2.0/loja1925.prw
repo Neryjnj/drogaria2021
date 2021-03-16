@@ -39,6 +39,7 @@ Class LJCClisitefPbm From LJAPbm
 	Method Confirmar()
 	Method Desfazer()
  	Method IniciouVen()
+	
       
 EndClass       
 
@@ -164,8 +165,7 @@ Method FinalVend() Class LJCClisitefPbm
 	Local oDadosTran := Nil						//Retorno do metodo
 	
 	lRetorno := ::oPbm:FinalVend()
-	
-		
+
 Return oDadosTran
 
 /*
@@ -238,29 +238,21 @@ Method CancPbm(oDadosTran) Class LJCClisitefPbm
 		//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
 		//os atributos dData,cHora e nCupom precisam ser alterados com os dados gerados pela PBM
 		
-		::oDadosTran := oDadosTran 
-		
+		::oDadosTran := oDadosTran
 		::oDadosTran:dData 	:= CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
 		::oDadosTran:cHora 	:= Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
-		::oDadosTran:nCupom 	:= Val(::oPbm:oPbm:cNumCupom)
-	
+		::oDadosTran:nCupom := Val(::oPbm:oPbm:cNumCupom)	
 	EndIf	
 		
 Return oDadosTran 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  |SelecPbm     บAutor  ณVendas CRM       บ Data ณ  01/04/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณSeleciona a PBM					                          บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method SelecPbm() Class LJCClisitefPbm 
 	
 	Local lRetorno 	:= .F.			//Retorno do metodo
@@ -279,7 +271,19 @@ Method SelecPbm() Class LJCClisitefPbm
                 	::oPbm:oPbm := LJCEpharma():EPharma(::oTransSitef:oClisitef)
                 	
 				Case oTelaPBM:cRetSelect == _TRNCENTRE
-					::oPbm:oPbm := LJCTrnCentre():TrnCentre(::oTransSitef:oClisitef) 
+					::oPbm:oPbm := LJCTrnCentre():TrnCentre(::oTransSitef:oClisitef)
+
+				Case oTelaPBM:cRetSelect == _VIDALINK
+					//JULIOOO - incluir a chamada
+					::oPbm:oPbm := LJCVDLINK():PVidaLink(::oTransSitef:oClisitef)
+				
+				Case oTelaPBM:cRetSelect == _PHARMASYS
+					//JULIOOO - incluir a chamada
+					//::oPbm:oPbm :=
+
+				Case oTelaPBM:cRetSelect == _FUNCCARD
+					//JULIOOO - incluir a chamada
+					//::oPbm:oPbm :=
 			EndCase
 			
 			lRetorno := (::oPbm:oPbm <> Nil)

@@ -108,6 +108,10 @@ If Select(cAlias) > 0
 		If Self:lTrnCentre
 			Self:oPbms:Add(_TRNCENTRE)
 		EndIf
+
+		Self:oPbms:Add(_VIDALINK)
+		Self:oPbms:Add(_PHARMASYS)
+		Self:oPbms:Add(_FUNCCARD)
 	EndIf
 
 	lRet := .T.

@@ -540,12 +540,13 @@ Template Function DROVLMItem( aLin, nTotVenda, oTotVenda, oLbx, aVidaLinkD )
 Local _nI 			:= 0						// Contador
 Local nBarras 		:= TamSX3("BI_CODBAR")[1]	// Dimensao do codigo de barras
 Local cCodBarras 	:= ""					 	// Codigo de barras
+Local lTotvsPDV		:= STFIsPOS()
 Local lSigaLoja		:= nModulo == 12			// Se utiliza o modulo Venda Assistida
 Local cTabelaProd	:= "SBI"					// Tabela para consulta do produto
 Local cCamDescProd	:= "BI_DESC" 				// Campo para consultado do pruduto
 Local nVlSubsidio	:= 0						//Valor do Subsidio
 
-If lSigaLoja
+If lSigaLoja .Or. lTotvsPDV
 	cTabelaProd 	:= "SB1"
 	cCamDescProd 	:= "B1_DESC"
 	nBarras			:= TamSX3("B1_CODBAR")[1]
@@ -834,18 +835,34 @@ Local _cDoc		  := ParamIxb[4]	// Numero do Cupom Fiscal
 
 If _nVidaLink = 2  // Gravou VidaLink
 	If nNumPbm == 1
-		oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
+		If lTotvsPDV
+			//JULIOOOO - inserir 
+		Else
+			oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
+		EndIf
 	ElseIf nNumPbm = 541
 		If Len(_aVidaLinkD) > 0
-			oTEF:Operacoes("PHARMASYSTEM_VENDA", _aVidaLinkD, , , _cDoc)	//PharmaSystem	
+			If lTotvsPDV
+				//JULIOOOO - inserir 
+			Else
+				oTEF:Operacoes("PHARMASYSTEM_VENDA", _aVidaLinkD, , , _cDoc)	//PharmaSystem	
+			EndIf
 		Endif
 	ElseIf nNumPbm = 560
 		If Len(_aVidaLinkD) > 0
-			oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card	
+			If lTotvsPDV
+				//JULIOOOO - inserir 
+			Else
+				oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card	
+			EndIf
 		Endif
 	ElseIf nNumPbm = 592
 		If Len(_aVidaLinkD) > 0
-			oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card	
+			If lTotvsPDV
+				//JULIOOOO - inserir 
+			Else
+				oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card
+			EndIf
 		Endif		
 	Endif
 EndIf
