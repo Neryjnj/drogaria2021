@@ -115,10 +115,9 @@ If nOpPbm <> 540
 	cCliCodLoj	:= aParamVL[1][VLP_CCLIEN] + " - " + aParamVL[1][VLP_CLOJAC]
 	cNomeCli	:= Subst(Posicione("SA1",1,xFilial("SA1") + aParamVL[1][VLP_CCLIEN] + aParamVL[1][VLP_CLOJAC],"A1_NOME"),1,30)
 Else
-	If lTotvsPDV
-		oTEF := STBGetTEF()
-	Else
-		oTEF := LJTEFAbre()	    				//Prepara o objeto TEF e carrega as variáveis necessárias par
+	//Prepara o objeto TEF e carrega as variáveis necessárias par
+	If !lTotvsPDV
+		oTEF := LJTEFAbre()
 	EndIf
 Endif
 
@@ -382,7 +381,10 @@ Local _cCPF		:= ""	//CPF do Cliente
 Local nValor	:= 0	//Valor do produto retornado pela Funcional Card
 Local lContinua	:= .T.
 Local lRet		:= .T.
-Local lTotvsPDV :=  STFIsPOS()
+Local lTotvsPDV := STFIsPOS()
+Local oPBM		:= NIL
+Local oTEF20	:= NIL
+Local oDados	:= NIL
 
 Default cCPF 	:= ""
 Default cNumCRM := ""
@@ -421,10 +423,19 @@ If lContinua
 
 	aAdd(aVidaLinkD,{_cNumAutori, _cNumConv, _cNumCartao, _cCPF, nNumPbm, cNumCRM, cUFCRM })
 	nTotVenda  := 0
+
+	If lTotvsPDV
+		oDados := LJCDadosTransacaoPBM():New(0    , _cNumAutori /*cDoc*/, Date()  ,  Time(),;
+									/*lUltimaTrn*/,/*cRede*/     , "" /*cTpDoc*/ ,  xNumCaixa(),;
+									_cNumAutori	 , "1"		)
+		oTEF20 := STBGetTEF()
+		oPBM := oTEF20:Pbm()
+	EndIf
 	
 	//Consulta Vidalink
 	If nNumPbm == 1
 		If lTotvsPDV
+			oPBM:VDLinkCons(oDados)
 		Else
 			oTEF:Operacoes("VIDALINK_CONSULTA"		, aVidaLinkD)
 		EndIf

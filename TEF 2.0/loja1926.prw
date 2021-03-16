@@ -91,6 +91,7 @@ Class LJCComClisitef
 	Method SetTrans()
 	Method GetRetorno()
 	Method Fechar()
+	Method EnvVDLCons(oDadosTran)
 	
 	//Metodos internos
 	Method RedeTpCart()
@@ -2982,5 +2983,53 @@ cSaida 	:= oParamsApi:aColecao[3][2]:cParametro
 oParamsApi:Destroy()
 oParamsApi := FreeObj(oParamsApi)
 
-Return( nRetDLL )   
+Return nRetDLL
 
+//-------------------------------------------------------------------
+/*/{Protheus.doc} EnvVDLCons
+Consulta PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		16/03/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method EnvVDLCons(oDadosTran) Class LJCComClisitef
+Local nRet		:= 0
+Local cRetorno 	:= ""       	//Retorno do comando enviado
+Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
+
+::oRetorno := LJCRetornoSitef():New()
+
+//Prepara os parametros de envio
+oParamsApi := ::PrepParam({CLISITEF, "IniciaFuncaoSiTefInterativoConsultaVidalink", oDadosTran:cCodAut, ;
+								oDadosTran:cCodProd, oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
+								oDadosTran:cHorario, oDadosTran:cOperador})
+
+cRetorno := ::EnviarCom(oParamsApi)
+
+//Carrega o retorno
+oDadosTran:cCodAut 	:= oParamsApi:Elements(3):cParametro
+oDadosTran:cCodProd := Val(oParamsApi:Elements(4):cParametro)
+oDadosTran:nCupom 	:= Val(oParamsApi:Elements(5):cParametro)
+oDadosTran:cDataFisc:= oParamsApi:Elements(6):cParametro
+oDadosTran:cHorario := Val(oParamsApi:Elements(7):cParametro)
+oDadosTran:cOperador:= oParamsApi:Elements(8):cParametro
+
+oParamsApi:Destroy()
+oParamsApi := FreeObj(oParamsApi)
+nRet := Val(cRetorno)
+
+If nRet == 10000
+	//Gravar arquivo de controle para confirmar ou desfazer a transacao
+	::GrvArqCtrl()
+	//Carrega tela do sitef para troca de informacoes
+	::Show()
+Else
+	::TratarRet(nRet, _TRANSACAO)
+EndIf
+
+Return nRet

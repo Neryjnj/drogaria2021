@@ -41,7 +41,8 @@ Class LJCPBM
 	Method ConfProd( cCodBarra, nQtde, lOk)			// Confirma os produtos vendidos
 	Method ConfVend(lConfirma)										// Confirma a venda na PBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
-	Method SelecPbm()												//Metodo que ira selecionar a PBM
+	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
+	Method VDLinkCons(cCodAut,cCodProd,cCupom,cData,cHora,cOperador)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -372,7 +373,7 @@ Return lRetorno
 ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
 ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
 */
-Method SelecPbm() Class LJCPBM
+Method SelecPbm(cNomePBM) Class LJCPBM
 
 	Local lRet 		:= .F.		//Retorno do Metodo
 	Local aComboPbm	:= {}		//Combo da PBM
@@ -389,10 +390,7 @@ Method SelecPbm() Class LJCPBM
 
 Return lRet
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ฑฑบMetodo    ณGetTpOperaบAutor  ณVendas Clientes     บ Data ณ  26/11/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em retornar o tipo de operacao selecionado.     บฑฑ
@@ -400,9 +398,23 @@ Return lRet
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณNumerico                                                    บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
 Method GetTpOpera() Class LJCPBM
 Return ::nTpOpera
+
+/*/{Protheus.doc} VDLinkCons
+	Executa consulta do Vida Link
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method VDLinkCons(cCodAut,cCodProd,cCupom,cData,cHora,cOperador) Class LJCPBM
+Local lRet := .F.
+
+lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,cData,cHora,cOperador)
+
+Return lRet

@@ -12,7 +12,8 @@ Function LOJA1945 ; Return
 ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
 Class LJCDadosTransacaoPBM From LJADadosTransacao
 	   			
-	Method New(nValor, nCupom, dData, cHora, lUltimaTrn, cRede, cTpDoc, cOperador)						//Metodo construtor
+	Method New(nValor, nCupom, dData, cHora, lUltimaTrn,;
+				 cRede, cTpDoc, cOperador, cCodAut,	cCodProd)	//Metodo construtor
 	
 EndClass
 
@@ -30,8 +31,9 @@ EndClass
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณObjeto														     บฑฑ
 ฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
-Method New(nValor, nCupom, dData, cHora, lUltimaTrn, cRede, cTpDoc, cOperador) Class LJCDadosTransacaoPBM
+Method New(nValor, nCupom, dData, cHora, lUltimaTrn, cRede, cTpDoc, cOperador, cCodAut,	cCodProd) Class LJCDadosTransacaoPBM
     
-	_Super:New(nValor, nCupom, dData, cHora, _PBM, lUltimaTrn, cRede, cTpDoc, cOperador)
+	_Super:New(nValor, nCupom, dData, cHora, _PBM, lUltimaTrn,;
+				 cRede, cTpDoc, cOperador, cCodAut,	cCodProd)
    	
 Return Self

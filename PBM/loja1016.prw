@@ -28,6 +28,7 @@ Class LJCSitefPBM
 	//Metodos internos
 	Method TrataRet(oDadosTran)										//Metodo que ira tratar o retorno da autocom do enviasitefdireto
 	Method TratRetCat(cTrilha1, cTrilha2)							//Metodo que ira tratar o retorno da leitura do cartao
+	Method VDLinkCons(oDadosTran)
 	
 EndClass
 
@@ -378,4 +379,23 @@ Method TratRetCat(cTrilha1, cTrilha2) Class LJCSitefPBM
 		cTrilha2 := Substr(cTrilha2, 1, Len(cTrilha2) -1)
 	EndIf
 	
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} VDLinkCons
+Consulta PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		16/03/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method VDLinkCons(oDadosTran) Class LJCSitefPBM
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:EnvVDLCons(@oDadosTran)
+
 Return Nil

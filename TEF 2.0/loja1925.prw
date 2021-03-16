@@ -35,11 +35,11 @@ Class LJCClisitefPbm From LJAPbm
 	Method BuscaSubs()
 	Method ConfProd()
 	Method CancPbm()
-	Method SelecPbm()
+	Method SelecPbm(cNomePBM)
 	Method Confirmar()
 	Method Desfazer()
  	Method IniciouVen()
-	
+	Method VDLinkCons(oDadosTran)	
       
 EndClass       
 
@@ -253,10 +253,12 @@ Return oDadosTran
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
 ---------------------------------------------------------------------------*/
-Method SelecPbm() Class LJCClisitefPbm 
+Method SelecPbm(cNomePBM) Class LJCClisitefPbm 
 	
 	Local lRetorno 	:= .F.			//Retorno do metodo
 	Local oTelaPBM	:= Nil			//Tela da PBM
+
+	Default cNomePBM:= ""
 	
 	If ::oConfPbms:Count() > 0 
 
@@ -265,6 +267,8 @@ Method SelecPbm() Class LJCClisitefPbm
 		oTelaPBM:Show()
 	
 		If !oTelaPBM:lCancelado
+
+			cNomePBM := oTelaPBM:cRetSelect
 			
 			Do Case
 				Case oTelaPBM:cRetSelect == _EPHARMA
@@ -357,3 +361,31 @@ Return Nil
 Method IniciouVen() Class LJCClisitefPbm
 Local lIniciou := ::oPbm:oPbm <> Nil
 Return lIniciou
+
+/*/{Protheus.doc} VDLinkCons
+	Executa consulta do Vida Link
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method VDLinkCons(oDadosTran) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPbm:VDLinkCons(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
+							oDadosTran:cHora,oDadosTran:cOperador)
+
+If lRetorno
+	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
+	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
+	::oDadosTran := oDadosTran
+	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
+	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
+Else
+	::oPbm:oPbm := Nil
+EndIf	
+
+Return Nil

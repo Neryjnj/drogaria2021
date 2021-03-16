@@ -32,6 +32,7 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method RetServico(cTpServico)									//Metodo que retorna um objeto do tipo AbstrataServico do array de servicos.
 	Method FimTrans(lConfirma)										//Metodo que ira confirmar ou desfazer a transacao
 	Method LeCartDir(cMensagem, cTrilha1, cTrilha2)					//Metodo que ira fazer a leitura direta do cartao
+	Method VDLinkCons()
 		
 EndClass
 
@@ -86,7 +87,7 @@ Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 	Local lRetorno := .F.								//Retorno da funcao
 	
 	//Estancia o objeto
-	::oDadosTran := LJCDadosSitefDireto():DadosSitef()	
+	::oDadosTran := LJCDadosSitefDireto():DadosSitef()
 	
 	//Prepara os dados de envio
 	cDadosTX += AllTrim(Str(::nIndTrans))
@@ -300,3 +301,39 @@ Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefDireto
 	nRetorno := ::oSitefPbm:LeCartDir(cMensagem, @cTrilha1, @cTrilha2)
 	
 Return nRetorno
+
+/*/{Protheus.doc} VDLinkCons
+	Executa consulta do Vida Link
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method VDLinkCons() Class LJCSitefDireto
+Local lRet := .F.	//Retorno da funcao
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+
+::oDadosTran:cCupomFisc		:= ::cNumCupom
+::oDadosTran:cDataFisc		:= ::cData
+::oDadosTran:cHorario		:= ::cHora
+::oDadosTran:cOperador		:= AllTrim(Str(::nCodOper))
+::oDadosTran:cCodAut		:= ::cCodAut
+::oDadosTran:cCodProd		:= ::cCodProd
+
+//Envia a transacao
+::oSitefPbm:VDLinkCons(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0	
+	MsgAlert(STR0001) //#"Problema de comunicação com Sitef"
+Else
+	lRetorno := .T.	
+EndIf
+
+Return lRet
