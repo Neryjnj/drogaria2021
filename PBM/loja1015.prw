@@ -32,7 +32,7 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method RetServico(cTpServico)									//Metodo que retorna um objeto do tipo AbstrataServico do array de servicos.
 	Method FimTrans(lConfirma)										//Metodo que ira confirmar ou desfazer a transacao
 	Method LeCartDir(cMensagem, cTrilha1, cTrilha2)					//Metodo que ira fazer a leitura direta do cartao
-	Method VDLinkCons()
+	Method ConsVDLink()
 		
 EndClass
 
@@ -312,17 +312,17 @@ Return nRetorno
 	@return return, return_type, return_description
 
 /*/
-Method VDLinkCons() Class LJCSitefDireto
+Method ConsVDLink() Class LJCSitefDireto
 Local lRet := .F.	//Retorno da funcao
 
 //Estancia o objeto
 ::oDadosTran := LJCDadosSitefDireto():DadosSitef()
 
-::oDadosTran:cCupomFisc		:= ::cNumCupom
+::oDadosTran:cCupomFisc		:= AllTrim(::cCupom)
 ::oDadosTran:cDataFisc		:= ::cData
 ::oDadosTran:cHorario		:= ::cHora
-::oDadosTran:cOperador		:= AllTrim(Str(::nCodOper))
-::oDadosTran:cCodAut		:= ::cCodAut
+::oDadosTran:cOperador		:= AllTrim(::cOperador)
+::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
 ::oDadosTran:cCodProd		:= ::cCodProd
 
 //Envia a transacao
@@ -333,7 +333,7 @@ Local lRet := .F.	//Retorno da funcao
 If ::oDadosTran:nRetorno <= 0	
 	MsgAlert(STR0001) //#"Problema de comunicação com Sitef"
 Else
-	lRetorno := .T.	
+	lRet := .T.	
 EndIf
 
 Return lRet

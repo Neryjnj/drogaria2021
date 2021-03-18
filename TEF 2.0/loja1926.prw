@@ -353,38 +353,35 @@ Method IniciaFunc(nFuncao, cRestricao) Class LJCComClisitef
     	
 Return nRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³ContinFunc       ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºDesc.     ³Continuar o fluxo da transacao					 				 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºUso       ³SigaLoja / FrontLoja                                        		 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºParametros³EXPC1 (1 - cBuffer) - Buffer a ser enviado ao sitef. 				 º±±
 ±±º			 ³EXPN1 (2 - nContinua) - Indica se o fluxo continua.				 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºRetorno   ³Numerico														     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 
 	Local nRetorno		:= 0			//Retorno do metodo
 	Local oParamsApi 	:= Nil			//Objeto do tipo LJCParamsAPI
 	Local cRetorno 		:= ""       	//Retorno do comando enviado   
-	Local lSaida 			:= .F.         	//Controle do laco
-	Local cCMC7 			:= ""			//Utilizado na leitura do correspondente bancario atraves do CMC7
-	Local cUltMSG			:= ""			//Guarda ultima mensagem informada ao usuario para o comando 	 
+	Local lSaida 		:= .F.         	//Controle do laco
+	Local cCMC7 		:= ""			//Utilizado na leitura do correspondente bancario atraves do CMC7
+	Local cUltMSG		:= ""			//Guarda ultima mensagem informada ao usuario para o comando 	 
+	Local cDROVLBPro	:= ""
+	Local cValBrut		:= ""
 	Local lControl		:= .F.			//Controle a execucao do processo 23 do TEf
 	Local lEndTef 		:= .F.			//Controle do botao cancelar comando 23
 	Local cQtdParc		:= "" 			//Quantidade de Parcelas
-	
+	Local lPharmSys		:= .F.
+		
 	Default cBuffer := ""
-	Default nContinua := 0 
+	Default nContinua := 0
 	
 	::cBuffer := cBuffer
 	::nContinua := nContinua
@@ -392,7 +389,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 	//Verifica se o fluxo continua e valida o dado coletado
 	If nContinua != 0 .OR. ::ValColeta()
 		
-		While !lsaida			
+		While !lSaida			
 			//Prepara os parametros de envio
 			oParamsApi := ::PrepParam({CLISITEF, "ContinuaFuncaoSiTefInterativo", AllTrim(Str(::nProxComan)), ;
 			                         	   AllTrim(Str(::nTipoCampo)), AllTrim(Str(::nTamMin)), AllTrim(Str(::nTamMax)), ;
@@ -403,12 +400,12 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 		    
 		    If nRetorno == 10000
 		    	
-		    	::nProxComan		:= Val(oParamsApi:Elements(3):cParametro)
-		    	::nTipoCampo		:= Val(oParamsApi:Elements(4):cParametro)
+		    	::nProxComan	:= Val(oParamsApi:Elements(3):cParametro)
+		    	::nTipoCampo	:= Val(oParamsApi:Elements(4):cParametro)
 		    	::nTamMin		:= Val(oParamsApi:Elements(5):cParametro)
 		    	::nTamMax		:= Val(oParamsApi:Elements(6):cParametro)
 		    	::cBuffer		:= oParamsApi:Elements(7):cParametro
-		    	::nMaxBuffer		:= Val(oParamsApi:Elements(8):cParametro)	
+		    	::nMaxBuffer	:= Val(oParamsApi:Elements(8):cParametro)	
 		    	::nContinua		:= Val(oParamsApi:Elements(9):cParametro)	
 		    	
 		    	oParamsApi:Destroy()   
@@ -417,11 +414,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 		    	oParamsApi := NIL
 		    	
 		    	//Trata o conteudo do campo retornado
-		    	//::TratarCmd()    
-
+		    	//::TratarCmd()
 	
 				Do Case
-				
 				
 					Case ::nProxComan == 0
 						//Esta devolvendo um valor para, se desejado, ser armazenado pela automacao
@@ -468,29 +463,74 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 					Case ::nProxComan == 20
 						//Deve obter uma resposta do tipo SIM/NAO. 
 						//No retorno o primeiro caracter presente em Buffer deve conter 0 se confirma e 1 se cancela
+						If lPharmSys
+							::nTipoCampo := -1
+							::nTamMax  := 1
+							::nTamMin  := 1
+							::cBuffer  := "1"
+							Loop
+						EndIf
+
 						::TrataCampo()   
 						::cBuffer := ::oFrmTef:Questionar(::cBuffer)
 						cBuffer := ::cBuffer
 						nContinua := 0 
 						::cBuffer := cBuffer
 						::nContinua := nContinua
+
 						lSaida := .F.
 					   //	::ContinFunc(::cBuffer)
 						
 					Case ::nProxComan == 21
+
+						//Numero do Convenio
+						If ::nTipoCampo == 4022
+							::nProxComan := 4022	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 6
+							::cBuffer    := "1"
+							::nMaxBuffer := 18     
+							If !Empty(::aDados[1,5]) //JULIOOOO - verificar como alterar isso aqui
+								lPharmSys := .T.
+								Loop
+							Endif
+						Endif
+						
+						If lPharmSys
+							::nTipoCampo:= -1
+							::nTamMin   := 1
+							::nTamMax   := 2   
+							
+							//Informado o numero do cartao do convenio
+							//JULIOOOO - verificar como alterar isso aqui - aDados
+							If ::aDados[1,5] == 560	//Funcional card, solicita digitacao do cartao do convenio              
+								::cBuffer	:= "2"               				   
+							ElseIf !Empty(::aDados[1,3]) 
+								::cBuffer	:= "1"               
+							//Informado o numero do CPF do cliente
+							Else
+								::cBuffer  	:= "2"
+							Endif
+
+							::nMaxBuffer := 2
+							Loop
+						EndIf
+
 						//Deve apresentar um menu de opcoes e permitir que o usuario selecione uma delas. 
 						//Na chamada o parametro Buffer contem as opcoes no formato 1:texto;2:texto;...i:Texto;... 
 						//A rotina da aplicacao deve apresentar as opcoes da forma que ela desejar 
 						//(nao sendo necessario incluir os indices 1,2, ...) e apos a selecao feita pelo 
 						//usuario, retornar em Buffer o indice i escolhido pelo operador (em ASCII)
-									
+
 						::oFrmTef:MenuOpcoes(::cBuffer)
 						//Validação para ter certeza da forma de pagamento selecionada
 						If ::nTipoCampo == 731 .And. ::oTransacao:nTipoTrans == 7 //Recarga Celular
 							 ::oTransacao:cFormaPgto := ::cBuffer
-						EndIf		    
-						lSaida := .T.		
-								
+						EndIf
+
+						lSaida := .T.
+
 					Case ::nProxComan == 22
 						//Deve aguardar uma tecla do operador utilizada quando se deseja que
 						//o operador seja avisado de alguma mensagem apresentada na tela
@@ -571,10 +611,129 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::oFrmTef:MsgVisor(::cBuffer)
 							::oFrmTef:Capturar("A", ::nTamMin, ::nTamMax, StrZero(Day(::oTransacao:dData), 2) + StrZero(Month(::oTransacao:dData), 2) + Str(Year(::oTransacao:dData), 4))			
 						
+						ElseIf ::nTipoCampo == 1023
+							::nProxComan	:= 1023	
+							::nTipoCampo	:= 0		
+							::nTamMin   	:= 1
+							::nTamMax     	:= 10
+							::cBuffer     	:= ::aDados[1,6]
+							::nMaxBuffer	:= 10
+							If !Empty(::aDados[1,5])
+								lPharmSys	:= .T.
+								Loop
+							Endif
+						ElseIf ::nTipoCampo == 1024
+							::nProxComan	:= 1024	
+							::nTipoCampo	:= 0		
+							::nTamMin   	:= 1
+							::nTamMax     	:= 2
+							::cBuffer     	:= ::aDados[1,7]
+							::nMaxBuffer	:= 10
+							If !Empty(::aDados[1,5])
+								lPharmSys	:= .T.
+								Loop
+							Endif
+
+						ElseIf ::nTipoCampo == 1025
+							cDROVLBPro := T_DROVLBPro(Alltrim(::cGet),.T.)
+							If Empty(cDROVLBPro)
+								MsgAlert("Codigo de Produto Inválido")
+								::nProxComan := 30	
+								::nTipoCampo := 1012		
+								::nTamMin    := 1
+								::nTamMax    := 30
+								::nMaxBuffer := 30
+								Loop
+							Endif
+									
+							::nProxComan := 1025	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 35
+							::cBuffer    := Alltrim(Substr(cDROVLBPro,08,35))
+							::nMaxBuffer := 30
+							If !Empty(::aDados[1,5])
+								lPharmSys := .T.
+								Loop		
+							Endif
+						ElseIf ::nTipoCampo == 1026
+							// Antes de solicitar a quantidade, verifica existncia do produto
+							If ::nCodFuncao == 540
+								cDROVLBPro := T_DROVLBPro(Alltrim(::cGet), .T.)
+								If Empty(cDROVLBPro)
+									MsgAlert("Código de Produto Inválido")
+									::nProxComan := 30	
+									::nTipoCampo := 1012		
+									::nTamMin    := 1
+									::nTamMax    := 30
+									::nMaxBuffer := 30
+									Loop
+								Endif
+							Endif
+									
+							::nProxComan := 1026	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 30
+							::cBuffer    := Alltrim(Substr(cDROVLBPro,76,13))
+							::nMaxBuffer := 30
+							If !Empty(::aDados[1,5])
+								lPharmSys		:= .T.
+								Loop
+							Endif
+
+						//Numero de Autorizacao PBM PharmaSystem
+						ElseIf ::nTipoCampo == 1030  			
+							::nProxComan := 1030	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 9
+							::nMaxBuffer := 18
+							::cBuffer    := ::aDados[1,1]						
+							lPharmSys	 := .T.
+							Loop		
+						
+						//Numero do Convenio
+						ElseIf ::nTipoCampo == 4022
+							::nProxComan := 4022	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 6
+							::cBuffer    := ::aDados[1][2]
+							::nMaxBuffer := 18     
+							If !Empty(::aDados[1,5])
+								lPharmSys := .T.
+								Loop		
+							Endif
 						Else
 							::oFrmTef:MsgVisor(::cBuffer)
 							::oFrmTef:Capturar("A", ::nTamMin, ::nTamMax)
 						EndIf
+
+						If lPharmSys
+							//CPF do cliente
+							If ::nTipoCampo == 502
+								::nProxComan := 502	
+								::nTipoCampo := 0		
+								::nTamMin    := 1
+								::nTamMax    := 11  
+								::cBuffer    := ::aDados[1][4]			
+								::nMaxBuffer := 29     
+								Loop						
+							Endif	
+				
+							//Numero do Cartao	
+							If ::nTipoCampo == 512
+								::nProxComan := 512	
+								::nTipoCampo := 0		
+								::nTamMin    := 1
+								::nTamMax    := 2  
+								::cBuffer    := ::aDados[1][3]			
+								::nMaxBuffer := 18     
+								Loop						
+							Endif
+						Endif
+
 					    lSaida := .T.
 					Case ::nProxComan == 31
 					    //Deve ser lido o numero de um cheque. A coleta pode ser feita via leitura de CMC-7 ou pela 
@@ -588,7 +747,6 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 					    //retornando como bom um cheque com problemas
 						
 						::oFrmTef:MsgVisor(::cBuffer)
-			
 				
 						::LeDadChq(cCMC7)
 									
@@ -614,10 +772,31 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::oFrmTef:MsgVisor(::cBuffer)
 							::oFrmTef:Capturar("N", ::nTamMin, ::nTamMax, ::oTransacao:nValor)
 						
+						ElseIf ::nTipoCampo == 4016		
+							cValBrut := StrZero(Val(StrTran(Alltrim(Str((Val(Substr(cDROVLBPro,55,10))/100),10,2)), '.', '', 1)),7) 
+							::nProxComan := 4016	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 10
+							::cBuffer    := cValBrut  //Valor Bruto, pego da tabela SB0/DA0
+							::nMaxBuffer := 18     
+							lPharmSys := .T.
+							Loop				
+						ElseIf ::nTipoCampo == 4017
+							cValBrut := StrZero(Val(StrTran(Alltrim(Str((Val(Substr(cDROVLBPro,55,10))/100),10,2)), '.', '', 1)),7)			
+							::nProxComan := 4017	
+							::nTipoCampo := 0		
+							::nTamMin    := 1
+							::nTamMax    := 6
+							::cBuffer    := cValBrut  //Valor Bruto, pego da tabela SB0/DA0
+							::nMaxBuffer := 18     
+							lPharmSys	:= .T.
+							Loop
 						Else
 							::oFrmTef:MsgVisor(::cBuffer)
 							::oFrmTef:Capturar("N", ::nTamMin, ::nTamMax)
-						EndIf  
+						EndIf
+
 						lSaida := .T. 
 					
 					Case ::nProxComan == 35
@@ -642,11 +821,10 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::oFrmTef:Capturar("A", ::nTamMin, ::nTamMax)			
 						EndIf
 						lSaida := .T. 			
+					
 					Otherwise
 					lSaida := .T. 	
-				EndCase		
-			            
-		    	
+				EndCase
 		    
 		    ElseIf nRetorno == 0
 		    	//Transacao OK
@@ -1103,24 +1281,20 @@ Method TratarCmd() Class LJCComClisitef
 		
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³TrataCampo   	   ºAutor  ³Vendas Clientes     º Data ³  12/11/08   º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºDesc.     ³Tratar o tipo campo retornado do sitef							 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºUso       ³SigaLoja / FrontLoja                                        		 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+------------------------------------------------------------------------------------
 ±±ºRetorno   ³																     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method TrataCampo() Class LJCComClisitef  
 	Local nParcela	:= 1
 	Local cBuffer	:= ""
+	Local nX		:= 0
+	Local nY 		:= 0
 
 	//Tratamento para retirar os caracteres especiais	 
 	If !Empty(AllTrim(::cBuffer))
@@ -1163,8 +1337,8 @@ Method TrataCampo() Class LJCComClisitef
 				
 		Case ::nTipoCampo == 105
 			//Contem a data e hora da transacao no formato AAAAMMDDHHMMSS
-	  		::oRetorno:dData := CTOD(SubStr(::cBuffer, 7, 2) + "/" + SubStr(::cBuffer, 5, 2) + "/" + SubStr(::cBuffer, 1, 4))
-		    ::oRetorno:cHora := SubStr(::cBuffer, 9, 2) + ":" + SubStr(::cBuffer, 11, 2) + ":" + SubStr(::cBuffer, 13, 2)
+			::oRetorno:dData := CTOD(SubStr(::cBuffer, 7, 2) + "/" + SubStr(::cBuffer, 5, 2) + "/" + SubStr(::cBuffer, 1, 4))
+			::oRetorno:cHora := SubStr(::cBuffer, 9, 2) + ":" + SubStr(::cBuffer, 11, 2) + ":" + SubStr(::cBuffer, 13, 2)
 
 		Case ::nTipoCampo == 106
 			// ID da Administradora da Carteira Virtual, Ex: MERCADO PAGO, ITI, IzPay
@@ -1313,6 +1487,10 @@ Method TrataCampo() Class LJCComClisitef
 			//a lib de segurança da Software Express personalizada para o estabelecimento comercial de forma 
 			//a obter a senha aberta
 			::oRetorno:cSenhaCli	:= AllTrim(::cBuffer)
+		
+		Case ::nTipoCampo == 200
+			//PharmaSystem Preco Liquido
+			::oRetorno:cSaldoDisp := AllTrim(::cBuffer)
 																								
 	    //------------------------
 		//Recarga de Celular      
@@ -1434,10 +1612,252 @@ Method TrataCampo() Class LJCComClisitef
 			//Codigo em barras pago. Aparece uma vez para cada indice de documento (campo 607). O formato eh o 
 			//mesmo utilizado para entrada do campo ou seja, 0:numero ou 1:numero
 			::oRetorno:oCodBarras:Add(::oRetorno:nIndiceDoc , AllTrim(::cBuffer))
+
+		Case ::nTipoCampo == 641
+			::oRetorno:cDataIni := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 642
+			::oRetorno:cDataFim := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1010
+			//Qtde de medicamentos
+			nX := Val(AllTrim(::cBuffer))
+			::oRetorno:nQtdeMed  := nX
+			::oRetorno:aItemsPBM := Array(nX)
+			For nY:= 1 to ::oRetorno:nQtdeMed
+				::oRetorno:aItemsPBM[nY] := MSRetVidaLinkItem():New() //Classe no LOXTEF
+			Next nY
+
+			If ::nCodFuncao == 560
+				::oRetorno:nIndAtuMed := ::oRetorno:nIndAtuMed + 1
+				nX := ::oRetorno:nIndAtuMed
+			EndIf
+
+		Case ::nTipoCampo == 1011
+			//Indice de medicamentos
+			nX := Val(AllTrim(::cBuffer))
+			::oRetorno:nIndAtuMed := nX
+			::oRetorno:aItemsPBM[nX]:nIndice := nX
+
+		Case ::nTipoCampo == 1012
+			//Codigo do medicamento
+
+			//PBM PharmaSystem
+			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 540
+				::oRetorno:nIndAtuMed := ::oRetorno:nIndAtuMed + 1
+				::oRetorno:nQtdeMed	 := ::oRetorno:nIndAtuMed
+
+				If ::oRetorno:nIndAtuMed == 1
+					::oRetorno:aItemsPBM := {}
+				Endif
 				
+				AADD( ::oRetorno:aItemsPBM , MSRetVidaLinkItem():New() ) //Classe no LOJXTEF
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nIndice := ::oRetorno:nIndAtuMed
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:cCodigo := AllTrim(::cBuffer)
+			Else
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:cCodigo := AllTrim(::cBuffer)
+			Endif
+
+		Case ::nTipoCampo == 1013
+			//PBM PharmaSystem
+			::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nQuantAut := Val(AllTrim(::cBuffer))
+			
+		
+		Case ::nTipoCampo == 1014
+			//Preço unitário máximo de venda ao consumidor
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nPrecoMax := Val(AllTrim(::cBuffer))/100
+		
+		Case ::nTipoCampo == 1015
+			//Valor unitário recomendado de venda ao consumidor
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nPrecoRecomend	:= Val(AllTrim(::cBuffer))/100
+		
+		Case ::nTipoCampo == 1016
+			//Valor unitário de venda à farmácia. Corresponde ao Valor de venda ao consumidor + Reembolso da farmácia
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValVendFarm := Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 1017
+			//Valor unitário de reembolso da farmácia
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValReembFarm := Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 1018
+			//Valor unitário de reposição
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValReposiFarm	:= Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 1019
+			//Valor do subsídio do convênio
+			nX := ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValSubsidio := Val(AllTrim(::cBuffer))/100
+		
+		Case ::nTipoCampo == 1020
+			//CNPJ do convênio
+			::oRetorno:cCNPJConvenio := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1021
+			//Código do plano de desconto do Convênio
+			::oRetorno:cCodPlano := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1022
+			//Número do documento (retorno na venda e solicitado no cancelamento)
+			MsgStop("TipoCampo "+Str(::nTipoCampo)+"= "+AllTrim(::cBuffer))
+
+		Case ::nTipoCampo == 1023
+			//Data da venda a ser cancelada no formato DDMMAAAA
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cCRM := AllTrim(::cBuffer)
+		
+		Case ::nTipoCampo == 1024
+			//Número do cupon fiscal original a ser cancelado
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cUF := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1025
+			//Código do medicamento a ser devolvido
+			MsgStop("TipoCampo "+Str(::nTipoCampo)+"= "+AllTrim(::cBuffer))
+
+		Case ::nTipoCampo == 1026
+			//Quantidade do medicamento a ser devolvida
+			MsgStop("TipoCampo "+Str(::nTipoCampo)+"= "+AllTrim(::cBuffer))
+
+		Case ::nTipoCampo == 1029
+			//1029	Data da receita médica
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:dDataRec := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1030
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:cNumPreAut := AllTrim(::cBuffer)
+		
+		Case ::nTipoCampo == 1033
+			//VidaLink Valor unitário de venda ao consumidor para pagamento à vista
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValConsum	:= Val(AllTrim(::cBuffer))/100
+		
+		Case ::nTipoCampo == 1039
+			::oRetorno:cAdmFin := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1040
+			//Tipo de Medicamento PBM (01–Medicamento, 02-Manipulação, 03-Manipulação Especial, 04-Perfumaria)
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cTpMedic := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 1041
+			//1041	Descrição do Medicamento
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cDescMedic	:= AllTrim(::cBuffer)                                                    
+
+		Case ::nTipoCampo == 1042
+			//1042	Condição p/venda:Se 0 obrigatório utilizar preço Funcional Card (PF) Se 1 pode vender por preço inferior ao preço PF
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cPrecoFun := AllTrim(::cBuffer)
+			
+		Case ::nTipoCampo == 1043
+			//1043	Preço Funcional Card
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValorFC		:= Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 1044
+			//1044	Preço praticado
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValorPrat		:= Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 1045
+			//PharmaSystem Status do Medicamento
+			If ::nCodFuncao == 541  .OR. ::nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:cStatMedic := AllTrim(::cBuffer)
+			Endif
+
+		Case ::nTipoCampo == 1046
+			//1046	Quantidade receitada
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nQtdReceit	:= Val(AllTrim(::cBuffer))
+
+		Case ::nTipoCampo == 1047
+			//1047	Referência
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cRef := AllTrim(::cBuffer)
+
+		Case  ::nTipoCampo == 1047
+			//1048	Indicador da venda PBM (0-Produto venda cartão 1-Produto venda a vista)
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cIndPBM := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 4001
+			//4001	CRF
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cCRF := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 4002
+			//4002	UF do CRF
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cUFCRF := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 4003
+			//4003	Tipo de venda
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:cTipoVen := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 4004
+			//PharmaSystem Valor Total
+			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 560  .OR. ::nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValTot := Val(AllTrim(::cBuffer))/100
+			Endif               
+
+		Case ::nTipoCampo == 4005
+			//4005	Valor a Vista
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nValConsum	:= Val(AllTrim(::cBuffer))/100
+			
+		Case ::nTipoCampo == 4006
+			//4006	Valor cartão PBM
+			nX	:= ::oRetorno:nIndAtuMed
+			::oRetorno:aItemsPBM[nX]:nVlCartao := Val(AllTrim(::cBuffer))/100
+
+		Case ::nTipoCampo == 4008 
+			//PharmaSystem % De Desconto
+			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 560  .OR. ::nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nPerDesc := Val(AllTrim(::cBuffer))
+			Endif
+
+		Case  ::nTipoCampo == 4016
+			//PharmaSystem Preco Bruto
+			MsgAlert("LjTEFTrata - 4016")
+					
+			If ::nCodFuncao == 541  .OR. ::nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValTot := Val(AllTrim(::cBuffer)) /100
+			Endif
+		
+		Case ::nTipoCampo == 4017
+			If oTef:nCodFuncao == 541  .OR. oTef:nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValLiq	:= Val(AllTrim(::cBuffer)) /100
+			Endif
+		
+		Case ::nTipoCampo == 4022
+			::oRetorno:cNumPreAut := AllTrim(::cBuffer)
+		
+		Case ::nTipoCampo == 4023 .Or. ::nTipoCampo == 4025 .Or. ::nTipoCampo == 4026 .Or. ::nTipoCampo == 4027
+			::oRetorno:cNomeConveniado := AllTrim(::cBuffer)
+
+		Case ::nTipoCampo == 4024
+			::oRetorno:cNomEmpConv := AllTrim(::cBuffer)
+
+		//PharmaSystem Valor a Receber do Conveniado
+		Case ::nTipoCampo == 4028
+			If oTef:nCodFuncao == 541  .OR. oTef:nCodFuncao == 540
+				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValRec	:= Val(AllTrim(::cBuffer))  /100
+			Endif 
+
 		Case ::nTipoCampo == 4029
 			//Indica, na coleta, que o campo em questão é o valor do desconto concedido pelo SITEF
 			::oRetorno:nVlrDescTEF	:= Round(Val(::cBuffer) / 100, 2)
+		
+		Case ::nTipoCampo == 4033
+			//4033	Tipo de documento PBM (0 = CRM, 1 = CRO)			
+			::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:cTpBPM := AllTrim(::cBuffer)
 			
 		Otherwise
 			
@@ -1445,10 +1865,7 @@ Method TrataCampo() Class LJCComClisitef
 		
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºMetodo    ³TratarRet ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Trata o retorno do sitef.							          º±±
@@ -1459,10 +1876,7 @@ Return Nil
 ±±º			 ³ExpC1 (1 - cTipo) - Tipo de mensagem.			    		  º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³		                                                      º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+---------------------------------------------------------------------------*/
 Method TratarRet(nRetorno, cTipo) Class LJCComClisitef
 		
 		If cTipo == _INICIALIZACAO
@@ -2105,48 +2519,40 @@ Method FormatData(dData, cHora, cDataAux, cHoraAux) Class LJCComClisitef
 Return Nil
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºMetodo    ³GrvArqCtrlºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+-----------------------------------------------------------------------------
 ±±ºDesc.     ³Gravar o arquivo de controle do tef.         				  º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+-----------------------------------------------------------------------------
 ±±ºUso       ³SigaLoja / FrontLoja                                        º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+-----------------------------------------------------------------------------
 ±±ºRetorno   ³		                                                      º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+---------------------------------------------------------------------------*/
 Method GrvArqCtrl( cNSU ) Class LJCComClisitef
+Local cData		:= ""						//Data da transacao
+Local cHora		:= "" 						//Hora da transacao
+Local cCupom	:= ""						//Numero do cupom
+Local lRetorno	:= .F.						//Controla se o arquivo foi gravado
+
+Default cNSU := ""
+
+::FormatData(::oTransacao:dData, ::oTransacao:cHora, @cData, @cHora)
+
+cCupom := AllTrim(Str(::oTransacao:nCupom))
+
+//Grava o arquivo de controle
+If Empty(cNSU)
+	lRetorno := ::oGlobal:GravarArq():TransTef(cData, cHora):Gravar(cCupom + "/" + cData + "/" + cHora )
+Else
+	lRetorno := ::oGlobal:GravarArq():TransTef(cData, cHora):Gravar(cCupom + "/" + cData + "/" + cHora + "/" + cNSU )
+EndIf
 	
-	Local cData		:= ""						//Data da transacao
-	Local cHora		:= "" 						//Hora da transacao
-	Local cCupom		:= ""						//Numero do cupom
-	Local lRetorno	:= .F.						//Controla se o arquivo foi gravado
-	
-	Default cNSU := ""			
-	
-	
-	::FormatData(::oTransacao:dData, ::oTransacao:cHora, @cData, @cHora)
-	
-	cCupom := AllTrim(Str(::oTransacao:nCupom)) 
-	
-	//Grava o arquivo de controle
-	If Empty(cNSU)
-		lRetorno := ::oGlobal:GravarArq():TransTef(cData, cHora):Gravar(cCupom + "/" + cData + "/" + cHora )
-	Else
-		lRetorno := ::oGlobal:GravarArq():TransTef(cData, cHora):Gravar(cCupom + "/" + cData + "/" + cHora + "/" + cNSU )
-	EndIf
-		
-	//Grava log
-	If lRetorno
-		::GravarLog("Arquivo de controle gravado com sucesso (Cupom: " + cCupom + " ; Data: " + cData + " ; Hora: " + cHora + ")")
-	Else
-		::GravarLog("Arquivo de controle nao foi gravado (Cupom: " + cCupom + " ; Data: " + cData + " ; Hora: " + cHora + ")")
-	EndIf
+//Grava log
+If lRetorno
+	::GravarLog("Arquivo de controle gravado com sucesso (Cupom: " + cCupom + " ; Data: " + cData + " ; Hora: " + cHora + ")")
+Else
+	::GravarLog("Arquivo de controle nao foi gravado (Cupom: " + cCupom + " ; Data: " + cData + " ; Hora: " + cHora + ")")
+EndIf
 	
 Return Nil
 
@@ -2701,7 +3107,7 @@ Return lRetorno
 Method RetornaAdm(cCodBand, cForma, nParcelas, cCodRede) Class LJCComClisitef
 Local aRetorno	:= {}
 Local oTEF		:= STBGetTef()
-Local aAdmin	:= oTEF:Administradoras()
+Local aAdmin	:= ::Administradoras()
 Local nPos		:= 0
 Local lPesqREDE := Len(aAdmin) > 0 .And. Len(aAdmin[1]) > 8 //Verifica se alem da Bandeira, considera tambem a pesquisa por Rede  
 Local lAchouADM := .F.
@@ -3014,13 +3420,13 @@ cRetorno := ::EnviarCom(oParamsApi)
 //Carrega o retorno
 oDadosTran:cCodAut 	:= oParamsApi:Elements(3):cParametro
 oDadosTran:cCodProd := Val(oParamsApi:Elements(4):cParametro)
-oDadosTran:nCupom 	:= Val(oParamsApi:Elements(5):cParametro)
+oDadosTran:cCupomFisc:= oParamsApi:Elements(5):cParametro
 oDadosTran:cDataFisc:= oParamsApi:Elements(6):cParametro
-oDadosTran:cHorario := Val(oParamsApi:Elements(7):cParametro)
+oDadosTran:cHorario := oParamsApi:Elements(7):cParametro
 oDadosTran:cOperador:= oParamsApi:Elements(8):cParametro
-
 oParamsApi:Destroy()
 oParamsApi := FreeObj(oParamsApi)
+
 nRet := Val(cRetorno)
 
 If nRet == 10000

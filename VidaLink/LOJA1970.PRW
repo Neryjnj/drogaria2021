@@ -16,7 +16,7 @@
 #DEFINE CARTAO			2
 #DEFINE AUTORIZACAO		3
 
-User Function LOJA1970 ; Return  			// "dummy" function - Internal Use
+User Function LOJA1970 ; Return  	// "dummy" function - Internal Use
 
 /*--------------------------------------------------------------------------------
 |Classe    |LJCVDLINK       |Autor  |Julio Nery     | Data |  15/03/21           |
@@ -27,29 +27,6 @@ User Function LOJA1970 ; Return  			// "dummy" function - Internal Use
 --------------------------------------------------------------------------------*/
 Class LJCVDLINK From LJCSitefDireto
 	
-	DATA nQtdeMed												//Quantidade de medicamentos retornados na consulta
-	DATA nIndAtual												//Indice do medicamento que esta sendo retornado no VidaLink
-	DATA cCNPJConvenio											//CNPJ do Convenio
-	DATA cCodPlano												//Codigo do plano de desconto do Convenio
-	DATA cCupom01												//Primeira via do cupom VIDALINK
-	DATA cCupom02												//Segunda via do cupom VIDALINK
-	DATA aItems													//Items da Consulta VIDALINK
-	DATA cNsuAutor                                              //Numero de Autorizacao do VidaLink
-	DATA cNsuSitef                                              //Numero do NSU do SiTEF 
-    DATA cHoraTrans        										//Hora da transacao
-    DATA cAutoriza                          					//Contém o Código de Autorização para as transações de crédito (15 posições no máximo)  
-    DATA cDescAdm                                               //Nome da Administradora de cartao	
-	DATA cTipCart												//Identificador de cartao diferenciado
-	DATA lConfTran												//Controla a Confirmacao de Envio da Venda Do Vidalink
-	DATA cNumPreAut
-	DATA cNomeConveniado	
-	DATA cNomEmpConv
-	DATA cSaldoDisp	
-	DATA cDataIni
-	DATA cDataFim	
-	DATA cQtdeDependentes
-	DATA cCodDependente	
-	DATA cNomDependente
 	DATA cCodAut
 	DATA cCodProd
 	DATA cCupom
@@ -57,8 +34,7 @@ Class LJCVDLINK From LJCSitefDireto
 	DATA cHora
 	DATA cOperador	
 
-    //JULIOOOOOOOO
-	Method PVidaLink()												//Metodo construtor
+	Method PVidaLink()						//Metodo construtor
     Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
 
     /*
@@ -105,28 +81,6 @@ Method PVidaLink(oClisitef) Class LJCVDLINK
 
 ::SitefDireto(oClisitef)
 
-::nQtdeMed			:= 0
-::nIndAtual			:= 0
-::cCNPJConvenio		:= ""
-::cCodPlano			:= ""
-::cCupom01			:= ""
-::cCupom02			:= ""
-::cNsuAutor	    	:= ""
-::cNsuSitef         := ""
-::cHoraTrans        := ""
-::cAutoriza         := "" 
-::cDescAdm          := "" 
-::cTipCart          := ""
-::lConfTran      	:= .F.
-::cNumPreAut		:= ""
-::cNomeConveniado   := ""
-::cNomEmpConv		:= ""
-::cSaldoDisp		:= ""
-::cDataIni			:= ""
-::cDataFim			:= ""
-::cQtdeDependentes  := ""
-::cCodDependente    := ""
-::cNomDependente	:= ""
 ::cCodAut			:= ""
 ::cCodProd			:= ""
 ::cCupom			:= ""
@@ -155,8 +109,7 @@ Local lRet := .T.
 ::cHora		:= StrTran(cHora,":")
 ::cOperador	:= cOperador
 
-//JULIOOOOOOOOOOOOOOOOO - continuar daqui, verificando aonde chamar pra ir pro proximo fonte
-// lRet := ::
+lRet := ::ConsVDLink()
 
 Return lRet
 

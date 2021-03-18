@@ -363,20 +363,21 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 	EndIf
 Return Nil
                       
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±³Fun‡„o	 ³DROVLCar  ³ Autor ³ VENDAS CRM	                        ³ Data ³20/04/2005³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡„o ³ Carrega a cotacao criada no Host VidaLink no array aVidaLinkD para inico da³±±
+/*-------------------------------------------------------------------------------------------
+±±³Função	 ³DROVLCar  ³ Autor ³ VENDAS CRM	                        ³ Data ³20/04/2005³±±
+---------------------------------------------------------------------------------------------
+±±³Descrição ³ Carrega a cotacao criada no Host VidaLink no array aVidaLinkD para inico da³±±
 ±±³          ³ operacao de venda no FrontLoja, referente ao numero de autorizacao digitado³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+---------------------------------------------------------------------------------------------
 ±±³Uso		 ³ Front Loja com Template Drogarias                     					  ³±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLCar( _cNumAutori	, _cNumAutAnt	, aLin			, aVidaLinkD	, ;
 							nTotVenda	, oTotVenda		, oLbx			, nNumPbm		, ;	 
 							_cNumConv	,_cNumCartao	,  _cCliente	, _cLoja		, ;
 							cCPF 		,cNumCRM		, cUFCRM		)
 
 Local I 		:= 0 	//Contador
+Local cDoc		:= 0
 Local _cCPF		:= ""	//CPF do Cliente
 Local nValor	:= 0	//Valor do produto retornado pela Funcional Card
 Local lContinua	:= .T.
@@ -425,9 +426,10 @@ If lContinua
 	nTotVenda  := 0
 
 	If lTotvsPDV
-		oDados := LJCDadosTransacaoPBM():New(0    , _cNumAutori /*cDoc*/, Date()  ,  Time(),;
-									/*lUltimaTrn*/,/*cRede*/     , "" /*cTpDoc*/ ,  xNumCaixa(),;
-									_cNumAutori	 , "1"		)
+		cDoc := STBPbmNDoc()
+		oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
+											/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  cUserName,;
+											 _cNumAutori  , "1"		)
 		oTEF20 := STBGetTEF()
 		oPBM := oTEF20:Pbm()
 	EndIf
@@ -437,7 +439,7 @@ If lContinua
 		If lTotvsPDV
 			oPBM:VDLinkCons(oDados)
 		Else
-			oTEF:Operacoes("VIDALINK_CONSULTA"		, aVidaLinkD)
+			oTEF:Operacoes("VIDALINK_CONSULTA", aVidaLinkD)
 		EndIf
 	//Consulta PharmaSystem
 	ElseIf nNumPbm == 541
@@ -459,12 +461,20 @@ If lContinua
 	Endif
 
 	If lTotvsPDV
+		aAdd(aVidaLinkD, {} )
+		aAdd(aVidaLinkD, 0  )
+
+
+		//JULIOOOOOOOOOOOOOOO - 18/03/2021
+		//CONTINUAR DAQUI
+		For I := 1 to oPBM:nQtdeMed
+
 	
 	Else
 
 		If oTEF:lTEFOk
 			aAdd(aVidaLinkD, {} )
-			aAdd(aVidaLinkD, 0  )  
+			aAdd(aVidaLinkD, 0  )
 			
 			For I := 1 to oTEF:aRetVidaLink:nQtdeMed
 				If oTef:nCodFuncao == 541 .OR. oTef:nCodFuncao == 540	//PharmaSystem
@@ -951,24 +961,42 @@ Return aRet
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
 -------------------------------------------------------------------------------------------*/
 Template Function DROVLBPro(cCodBarra, lIncProd)
+Local aAreaSB1		:= {}
 Local cRet          := ""  	// Retorno da funcao
 Local cDescrProd	:= ""  	// Descricao do produto
 Local nPrecoPMC		:= 0   	// Preco Maximo Consumidor
 Local nPrecoPromo	:= 0   	// Preco de venda do estabelecimento
 Local lEncontrou	:= .F. 	// Encontrou o produto?
-Local cCodProd	:= ""
+Local cCodProd		:= ""
+Local lTotvsPDV		:= STFIsPOS()
+Local oCliModel		:= NIL
 
 Default lIncProd := .F.
 
-DbSelectArea("SBI")
-SBI->(DbSetorder(5))
-				
-If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, 13)))
-	cDescrProd	:= SBI->BI_DESC
-	nPrecoPMC	:= SBI->BI_PRV
-	nPrecoPromo	:= SBI->BI_PRV
-	cCodProd	:= SBI->BI_COD
-	lEncontrou	:= .T.
+If lTotvsPDV
+	DBSelectArea("SB1")
+	aAreaSB1 := SB1->(GetArea())
+	SB1->(DbSetOrder(5)) //B1_FILIAL + B1_CODBAR
+	If SB1->(DbSeek(xFilial("SB1") + PADR(cCodBarra, 13)))
+		cDescrProd	:= SB1->B1_DESC		
+		cCodProd	:= SB1->B1_COD
+		oCliModel 	:= STDGCliModel() //Model do Cliente
+		nPrecoPMC   := STWFormPr( SB1->B1_COD, oCliModel:GetValue("SA1MASTER","A1_COD"), "", ;
+									oCliModel:GetValue("SA1MASTER","A1_LOJA"),0, 1	)
+		nPrecoPromo	:= nPrecoPMC
+		lEncontrou	:= .T.
+	EndIf
+	RestArea(aAreaSB1)
+Else
+	DbSelectArea("SBI")
+	SBI->(DbSetorder(5)) //BI_FILIAL + BI_CODBAR
+	If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, 13)))
+		cDescrProd	:= SBI->BI_DESC
+		nPrecoPMC	:= SBI->BI_PRV
+		nPrecoPromo	:= SBI->BI_PRV
+		cCodProd	:= SBI->BI_COD
+		lEncontrou	:= .T.
+	EndIf
 EndIf
 
 If lEncontrou
@@ -982,12 +1010,9 @@ Else
 EndIf
 Return cRet
 
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLCall ³ Autor ³ VENDAS CRM				            ³ Data ³12/05/2010³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+---------------------------------------------------------------------------------------------
 ±±³Descri‡„o ³ Rotina chamada apartir do VidaLink atravez de integração via DLL.          ³±±
 ±±³          ³ Na digitação do codigo de barra do produto no VidaLink, ele passa este     ³±±
 ±±³          ³ codigo para a DLL TOTVSVIDA.dll que invoca esta funcao tambem passando o   ³±±
@@ -1001,12 +1026,9 @@ Return cRet
 ±±³          ³   55 | 64 | 10    | PMC - Preco Maximo ao Consumidor                       ³±±
 ±±³          ³   65 | 74 | 10    | Preco Promocional                                      ³±±
 ±±³          ³   75 | 75 | 01    | Espaco                                                 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+---------------------------------------------------------------------------------------------
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uParm6)
 	Local cRet := "" // Retorno da Funcao
     Local cEAN := "" // EAN do produto

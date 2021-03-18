@@ -42,7 +42,7 @@ Class LJCPBM
 	Method ConfVend(lConfirma)										// Confirma a venda na PBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
-	Method VDLinkCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador)
+	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -412,9 +412,9 @@ Return ::nTpOpera
 	@return return, return_type, return_description
 
 /*/
-Method VDLinkCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador) Class LJCPBM
+Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador) Class LJCPBM
 Local lRet := .F.
 
-lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador)
+lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
 
 Return lRet
