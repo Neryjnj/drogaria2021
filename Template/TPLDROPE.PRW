@@ -1029,16 +1029,25 @@ Return cCodPag
 ±±ºUso       ³Template Drogaria                                           º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function FRTALTPG()
-Local _Ret := .T.         
-Local lRet := .T.
-Local cMVLJTPPAG := ""
+Local _Ret 		 := .T.         
+Local lRet 		 := .T.
+Local cMVLJTPPAG := SuperGetMV("MV_LJTPPAG", ,"") //Controle dos tipos de formas de pagto possiveis para recebimento dos titulos
+Local lTotvsPDV	 := STFIsPOS() //Verifica se é Totvs PDV
+Local lRecebTit  := .F.
 
-If FunName() == "FRTA271"
-	If Len(ParamIxb) > 3 .And. !Empty(ParamIxb[2]) .And. ParamIxb[3]
-		cMVLJTPPAG := ParamIxb[4] //Parametro MV_LJTPPAG. Condicoes de pagamento validas no recebimento.
+If lTotvsPDV
+	lRecebTit := STIGetRecTit()	// Indica se eh Recebimento de Titulos
+	If !Empty(ParamIxb[2]) .And. lRecebTit
+		_Ret    := ParamIxb[2] $ cMVLJTPPAG .Or. Empty(cMVLJTPPAG) //Controle dos tipos de formas de pagto possiveis para recebimento dos titulos
+	ElseIf !(SuperGetMV("MV_LJLBFRM",,.F.))//Habilita alteração de forma de pagamento, quando execução de Template(Ex:Drogarias) (Sendo .T. = SIM e .F. = Nao).   Padrão .F., pois assim utiliza-se "Condição de Pagamento"
+		_Ret    := lRecebTit 	
+	EndIf
+ElseIf FunName() == "FRTA271"
+	lRecebTit := ParamIxb[3] 	// Indica se eh Recebimento de Titulos
+	If Len(ParamIxb) > 3 .And. !Empty(ParamIxb[2]) .And. lRecebTit
 		_Ret    := ParamIxb[2] $ cMVLJTPPAG .Or. Empty(cMVLJTPPAG) //Controle dos tipos de formas de pagto possiveis para recebimento dos titulos
 	ElseIf !(SuperGetMV("MV_LJLBFRM",,.F.))//Habilita alteração de forma de pagamento, quando execução de Template(Ex:Drogarias) no FrontLoja(Sendo .T. = SIM e .F. = Nao).   Padrão .F., pois assim utiliza-se F5 para alterar forma de pagamento
-		_Ret    := ParamIxb[3] 	
+		_Ret    := lRecebTit 	
 	EndIf
 Else
 	_Ret    := lRecebe		
@@ -2914,13 +2923,26 @@ Template Function FRTFuncoes()
 Local _aFuncoes := ParamIxb[1]	//Conteudo o array aFuncoes
 Local nOption   := IIf(Len(ParamIxb) > 1, ParamIxb[2],69)	//nOpção do Menu
 Local nNumMenu  := IIf(Len(ParamIxb) > 1, Val(ParamIxb[3]),30)	//nOpção do Menu
-Local lTotvsPDV := STFIsPOS()	//Origem da chamada
+Local lTotvsPDV := IIf(Len(ParamIxb) > 3, ParamIxb[4],.F.)	//Origem da chamada
+Local oTef20	:= NIL
 
+//|Intervalo utilizado pelos templates:|
+//|70 a 99                             |
 If lTotvsPDV
-	AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
+	If T_DroLenANVISA() > 0
+		AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
+	EndIf
+
+	oTEF20 := STBGetTEF()
+	// If STFGetCfg("lUsaTef") .And. ValType(oTef20:oConfig:oCfgTef) == "O" .And. ;
+	// 	 ValType(oTef20:oConfig:oCfgTef:oSitef) == "O" .And. ; //Verifica se está usando o Clisitef
+	// 	 oTef20:oCOnfig:oCfgTef:oSitef:lPBM //Verifica se a PBM esta ativa no cadastro de estação
+	If STFGetCfg("lUsaTef") .And. ValType(oTEF20) == "O" .And. oTEF20:oConfig:ISPBM()
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
+		AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
+	EndIf
 Else
-	//|Intervalo utilizado pelos templates:|
-	//|70 a 99                             |
 	If T_DroLenANVISA() > 0
 		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"
 	Endif

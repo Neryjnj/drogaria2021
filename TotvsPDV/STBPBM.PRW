@@ -1,5 +1,6 @@
 #include "TOTVS.CH"
 #INCLUDE "DEFTEF.CH"
+#include "STBPBM.CH"
 
 Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
 Static aVidaLinkc	:= {}	// array cabecalho (Cliente,loja,etc) do orcamento gerado no PBM VidaLink
@@ -520,3 +521,55 @@ If !lRet
 EndIf
 
 Return lRet
+
+//--------------------------------------------------------
+/*/{Protheus.doc} STBSubsidio
+Verifica se a venda PBM possui subsidio para ja levar 
+automaticamente para as formas de pagamento.
+
+@author  Varejo
+@version P12.1.27
+@since   16/03/2021
+
+@param		nVSubsidio, Numérico, Valor de subsidio da venda referente ao PBM
+@param		cFormaSub, Caractere, Determina se deve omitir formas de pagamento conforme regra da template function "FRTALTPG" (Drogaria)
+
+@return lRetorno, lógico, Retorno se tem ou nao subsidio.
+/*/
+//--------------------------------------------------------
+Function STBSubsidio(nVSubsidio, cFormaSub)
+Local lRetorno  := .F.					//Retorno da funcao, define se tem ou nao subsidio
+Local nI		:= 0
+Local lContinua := .F.
+
+If LjGetOPBM() <> Nil .Or. (nVidalink <> 0 .AND. Len(aVidaLinkD) > 0)
+    lContinua := .T.
+EndIf
+
+If lContinua
+    If nVidaLink <> 0 .And. nVidaLink <> 99
+        If oTef:nCodFuncao <> 560	//Se nao for Funcional Card
+            For nI := 1 to Len(aVidaLinkD[VL_DETALHE])
+                nVSubsidio += (aVidaLinkD[VL_DETALHE,nI, VL_PRVENDA ] - aVidaLinkD[VL_DETALHE,nI, VL_PRVISTA ]) * aVidaLinkD[VL_DETALHE,nI, VL_QUANTID]
+            Next nI
+        EndIf   	    
+    Else
+        nVSubsidio	:= oPbm:BuscaSubs()
+    EndIf   
+
+    If nVSubsidio > 0
+        
+        //Verifica a forma de pagamento utilizada como padrão na venda PBM com subsidio. Se não encontrar o default é "CO"
+        cFormaSub := SuperGetMV("MV_LJFSUB", Nil, "CO")
+        
+        //Verifica se a forma de pagamento está cadastrada na tabela 24
+        If GenTabPos( "24", cFormaSub )
+            lRetorno := .T.
+        Else
+            Alert("Venda PBM com subsídio, por favor, configurar uma forma de pagamento válida no parâmetro MV_LJFSUB.")
+            nVSubsidio := 0
+        EndIf
+    EndIf
+EndIf
+
+Return lRetorno
