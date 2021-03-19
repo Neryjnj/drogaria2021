@@ -447,7 +447,7 @@ If lContinua
 		Else
 			oTEF:Operacoes("PHARMASYSTEM_CONSULTA"	, aVidaLinkD)     
 		EndIf
-	ElseIf  nNumPbm == 540
+	ElseIf nNumPbm == 540
 		If lTotvsPDV
 		Else
 			oTEF:Operacoes("PHARMASYSTEM_AUTORIZA"	, aVidaLinkD)
@@ -464,12 +464,11 @@ If lContinua
 		aAdd(aVidaLinkD, {} )
 		aAdd(aVidaLinkD, 0  )
 
-
 		//JULIOOOOOOOOOOOOOOO - 18/03/2021
 		//CONTINUAR DAQUI
 		For I := 1 to oPBM:nQtdeMed
 
-	
+		Next I
 	Else
 
 		If oTEF:lTEFOk
@@ -966,6 +965,7 @@ Local cRet          := ""  	// Retorno da funcao
 Local cDescrProd	:= ""  	// Descricao do produto
 Local nPrecoPMC		:= 0   	// Preco Maximo Consumidor
 Local nPrecoPromo	:= 0   	// Preco de venda do estabelecimento
+Local nTamCodBar	:= 0
 Local lEncontrou	:= .F. 	// Encontrou o produto?
 Local cCodProd		:= ""
 Local lTotvsPDV		:= STFIsPOS()
@@ -975,9 +975,10 @@ Default lIncProd := .F.
 
 If lTotvsPDV
 	DBSelectArea("SB1")
+	nTamCodBar := TamSx3("B1_CODBAR")[1]
 	aAreaSB1 := SB1->(GetArea())
 	SB1->(DbSetOrder(5)) //B1_FILIAL + B1_CODBAR
-	If SB1->(DbSeek(xFilial("SB1") + PADR(cCodBarra, 13)))
+	If SB1->(DbSeek(xFilial("SB1") + PADR(cCodBarra,nTamCodBar)))
 		cDescrProd	:= SB1->B1_DESC		
 		cCodProd	:= SB1->B1_COD
 		oCliModel 	:= STDGCliModel() //Model do Cliente
@@ -989,8 +990,9 @@ If lTotvsPDV
 	RestArea(aAreaSB1)
 Else
 	DbSelectArea("SBI")
+	nTamCodBar := TamSx3("BI_CODBAR")[1]
 	SBI->(DbSetorder(5)) //BI_FILIAL + BI_CODBAR
-	If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, 13)))
+	If SBI->(DbSeek(xFilial("SBI") + PADR(cCodBarra, nTamCodBar)))
 		cDescrProd	:= SBI->BI_DESC
 		nPrecoPMC	:= SBI->BI_PRV
 		nPrecoPromo	:= SBI->BI_PRV

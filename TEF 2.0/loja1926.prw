@@ -264,6 +264,9 @@ Method ConfSitef(cEndIp, cLoja, cTerminal) Class LJCComClisitef
 		//Prepara os parametros de envio no Clisitef
   
 		//Se usa Cielo Premia chama outro inicializador
+
+		cTerminal := "MS000002"
+
 		If STFGetStat( "CIELOP" , .T. ) == "1"
 			oParamsApi := ::PrepParam({CLISITEF, "ConfiguraIntSiTefInterativoEx", cEndIp, cLoja, cTerminal, "0" , "[VersaoAutomacaoCielo=TOTVSPOS10]"})			
 		Else
@@ -479,7 +482,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 						::nContinua := nContinua
 
 						lSaida := .F.
-					   //	::ContinFunc(::cBuffer)
+					    //::ContinFunc(::cBuffer)
 						
 					Case ::nProxComan == 21
 
@@ -635,7 +638,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							Endif
 
 						ElseIf ::nTipoCampo == 1025
-							cDROVLBPro := T_DROVLBPro(Alltrim(::cGet),.T.)
+							cDROVLBPro := T_DROVLBPro(Alltrim(Self:oFrmTef:cGetDados),.T.)
 							If Empty(cDROVLBPro)
 								MsgAlert("Codigo de Produto Inválido")
 								::nProxComan := 30	
@@ -659,7 +662,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 						ElseIf ::nTipoCampo == 1026
 							// Antes de solicitar a quantidade, verifica existncia do produto
 							If ::nCodFuncao == 540
-								cDROVLBPro := T_DROVLBPro(Alltrim(::cGet), .T.)
+								cDROVLBPro := T_DROVLBPro(Alltrim(Self:oFrmTef:cGetDados), .T.)
 								If Empty(cDROVLBPro)
 									MsgAlert("Código de Produto Inválido")
 									::nProxComan := 30	
@@ -1624,7 +1627,7 @@ Method TrataCampo() Class LJCComClisitef
 			nX := Val(AllTrim(::cBuffer))
 			::oRetorno:nQtdeMed  := nX
 			::oRetorno:aItemsPBM := Array(nX)
-			For nY:= 1 to ::oRetorno:nQtdeMed
+			For nY:= 1 to nX
 				::oRetorno:aItemsPBM[nY] := MSRetVidaLinkItem():New() //Classe no LOXTEF
 			Next nY
 
@@ -3431,6 +3434,11 @@ nRet := Val(cRetorno)
 
 If nRet == 10000
 	//Gravar arquivo de controle para confirmar ou desfazer a transacao
+	
+	If ValType( ::oTransacao ) <> "O"
+		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , dDataBase, StrTran(Time(),":"))
+	EndIf
+
 	::GrvArqCtrl()
 	//Carrega tela do sitef para troca de informacoes
 	::Show()
