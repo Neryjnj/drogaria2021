@@ -264,9 +264,6 @@ Method ConfSitef(cEndIp, cLoja, cTerminal) Class LJCComClisitef
 		//Prepara os parametros de envio no Clisitef
   
 		//Se usa Cielo Premia chama outro inicializador
-
-		cTerminal := "MS000002"
-
 		If STFGetStat( "CIELOP" , .T. ) == "1"
 			oParamsApi := ::PrepParam({CLISITEF, "ConfiguraIntSiTefInterativoEx", cEndIp, cLoja, cTerminal, "0" , "[VersaoAutomacaoCielo=TOTVSPOS10]"})			
 		Else
@@ -3110,7 +3107,7 @@ Return lRetorno
 Method RetornaAdm(cCodBand, cForma, nParcelas, cCodRede) Class LJCComClisitef
 Local aRetorno	:= {}
 Local oTEF		:= STBGetTef()
-Local aAdmin	:= ::Administradoras()
+Local aAdmin	:= oTef:Administradoras()
 Local nPos		:= 0
 Local lPesqREDE := Len(aAdmin) > 0 .And. Len(aAdmin[1]) > 8 //Verifica se alem da Bandeira, considera tambem a pesquisa por Rede  
 Local lAchouADM := .F.
