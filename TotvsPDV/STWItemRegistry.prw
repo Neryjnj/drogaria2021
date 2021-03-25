@@ -2,7 +2,7 @@
 #INCLUDE "PARMTYPE.CH"
 #INCLUDE "STPOS.CH"
 #INCLUDE "STWITEMREGISTRY.CH"
-#INCLUDE "STBPBM.CH"
+#INCLUDE "STBDEFPBM.CH"
 
 Static lReceiptIsOpen	:= .F.		// Define se foi realizada abertura de cupom fiscal
 
