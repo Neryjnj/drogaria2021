@@ -42,7 +42,7 @@ Class LJCPBM
 	Method ConfVend(lConfirma)										// Confirma a venda na PBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
-	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
+	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -51,26 +51,20 @@ Class LJCPBM
 	
 EndClass
         
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณPBM       บAutor  ณVendas Clientes     บ Data ณ  03/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณ Construtor do Classe LJCPBM                                บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ SIGALOJA/FRONTLOJA                                         บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method PBM() Class LJCPBM
 
-	::oPbm 		:= Nil			// Objeto a ser criado
-	::oSlz    	:= Nil			// Inicializacao do Objeto
-	::oTelaPBM	:= Nil			// Objeto da Tela
-	::nTpOpera	:= 0
+::oPbm 		:= Nil			// Objeto a ser criado
+::oSlz    	:= Nil			// Inicializacao do Objeto
+::oTelaPBM	:= Nil			// Objeto da Tela
+::nTpOpera	:= 0
 	
 Return Self
 
@@ -412,9 +406,9 @@ Return ::nTpOpera
 	@return return, return_type, return_description
 
 /*/
-Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador) Class LJCPBM
+Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class LJCPBM
 Local lRet := .F.
 
-lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
+lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 
 Return lRet

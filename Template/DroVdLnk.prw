@@ -250,7 +250,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 	If nOpPbm == 540
 		@ 175,130 BUTTON STR0044 SIZE 39,12 OF oDlg PIXEL ;
 				ACTION If( T_DROVLConf(  {"",""}	, aVidalinkD, @nTotVenda, nTotVenda,;
-										 @oTotVenda , "000001"	, "01"		, lTotvsPDV),;
+										 @oTotVenda , "000001"	, "01"		, nOpPbm	),;
 							oDlg:End(),oDlg:End()) // STR0044 "Confirma"
 	Else
 						 
@@ -298,7 +298,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		@ 175,130 BUTTON STR0044 SIZE 39,12 OF oDlg PIXEL ACTION; // STR0044 "Confirma"
 		 			If( T_DROVLConf(@aParamVL[1][VLP_AVLC]	, @aParamVL[1][VLP_AVLD], @aParamVL[1][VLP_NVIDAL],;
 		 			 				@nTotVenda				, @oTotVenda			, @aParamVL[1][VLP_CCLIEN],;
-		 			 				@aParamVL[1][VLP_CLOJAC] ),;
+		 			 				@aParamVL[1][VLP_CLOJAC], nOpPbm ),;
 		 			 				Eval(bGrvVend), oDlg:End() )
 	Endif
 	
@@ -384,8 +384,8 @@ Local lContinua	:= .T.
 Local lRet		:= .T.
 Local lTotvsPDV := STFIsPOS()
 Local oPBM		:= NIL
-Local oTEF20	:= NIL
 Local oDados	:= NIL
+Local oTEF20	:= NIL
 
 Default cCPF 	:= ""
 Default cNumCRM := ""
@@ -429,7 +429,7 @@ If lContinua
 		cDoc := STBPbmNDoc()
 		oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
 											/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  cUserName,;
-											 _cNumAutori  , "1"		)
+											 _cNumAutori  , "1"		, aVidaLinkD )
 		oTEF20 := STBGetTEF()
 		oPBM := oTEF20:Pbm()
 	EndIf
@@ -461,14 +461,77 @@ If lContinua
 	Endif
 
 	If lTotvsPDV
-		aAdd(aVidaLinkD, {} )
-		aAdd(aVidaLinkD, 0  )
+		If ValType(oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno) == "O"
+			aAdd(aVidaLinkD, {} )
+			aAdd(aVidaLinkD, 0  )
 
-		//JULIOOOOOOOOOOOOOOO - 18/03/2021
-		//CONTINUAR DAQUI
-		For I := 1 to oPBM:nQtdeMed
+			For I := 1 to oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:nQtdeMed
 
-		Next I
+				If nNumPBM == 541 .Or. nNumPBM == 540 //PharmaSystem
+			
+					aAdd(aVidaLinkD[VL_DETALHE], ;
+							{ oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nIndice			,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cCodigo     	,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut		,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		,; 	// nValConsum
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		,;  // nPreco de Venda da Farmacia
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut     	,;  // Quantidade sem alteracao 
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValTot		,;	// Preco de venda VidaLink			 
+								0																		,;	// Valor do Subusidio
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		})	// Valor pago a vista
+		
+					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
+		
+				ElseIf nNumPbm == 560	//Funcional Card
+					
+					If AllTrim(oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cPrecoFun) == "0"
+						nValor := oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValorFC
+					Else
+						nValor := oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValorPrat
+					EndIf
+					
+					aAdd(aVidaLinkD[VL_DETALHE], ;
+							{ oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nIndice					,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cCodigo			  	,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut 				,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum				,; 	// nValConsum
+								nValor	  																		,;  // nPreco de Venda da Farmacia
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut				,;  // Quantidade sem alteracao 
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValTot				,;	// Preco de venda VidaLink			 
+								0																				,;	// Valor do Subusidio
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum				})	// Valor pago a vista
+		
+					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
+		
+				Else		               
+				
+					aAdd(aVidaLinkD[VL_DETALHE], ;
+							{ oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nIndice				,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cCodigo		  	,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut			,;
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nPrecoRecomend		,; 	// nValConsum
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm 		,;  // nPreco de Venda da Farmacia
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut 			,;  // Quantidade sem alteracao 
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nPrecoMax  		,;	// Preco de venda VidaLink			 
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValSubsidio +;
+										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subusidio
+								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum			})	// Valor pago a vista
+					
+					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm
+		
+				Endif
+			Next I
+
+			aVidaLinkD[VL_TOTVEND] := nTotVenda
+			aAdd(aVidaLinkD,cDoc)
+			
+			If Empty( aVidaLinkD[VL_DETALHE] )
+				MsgStop(STR0005, STR0002)		//N„o encontrado nenhum item na cotaÁ„o do VidaLink para este numero de autorizaÁ„o
+			EndIf
+		Else
+			MsgStop(STR0006, STR0002) //N„o encontrado cotaÁ„o no VidaLink para este numero de autorizaÁ„o	
+		EndIf
+
 	Else
 
 		If oTEF:lTEFOk
@@ -530,7 +593,7 @@ If lContinua
 				Endif
 			Next
 			
-			aVidaLinkD[VL_TOTVEND] := nTotVenda  	    
+			aVidaLinkD[VL_TOTVEND] := nTotVenda
 			aAdd(aVidaLinkD,oTef:cCupom)
 			
 			If Empty( aVidaLinkD[VL_DETALHE] )
@@ -541,22 +604,22 @@ If lContinua
 		EndIf
 	EndIf
 
-	T_DROVLMItem( @aLin, @nTotVenda, @oTotVenda, @oLbx, @aVidaLinkD )  // Mostra os Itens autorizados pelo VidaLink
+	T_DROVLMItem( @aLin, @nTotVenda, @oTotVenda, @oLbx, @aVidaLinkD, nNumPbm )  // Mostra os Itens autorizados pelo VidaLink
 EndIf
 
 lValidSitef := .F.
 
 Return lRet
 
-/*‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+/*---------------------------------------------------------------------------
 ±±∫Programa  ≥DROVLMItem∫Autor  ≥VENDAS CRM	  		 ∫ Data ≥ 26/04/05    ∫±±
 ±±ÃÕÕÕÕÕÕÕÕÕÕÿÕÕÕÕÕÕÕÕÕÕ ÕÕÕÕÕÕÕœÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕ ÕÕÕÕÕÕœÕÕÕÕÕÕÕÕÕÕÕÕÕπ±±
 ±±∫Desc.     ≥ Mostra os Itens (produto, qtd, preco, etc) autorizados     ∫±±
 ±±∫          ≥ pelo VidaLink                                              ∫±±
 ±±ÃÕÕÕÕÕÕÕÕÕÕÿÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕÕπ±±
 ±±≥Uso		 ≥ Front Loja com Template Drogarias        				  ≥±±
-ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/
-Template Function DROVLMItem( aLin, nTotVenda, oTotVenda, oLbx, aVidaLinkD )
+---------------------------------------------------------------------------*/
+Template Function DROVLMItem( aLin, nTotVenda, oTotVenda, oLbx, aVidaLinkD, nNumPbm )
 Local _nI 			:= 0						// Contador
 Local nBarras 		:= TamSX3("BI_CODBAR")[1]	// Dimensao do codigo de barras
 Local cCodBarras 	:= ""					 	// Codigo de barras
@@ -565,11 +628,21 @@ Local lSigaLoja		:= nModulo == 12			// Se utiliza o modulo Venda Assistida
 Local cTabelaProd	:= "SBI"					// Tabela para consulta do produto
 Local cCamDescProd	:= "BI_DESC" 				// Campo para consultado do pruduto
 Local nVlSubsidio	:= 0						//Valor do Subsidio
+Local nCodFuncao	:= 0
+
+Default nNumPbm		:= 0
 
 If lSigaLoja .Or. lTotvsPDV
-	cTabelaProd 	:= "SB1"
-	cCamDescProd 	:= "B1_DESC"
-	nBarras			:= TamSX3("B1_CODBAR")[1]
+	cTabelaProd := "SB1"
+	cCamDescProd:= "B1_DESC"
+	nBarras		:= TamSX3("B1_CODBAR")[1]
+	If lSigaLoja
+		nCodFuncao := oTef:nCodFuncao
+	Else
+		nCodFuncao := nNumPbm
+	EndIf
+Else
+	nCodFuncao :=  oTef:nCodFuncao
 EndIf
 
 If Len( aVidaLinkD ) == 4 
@@ -582,7 +655,8 @@ If Len( aVidaLinkD ) == 4
 		cDescProd := Posicione(cTabelaProd,5,xFilial(cTabelaProd)+ cCodBarras  ,cCamDescProd)	//Com o codigo de barra (EAN) pego a descricao do Produto
 		cDescProd := If(Empty(cDescProd) , STR0016, cDescProd ) //"N„o encontrado produto com este cÛdigo"
 
-		nVlSubsidio := IIf(oTef:nCodFuncao == 902 .And. (aVidaLinkD[VL_DETALHE,_nI,VL_PRVENDA ] - aVidaLinkD[VL_DETALHE,_nI,VL_SUBSIDI] <=0) , 0 , aVidaLinkD[VL_DETALHE,_nI,VL_SUBSIDI] )
+		nVlSubsidio := IIf( nCodFuncao == 902 .And. (aVidaLinkD[VL_DETALHE,_nI,VL_PRVENDA ] - aVidaLinkD[VL_DETALHE,_nI,VL_SUBSIDI] <= 0 ) ,;
+								 0 , aVidaLinkD[VL_DETALHE,_nI,VL_SUBSIDI] )
 		
 		aAdd(aLin , {	aVidaLinkD[VL_DETALHE,_nI,VL_NDXPROD]	,;  																					// Indice
   					    aVidaLinkD[VL_DETALHE,_nI,VL_EAN  ]		,;   		  																			// Cod Barra
@@ -697,18 +771,25 @@ Return Nil
 ±±≥Uso		 ≥ Front Loja com Template Drogarias                        				  ≥±±
 ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ*/
 Template Function DROVLConf(	aVidaLinkC	,	aVidaLinkD	,	nVidaLink	,	nTotVenda	,;
- 								oTotVenda	,	cCodCli		,	cLojCli		,   lTotvsPDV  )
+ 								oTotVenda	,	cCodCli		,	cLojCli		,   nNumPBM 	)
 Local lRet := .F.          	// Retorno da funcao  
 Local _nI  := 0            	// Variavel para usa no for
 Local aVdLnkDAux := {}     	// Array para auxiliar retorno dos dados
 Local aVidalink  := {}     	// Array para enviar os dados para o Frontloja
-Local lLojaFRT	 := .T.
+Local lTotvsPDV  := STFIsPOS()
+Local nCodFuncao := 0
+Local cMsg		 := ""
+Local oTEF20	 := NIL
 
-Default lTotvsPDV:= .F.
+Default nNumPBM	 := 0
 
-lLojaFRT := !lTotvsPDV
+If lTotvsPDV
+	nCodFuncao := nNumPbm
+	oTEF20 := STBGetTEF()
+Else
+	nCodFuncao := oTef:nCodFuncao
+EndIf
 
-// oTEF:aRetVidalink:cNumPreAut
 nTotVenda := 0
 If Len(aVidaLinkD) >= 4
 	If !Empty(aVidaLinkD[VL_DETALHE])
@@ -737,40 +818,33 @@ If lRet
 Endif
 
 If lRet
-	If lTotvsPDV
-		// If 
-
-		// Else
-		// 	lRet := .T.
-		// 	MsgAlert("Numero de Pre-Autorizacao Gerado: " /*+ oTEF:aRetVidalink:cNumPreAut*/)
-		// EndIf
+	If nCodFuncao <> 540 
+		If nCodFuncao <> 560 //PBM Funcional Card
+			lRet := MsgYesNo(STR0013,STR0002) // Confirma a FinalizaÁ„o da Venda para esta AutorizaÁ„o do VidaLink ?
+		EndIf	
 	Else
-		If oTef:nCodFuncao <> 540 
-			If oTef:nCodFuncao <> 560 //PBM Funcional Card
-				lRet := MsgYesNo(STR0013,STR0002) // Confirma a FinalizaÁ„o da Venda para esta AutorizaÁ„o do VidaLink ?
-			EndIf	
+		lRet := .T.
+		cMsg := "Numero de Pre-Autorizacao Gerado: "
+		If lTotvsPDV
+			cMsg += oTEF20:oPBM():oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:cNumPreAut
 		Else
-			lRet := .T.
-			MsgAlert("Numero de Pre-Autorizacao Gerado: " + oTEF:aRetVidalink:cNumPreAut)		
-		Endif
-	EndIf
+			cMsg += oTEF:aRetVidalink:cNumPreAut
+		EndIf
+		MsgAlert( cMsg )
+	Endif
 EndIf
 
 If lRet
 	aVidaLinkC := {cCodCli, cLojCli}	// Atualiza aVidaLinkC (Cabecalho) com codigo do Cliente e Loja
-EndIf
 
-If lRet
 	For _nI := 1 to Len(aVidaLinkD[VL_DETALHE])
 		If aVidaLinkD[VL_DETALHE, _nI, VL_QUANTID ] * aVidaLinkD[VL_DETALHE, _nI, VL_PRVENDA ]	> 0
 			aAdd( aVdLnkDAux , aVidaLinkD[VL_DETALHE, _nI] )
 		EndIf
-	Next      
+	Next _nI
 	
 	aVidaLinkD[VL_DETALHE] := aVdLnkDAux
-EndIf
 
-If lRet
 	nVidaLink := 1
 Else
 	nVidaLink := 0
@@ -779,14 +853,24 @@ EndIf
 aVidalink := {aVidaLinkD,aVidaLinkC,nVidalink}
 
 //FrontLoja
-FRT271aVL(aVidalink)  
+If !lTotvsPDV
+	FRT271aVL(aVidalink)
+EndIf
 
-//Venda Assistida
+//Venda Assistida e TOTVSPDV
 If Len(aVidaLinkD) > 0
-	aVidalink := {aVidaLinkD,aVidaLinkC,2} 
-	LJ7DadosVL(aVidalink) 
+	aVidalink := {aVidaLinkD,aVidaLinkC,2}
+	If lTotvsPDV
+		STBDadosVL(aVidalink)
+	Else
+		LJ7DadosVL(aVidalink) 
+	EndIf
 Else
-	LJ7DadosVL({1})
+	If lTotvsPDV
+		STBDadosVL({1})
+	Else
+		LJ7DadosVL({1})
+	EndIf
 EndIf
 	
 Return lRet
@@ -827,10 +911,10 @@ If Len(aVidaLinkD) = 4
 	EndIf
 EndIf
 
-If lRet	   						// Confirmado o cancelamento do Uso do VidaLink
-	aVidaLinkC			:= {}	// Zera array aVidaLinkC (Cabecalho)
-	aVidaLinkD			:= {}	// Zera array aVidaLinkC (Detalhe)
-	nVidaLink			:= 0	// Nao esta usando o Orcamento do VidaLink
+If lRet	 // Confirmado o cancelamento do Uso do VidaLink
+	aVidaLinkC	:= {}	// Zera array aVidaLinkC (Cabecalho)
+	aVidaLinkD	:= {}	// Zera array aVidaLinkC (Detalhe)
+	nVidaLink	:= 0	// Nao esta usando o Orcamento do VidaLink
 EndIf
 
 Return lRet

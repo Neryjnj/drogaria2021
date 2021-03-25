@@ -24,9 +24,10 @@ Class LJADadosTransacao
 	Data nParcela													//Numero de parcelas para vendas parceladas
 	Data dDataVcto  												//Data da transacao de pre-datado	
 	Data cOperador													//Operador da venda
-	Data cTpDoc														//tipo de documento utilizado no pbm => 0 - ecf, 1 - nfce, 2 -sat
+	Data cTpDoc														//tipo de documento utilizado no PBM => 0 - ecf, 1 - nfce, 2 -sat
 	Data cCodAut													//código da autorização - VIDALINK
 	Data cCodProd													//código do produto - VIDALINK
+	Data aVDLink													//outros dados da PBM
 	
 	Method New()
 	Method Retorno()
@@ -43,7 +44,7 @@ EndClass
 ---------------------------------------------------------------------------*/
 Method New(	nValor		, 	nCupom		, 	dData	,	cHora, ;
 			nTipoTrans	,	lUltimaTrn	,	cRede	,	cTpDoc, ;
-			cOperador	, 	cCodAut		,	cCodProd			) Class LJADadosTransacao 
+			cOperador	, 	cCodAut		,	cCodProd,	aVDLink	) Class LJADadosTransacao 
 			
 Default lUltimaTrn := .T. //Valida apenas para gerenciador Direcao
 Default cTpDoc	   := "1" //Insiro padrão NFCE
@@ -64,6 +65,7 @@ Self:cOperador  := cOperador
 Self:cTpDoc		:= cTpDoc //tipo de documento utilizado no pbm => 0 - ecf, 1 - nfce, 2 -sat
 Self:cCodAut	:= cCodAut
 Self:cCodProd	:= cCodProd
+Self:aVDLink	:= aVDLink
 
 Return Self 
 

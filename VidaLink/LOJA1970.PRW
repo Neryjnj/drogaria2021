@@ -32,10 +32,11 @@ Class LJCVDLINK From LJCSitefDireto
 	DATA cCupom
 	DATA cData
 	DATA cHora
-	DATA cOperador	
+	DATA cOperador
+	DATA aVDLink
 
 	Method PVidaLink()						//Metodo construtor
-    Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador)
+    Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 
     /*
 	Method IniciaVend(cCupom, cOperador)							//Inica a venda com o PBM
@@ -87,6 +88,7 @@ Method PVidaLink(oClisitef) Class LJCVDLINK
 ::cData				:= ""
 ::cHora				:= ""
 ::cOperador			:= ""
+::aVDLink			:= {}
 
 Return Self
 
@@ -99,7 +101,7 @@ Return Self
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
 /*/
-Method VDLinkCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador) Class LJCVDLINK
+Method VDLinkCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador,aVDLink) Class LJCVDLINK
 Local lRet := .T.
 
 ::cCodAut	:= cCodAut
@@ -108,6 +110,7 @@ Local lRet := .T.
 ::cData		:= DToS(dData)
 ::cHora		:= StrTran(cHora,":")
 ::cOperador	:= cOperador
+::aVDLink	:= aVDLink
 
 lRet := ::ConsVDLink()
 

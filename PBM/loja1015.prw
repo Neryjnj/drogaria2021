@@ -324,6 +324,7 @@ Local lRet := .F.	//Retorno da funcao
 ::oDadosTran:cOperador		:= AllTrim(::cOperador)
 ::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
 ::oDadosTran:cCodProd		:= ::cCodProd
+::oDadosTran:aVDLink		:= ::aVDLink
 
 //Envia a transacao
 ::oSitefPbm:VDLinkCons(@::oDadosTran)

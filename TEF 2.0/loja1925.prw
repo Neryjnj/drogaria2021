@@ -376,7 +376,7 @@ Method VDLinkCons(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.
 
 lRetorno := ::oPbm:VDLinkCons(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
-							oDadosTran:cHora,oDadosTran:cOperador)
+							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
 
 If lRetorno
 	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
