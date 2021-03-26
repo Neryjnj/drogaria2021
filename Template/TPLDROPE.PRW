@@ -1078,17 +1078,23 @@ Template Function FRTGrvSZ()
 
 Local aRet := {}
 
-// Determina que o arquivo LHG será gravado na retarguada e posteriormente será atualizado no BackOffice.
-AAdd(aRet,{"LHG",4})
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Conteudo do array aFilesTPL              ³
-//³                                         ³
-//³[1][1] - Nome do Alias                   ³
-//³[1][2] - Indice referente ao campo _SITUA³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-aAdd(aRet, {"LK9", 3})		// Logs ANVISA
+//-------------------------------------------------------------------------
+//Tabelas do Template de Drogaria cujo dados devem subir para a Retaguarda.
+//-------------------------------------------------------------------------
+//LHG - MOV.PONTOS DE CLIENTE
+AAdd(aRet,	{	"LHG"					,;	//01-Alias da tabela
+				4						,;	//02-Indice da tabela referente ao campo _SITUA
+				"LHG_FILIAL + LHG_SITUA",;	//03-Chave do indice
+				xFilial("LHG") + "00"	})	//04-Chave de Busca
+
+//LK9 - LOGS ANVISA
+AAdd(aRet,	{	"LK9"					,;	//01-Alias da tabela
+				3						,;	//02-Indice da tabela referente ao campo _SITUA
+				"LK9_FILIAL + LK9_SITUA",;	//03-Chave do indice
+				xFilial("LK9") + "00"	})	//04-Chave de Busca
 
 Return aRet
+
 /*
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
