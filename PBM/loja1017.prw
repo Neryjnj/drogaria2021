@@ -2,19 +2,13 @@
   
 User Function LOJA1017 ; Return  			// "dummy" function - Internal Use
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*------------------------------------------------------------------------------------
 ฑฑบClasse    ณLJCDadosSitefDiretoบAutor  ณVendas Clientes     บ Data ณ  10/09/07   บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณClasse responsavel em armazenar os dados da transacao.               บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณSigaLoja / FrontLoja                                        		   บฑฑ
-ฑฑศออออออออออฯอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+------------------------------------------------------------------------------------*/
 Class LJCDadosSitefDireto
 	
 	Data nRetorno							//Ira guardar o codigo de retorno da funcao
@@ -35,6 +29,7 @@ Class LJCDadosSitefDireto
 											//transacao que exige uma confirmacao
 	Data cCodAut							//c๓digo da autoriza็ใo VIDALINK
 	Data cCodProd							//c๓digo do produto VIDALINK
+	Data aVDLink							//outros dados PBM
 	
 	Method DadosSitef()						//Metodo construtor
 
@@ -68,5 +63,6 @@ Method DadosSitef() Class LJCDadosSitefDireto
 	::nTpTrans			:= 0
 	::cCodAut			:= ""
 	::cCodProd			:= ""
-					
+	::aVDLink			:= {}
+
 Return Self

@@ -490,8 +490,8 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTamMin    := 1
 							::nTamMax    := 6
 							::cBuffer    := "1"
-							::nMaxBuffer := 18     
-							If !Empty(::aDados[1,5]) //JULIOOOO - verificar como alterar isso aqui
+							::nMaxBuffer := 18
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys := .T.
 								Loop
 							Endif
@@ -503,10 +503,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTamMax   := 2   
 							
 							//Informado o numero do cartao do convenio
-							//JULIOOOO - verificar como alterar isso aqui - aDados
-							If ::aDados[1,5] == 560	//Funcional card, solicita digitacao do cartao do convenio              
+							If ::oTransacao:aVDLink[1,5] == 560	//Funcional card, solicita digitacao do cartao do convenio              
 								::cBuffer	:= "2"               				   
-							ElseIf !Empty(::aDados[1,3]) 
+							ElseIf !Empty(::oTransacao:aVDLink[1,3])
 								::cBuffer	:= "1"               
 							//Informado o numero do CPF do cliente
 							Else
@@ -616,9 +615,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTipoCampo	:= 0		
 							::nTamMin   	:= 1
 							::nTamMax     	:= 10
-							::cBuffer     	:= ::aDados[1,6]
+							::cBuffer     	:= ::oTransacao:aVDLink[1,6]
 							::nMaxBuffer	:= 10
-							If !Empty(::aDados[1,5])
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys	:= .T.
 								Loop
 							Endif
@@ -627,9 +626,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTipoCampo	:= 0		
 							::nTamMin   	:= 1
 							::nTamMax     	:= 2
-							::cBuffer     	:= ::aDados[1,7]
+							::cBuffer     	:= ::oTransacao:aVDLink[1,7]
 							::nMaxBuffer	:= 10
-							If !Empty(::aDados[1,5])
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys	:= .T.
 								Loop
 							Endif
@@ -652,13 +651,13 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTamMax    := 35
 							::cBuffer    := Alltrim(Substr(cDROVLBPro,08,35))
 							::nMaxBuffer := 30
-							If !Empty(::aDados[1,5])
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys := .T.
 								Loop		
 							Endif
 						ElseIf ::nTipoCampo == 1026
 							// Antes de solicitar a quantidade, verifica existncia do produto
-							If ::nCodFuncao == 540
+							If ::oTransacao:aVDLink[1,5] == 540
 								cDROVLBPro := T_DROVLBPro(Alltrim(Self:oFrmTef:cGetDados), .T.)
 								If Empty(cDROVLBPro)
 									MsgAlert("Código de Produto Inválido")
@@ -677,7 +676,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTamMax    := 30
 							::cBuffer    := Alltrim(Substr(cDROVLBPro,76,13))
 							::nMaxBuffer := 30
-							If !Empty(::aDados[1,5])
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys		:= .T.
 								Loop
 							Endif
@@ -689,7 +688,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTamMin    := 1
 							::nTamMax    := 9
 							::nMaxBuffer := 18
-							::cBuffer    := ::aDados[1,1]						
+							::cBuffer    := ::oTransacao:aVDLink[1,1]						
 							lPharmSys	 := .T.
 							Loop		
 						
@@ -699,9 +698,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							::nTipoCampo := 0		
 							::nTamMin    := 1
 							::nTamMax    := 6
-							::cBuffer    := ::aDados[1][2]
+							::cBuffer    := ::oTransacao:aVDLink[1,2]
 							::nMaxBuffer := 18     
-							If !Empty(::aDados[1,5])
+							If !Empty(::oTransacao:aVDLink[1,5])
 								lPharmSys := .T.
 								Loop		
 							Endif
@@ -717,7 +716,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 								::nTipoCampo := 0		
 								::nTamMin    := 1
 								::nTamMax    := 11  
-								::cBuffer    := ::aDados[1][4]			
+								::cBuffer    := ::oTransacao:aVDLink[1][4]			
 								::nMaxBuffer := 29     
 								Loop						
 							Endif	
@@ -728,7 +727,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 								::nTipoCampo := 0		
 								::nTamMin    := 1
 								::nTamMax    := 2  
-								::cBuffer    := ::aDados[1][3]			
+								::cBuffer    := ::oTransacao:aVDLink[1][3]			
 								::nMaxBuffer := 18     
 								Loop						
 							Endif
@@ -1628,7 +1627,7 @@ Method TrataCampo() Class LJCComClisitef
 				::oRetorno:aItemsPBM[nY] := MSRetVidaLinkItem():New() //Classe no LOXTEF
 			Next nY
 
-			If ::nCodFuncao == 560
+			If ::oTransacao:aVDLink[1,5] == 560
 				::oRetorno:nIndAtuMed := ::oRetorno:nIndAtuMed + 1
 				nX := ::oRetorno:nIndAtuMed
 			EndIf
@@ -1643,7 +1642,7 @@ Method TrataCampo() Class LJCComClisitef
 			//Codigo do medicamento
 
 			//PBM PharmaSystem
-			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541 .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:nIndAtuMed := ::oRetorno:nIndAtuMed + 1
 				::oRetorno:nQtdeMed	 := ::oRetorno:nIndAtuMed
 
@@ -1662,7 +1661,6 @@ Method TrataCampo() Class LJCComClisitef
 			//PBM PharmaSystem
 			::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nQuantAut := Val(AllTrim(::cBuffer))
 			
-		
 		Case ::nTipoCampo == 1014
 			//Preço unitário máximo de venda ao consumidor
 			nX := ::oRetorno:nIndAtuMed
@@ -1767,7 +1765,7 @@ Method TrataCampo() Class LJCComClisitef
 
 		Case ::nTipoCampo == 1045
 			//PharmaSystem Status do Medicamento
-			If ::nCodFuncao == 541  .OR. ::nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:cStatMedic := AllTrim(::cBuffer)
 			Endif
 
@@ -1803,7 +1801,7 @@ Method TrataCampo() Class LJCComClisitef
 
 		Case ::nTipoCampo == 4004
 			//PharmaSystem Valor Total
-			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 560  .OR. ::nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541 .OR. ::oTransacao:aVDLink[1,5] == 560  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValTot := Val(AllTrim(::cBuffer))/100
 			Endif               
 
@@ -1819,7 +1817,7 @@ Method TrataCampo() Class LJCComClisitef
 
 		Case ::nTipoCampo == 4008 
 			//PharmaSystem % De Desconto
-			If ::nCodFuncao == 541 .OR. ::nCodFuncao == 560  .OR. ::nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541 .OR. ::oTransacao:aVDLink[1,5] == 560  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nPerDesc := Val(AllTrim(::cBuffer))
 			Endif
 
@@ -1827,12 +1825,12 @@ Method TrataCampo() Class LJCComClisitef
 			//PharmaSystem Preco Bruto
 			MsgAlert("LjTEFTrata - 4016")
 					
-			If ::nCodFuncao == 541  .OR. ::nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValTot := Val(AllTrim(::cBuffer)) /100
 			Endif
 		
 		Case ::nTipoCampo == 4017
-			If oTef:nCodFuncao == 541  .OR. oTef:nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValLiq	:= Val(AllTrim(::cBuffer)) /100
 			Endif
 		
@@ -1847,7 +1845,7 @@ Method TrataCampo() Class LJCComClisitef
 
 		//PharmaSystem Valor a Receber do Conveniado
 		Case ::nTipoCampo == 4028
-			If oTef:nCodFuncao == 541  .OR. oTef:nCodFuncao == 540
+			If ::oTransacao:aVDLink[1,5] == 541  .OR. ::oTransacao:aVDLink[1,5] == 540
 				::oRetorno:aItemsPBM[::oRetorno:nIndAtuMed]:nValRec	:= Val(AllTrim(::cBuffer))  /100
 			Endif 
 
@@ -3433,8 +3431,10 @@ If nRet == 10000
 	//Gravar arquivo de controle para confirmar ou desfazer a transacao
 	
 	If ValType( ::oTransacao ) <> "O"
-		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , dDataBase, StrTran(Time(),":"))
+		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , SToD(oDadosTran:cDataFisc), StrTran(oDadosTran:cHorario,":"))
 	EndIf
+
+	::oTransacao:aVDLink := oDadosTran:aVDLink
 
 	::GrvArqCtrl()
 	//Carrega tela do sitef para troca de informacoes
