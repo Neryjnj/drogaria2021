@@ -43,6 +43,7 @@ Class LJCPBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
 	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+	Method PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -410,5 +411,22 @@ Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class L
 Local lRet := .F.
 
 lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+
+Return lRet
+
+/*/{Protheus.doc} PharmSCons
+	Executa consulta do PharmaSystem
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class LJCPBM
+Local lRet := .F.
+
+lRet := ::oPBM:PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 
 Return lRet

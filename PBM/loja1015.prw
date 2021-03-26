@@ -33,13 +33,10 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method FimTrans(lConfirma)										//Metodo que ira confirmar ou desfazer a transacao
 	Method LeCartDir(cMensagem, cTrilha1, cTrilha2)					//Metodo que ira fazer a leitura direta do cartao
 	Method ConsVDLink()
-		
+	Method PharmSCons()
 EndClass
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณSitefDiretบAutor  ณVendas Clientes  บ Data ณ  04/09/07      บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConstrutor da classe LJCSitefDireto.				          บฑฑ
@@ -47,10 +44,7 @@ EndClass
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบParametrosณ														      บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method SitefDiret(oClisitef) Class LJCSitefDireto
 
 	::AbstratPBM()
@@ -61,10 +55,7 @@ Method SitefDiret(oClisitef) Class LJCSitefDireto
 
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณEnvTrans  บAutor  ณVendas Clientes     บ Data ณ  10/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em enviar a transacao ao sitef.	              บฑฑ
@@ -77,10 +68,7 @@ Return Nil
 ฑฑบ			 ณ	     cartao no dados TX.                                  บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico													  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 	
 	Local cDadosTX := ""								//Dados da transacao
@@ -328,6 +316,43 @@ Local lRet := .F.	//Retorno da funcao
 
 //Envia a transacao
 ::oSitefPbm:VDLinkCons(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0	
+	MsgAlert(STR0001) //#"Problema de comunica็ใo com Sitef"
+Else
+	lRet := .T.	
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} PharmSCons
+	Executa consulta do PharmaSystem
+	@type  Metodo
+	@author Julio.Nery
+	@since 26/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method PharmSCons() Class LJCSitefDireto
+Local lRet := .F.	//Retorno da funcao
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+
+::oDadosTran:cCupomFisc		:= AllTrim(::cCupom)
+::oDadosTran:cDataFisc		:= ::cData
+::oDadosTran:cHorario		:= ::cHora
+::oDadosTran:cOperador		:= AllTrim(::cOperador)
+::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
+::oDadosTran:cCodProd		:= ::cCodProd
+::oDadosTran:aVDLink		:= ::aVDLink
+
+//Envia a transacao
+::oSitefPbm:PharmSCons(@::oDadosTran)
 
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef

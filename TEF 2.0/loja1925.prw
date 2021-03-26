@@ -39,7 +39,8 @@ Class LJCClisitefPbm From LJAPbm
 	Method Confirmar()
 	Method Desfazer()
  	Method IniciouVen()
-	Method VDLinkCons(oDadosTran)	
+	Method VDLinkCons(oDadosTran)
+	Method PharmSCons(oDadosTran)
       
 EndClass       
 
@@ -283,11 +284,11 @@ Method SelecPbm(cNomePBM) Class LJCClisitefPbm
 				
 				Case oTelaPBM:cRetSelect == _PHARMASYS
 					//JULIOOO - incluir a chamada
-					//::oPbm:oPbm :=
+					::oPbm:oPbm := LJCPharmSys():PharmaSystem(::oTransSitef:oClisitef)
 
 				Case oTelaPBM:cRetSelect == _FUNCCARD
 					//JULIOOO - incluir a chamada
-					//::oPbm:oPbm :=
+					::oPbm:oPbm := LJCFunCard():FuncCard(::oTransSitef:oClisitef)
 			EndCase
 			
 			lRetorno := (::oPbm:oPbm <> Nil)
@@ -387,5 +388,33 @@ If lRetorno
 Else
 	::oPbm:oPbm := Nil
 EndIf	
+
+Return Nil
+
+/*/{Protheus.doc} PharmSCons
+	Executa consulta do PharmSystem
+	@type  Metodo
+	@author Julio.Nery
+	@since 26/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+
+/*/
+Method PharmSCons(oDadosTran) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPbm:PharmSCons(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
+							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
+
+If lRetorno
+	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
+	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
+	::oDadosTran := oDadosTran
+	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
+	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
+Else
+	::oPbm:oPbm := Nil
+EndIf
 
 Return Nil

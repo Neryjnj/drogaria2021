@@ -2536,7 +2536,7 @@ Default cNSU := ""
 
 ::FormatData(::oTransacao:dData, ::oTransacao:cHora, @cData, @cHora)
 
- cCupom := AllTrim(Str(::oTransacao:nCupom))
+cCupom := AllTrim(Str(::oTransacao:nCupom))
 
 //Grava o arquivo de controle
 If Empty(cNSU)

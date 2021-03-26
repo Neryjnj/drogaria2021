@@ -1,5 +1,6 @@
 #include "TOTVS.CH"
 #INCLUDE "DEFTEF.CH"
+#INCLUDE "FRTDEF.CH"
 #include "STBDEFPBM.CH"
 
 Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
@@ -45,6 +46,8 @@ Return
     @return return, return_type, return_description
 /*/
 Static Function STBConPbm()
+Local aRetVDLink:= {}
+Local aParamVL  := {}
 Local oTEF20    := NIL
 Local lContinua := .T.
 Local nOpPBM    := 0
@@ -55,6 +58,15 @@ lContinua := STBVerConVnd(.T.,,@nOpPBM)
 
 If lContinua
     T_DroVLGet(nOpPBM)
+    aRetVDLink := STGDadosVL()
+    T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
+                ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
+                ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
+    aParamVL := T_DROVLPGet()
+    If aParamVL[1][VLP_NVIDAL] == 2
+        //JULIOOOOOO - chama a função de registro do item
+        STBPRegItem(aParamVL)
+    EndIf
 EndIf
 
 Return
@@ -573,3 +585,116 @@ If lContinua
 EndIf
 
 Return lRetorno
+
+
+
+/*/{Protheus.doc} STPbmRtFun
+    Retorna o numero da Função da PBM 
+    @type  Function
+    @author Julio.Nery
+    @since 26/03/2021
+    @version 12
+    @param cOperacao, string, descrição da operação
+    @return nFuncao, integer, numero da função
+/*/
+Function STPbmRtFun(cOperacao)
+Local nFuncao := 0
+
+If cOperacao == "VIDALINK_CONSULTA"
+	nFuncao := 902
+
+ElseIf cOperacao == "VIDALINK_VENDA"
+	nFuncao := 903
+
+ElseIf cOperacao == "VIDALINK_CANCELAMENTO"
+	nFuncao := 904
+
+// Cancelamento de captura da Pre-Autorizacao  (PharmaSystem)
+ElseIf cOperacao == "PHARMASYSTEM_AUTORIZA"
+	nFuncao := 540
+ElseIf cOperacao == "PHARMASYSTEM_CONSULTA"
+	nFuncao := 541
+
+ElseIf cOperacao == "PHARMASYSTEM_VENDA"
+	nFuncao := 545
+
+ElseIf cOperacao == "PHARMASYSTEM_CANCELAMENTO"
+	nFuncao := 543
+
+ElseIf cOperacao == "FUNCARD_CONSULTA"
+	nFuncao := 560
+
+ElseIf cOperacao == "FUNCARD_VENDA"
+	nFuncao := 561
+EndIf
+
+Return nFuncao
+
+/*/{Protheus.doc} STBPRegItem
+    Efetua o registro do item PBM
+    @type  Function
+    @author Julio.Nery
+    @since 26/03/2021
+    @version 12
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+/*/
+Function STBPRegItem(aDadosVL)
+Local nI    := 0
+Local aItem := {}
+Local lRet  := .T.
+
+For nI := 1 To Len(aSL2)
+
+    aItem := STWFindItem( aSL2[nI][nL2_PRODUTO][2] )
+		
+    // Caso nao encontre o item na base de dados, sera feito seu cadastro
+    If !aItem[1] //Item Encontrado - posicao 1
+        LjGrvLog("PBM","Item Nao encontrado na base de dados - Venda PBM não permitida")        
+        STFMessage("STBPRegItem","Item Nao encontrado - Venda PBM não permitida")
+        STFShowMessage("STBPRegItem")
+        lRet := .F.
+    EndIf
+
+    If lRet
+            nVlrTotal  	:= aParamVL[1][VLP_NVLRTO]
+			nTotItens	:= aParamVL[1][VLP_NTOTIT]
+			nVlrBruto	:= aParamVL[1][VLP_NVLRBR]
+			oDesconto	:= aParamVL[1][VLP_ODESCO]
+			oTotItens	:= aParamVL[1][VLP_OTOTIT]
+			oVlrTotal	:= aParamVL[1][VLP_OVLRTO]
+			nVlrPercIT	:= aParamVL[1][VLP_NVLRPE]
+			nQuant		:= aParamVL[1][VLP_NQUANT]
+			cUnidade	:= aParamVL[1][VLP_CUNIDA]
+			nVlrUnit	:= aParamVL[1][VLP_NVLRUN]
+			nVlrItem	:= aParamVL[1][VLP_NVLRIT]
+			oProduto	:= aParamVL[1][VLP_OPRODU]
+			oQuant		:= aParamVL[1][VLP_OQUANT]
+			oUnidade	:= aParamVL[1][VLP_OUNIDA]
+			oVlrUnit	:= aParamVL[1][VLP_OVLRUN]
+			oVlrItem	:= aParamVL[1][VLP_OVLRIT]
+			oPgtos		:= aParamVL[1][VLP_OPGTOS]
+			oPgtosSint	:= aParamVL[1][VLP_OPGTO2]
+			aPgtos		:= aParamVL[1][VLP_APGTOS]
+			aPgtosSint	:= aParamVL[1][VLP_APGTO2]
+			aItens 		:= aParamVL[1][VLP_AITENS]
+			nVlrMerc	:= aParamVL[1][VLP_NVLRME]
+			lDescTotal	:= aParamVL[1][VLP_LDESCT]
+			nDesconto	:= aParamVL[1][VLP_NDESCO]
+			lAbreCup	:= aParamVL[1][VLP_LABREC]
+
+        //Seta quantidade
+        STBSetQuant( aSL2[nI][AScan( aSL2[nI] , { |x| x[1] == "L2_QUANT"	} 	)][2] )				
+
+        // Registra Item
+        STWItemReg( 	nI 				, aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_PRODUTO"	} 	)][2] 	, cCliCode 	, cCliStore	, ;
+                        STBGetCurrency(), aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_VALDESC"	} 	)][2] 	, "V"			, NIL	, ;
+                        NIL				, cCliType,,,;
+                        ,,.T.,,;
+                        ,,,,;
+                        ,,,,;
+                        Iif(nPosIDITREL > 0,aSL2[nI][nPosIDITREL][2],""),aSL2[nI][AScan ( aSL2[1] , { |x| x[1] == "L2_VALEPRE"	})][2])
+    EndIf
+Next nI
+
+Return NIL

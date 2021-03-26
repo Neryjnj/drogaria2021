@@ -250,7 +250,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 	If nOpPbm == 540
 		@ 175,130 BUTTON STR0044 SIZE 39,12 OF oDlg PIXEL ;
 				ACTION If( T_DROVLConf(  {"",""}	, aVidalinkD, @nTotVenda, nTotVenda,;
-										 @oTotVenda , "000001"	, "01"		, nOpPbm	),;
+										 @oTotVenda , "000001"	, "01"		),;
 							oDlg:End(),oDlg:End()) // STR0044 "Confirma"
 	Else
 						 
@@ -298,7 +298,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		@ 175,130 BUTTON STR0044 SIZE 39,12 OF oDlg PIXEL ACTION; // STR0044 "Confirma"
 		 			If( T_DROVLConf(@aParamVL[1][VLP_AVLC]	, @aParamVL[1][VLP_AVLD], @aParamVL[1][VLP_NVIDAL],;
 		 			 				@nTotVenda				, @oTotVenda			, @aParamVL[1][VLP_CCLIEN],;
-		 			 				@aParamVL[1][VLP_CLOJAC], nOpPbm ),;
+		 			 				@aParamVL[1][VLP_CLOJAC] ),;
 		 			 				Eval(bGrvVend), oDlg:End() )
 	Endif
 	
@@ -377,7 +377,7 @@ Template Function DROVLCar( _cNumAutori	, _cNumAutAnt	, aLin			, aVidaLinkD	, ;
 							cCPF 		,cNumCRM		, cUFCRM		)
 
 Local I 		:= 0 	//Contador
-Local cDoc		:= 0
+Local cDoc		:= ""
 Local _cCPF		:= ""	//CPF do Cliente
 Local nValor	:= 0	//Valor do produto retornado pela Funcional Card
 Local lContinua	:= .T.
@@ -386,6 +386,8 @@ Local lTotvsPDV := STFIsPOS()
 Local oPBM		:= NIL
 Local oDados	:= NIL
 Local oTEF20	:= NIL
+Local nCodFuncao:= 0
+Local aInfo		:= {}
 
 Default cCPF 	:= ""
 Default cNumCRM := ""
@@ -422,28 +424,30 @@ EndIf
 
 If lContinua
 
-	aAdd(aVidaLinkD,{_cNumAutori, _cNumConv, _cNumCartao, _cCPF, nNumPbm, cNumCRM, cUFCRM })
 	nTotVenda  := 0
 
-	If lTotvsPDV
-		cDoc := STBPbmNDoc()
-		oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
-											/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  cUserName,;
-											 _cNumAutori  , "1"		, aVidaLinkD )
+	If lTotvsPDV		
 		oTEF20 := STBGetTEF()
 		oPBM := oTEF20:Pbm()
 	EndIf
+
+	aAdd(aVidaLinkD,{_cNumAutori, _cNumConv, _cNumCartao, _cCPF, nNumPbm, cNumCRM, cUFCRM })
+	aAdd(aInfo, {cUserName})
 	
 	//Consulta Vidalink
 	If nNumPbm == 1
 		If lTotvsPDV
+			oDados := T_DroRtOtran("VIDALINK_CONSULTA",aVidaLinkD,aInfo)
 			oPBM:VDLinkCons(oDados)
 		Else
 			oTEF:Operacoes("VIDALINK_CONSULTA", aVidaLinkD)
 		EndIf
+
 	//Consulta PharmaSystem
 	ElseIf nNumPbm == 541
 		If lTotvsPDV
+			oDados := T_DroRtOtran("PHARMASYSTEM_CONSULTA",aVidaLinkD,aInfo)
+			oPBM:VDLinkCons(oDados)
 		Else
 			oTEF:Operacoes("PHARMASYSTEM_CONSULTA"	, aVidaLinkD)     
 		EndIf
@@ -461,13 +465,16 @@ If lContinua
 	Endif
 
 	If lTotvsPDV
+		cDoc := oDados:nCupom
+		nCodFuncao := oDados:aVDLink[1,5] //código da função
+
 		If ValType(oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno) == "O"
 			aAdd(aVidaLinkD, {} )
 			aAdd(aVidaLinkD, 0  )
 
 			For I := 1 to oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:nQtdeMed
 
-				If nNumPBM == 541 .Or. nNumPBM == 540 //PharmaSystem
+				If nCodFuncao == 541 .Or. nCodFuncao == 540 //PharmaSystem
 			
 					aAdd(aVidaLinkD[VL_DETALHE], ;
 							{ oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nIndice			,;
@@ -482,7 +489,7 @@ If lContinua
 		
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
 		
-				ElseIf nNumPbm == 560	//Funcional Card
+				ElseIf nCodFuncao == 560	//Funcional Card
 					
 					If AllTrim(oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cPrecoFun) == "0"
 						nValor := oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValorFC
@@ -604,7 +611,7 @@ If lContinua
 		EndIf
 	EndIf
 
-	T_DROVLMItem( @aLin, @nTotVenda, @oTotVenda, @oLbx, @aVidaLinkD, nNumPbm )  // Mostra os Itens autorizados pelo VidaLink
+	T_DROVLMItem( @aLin, @nTotVenda, @oTotVenda, @oLbx, @aVidaLinkD )  // Mostra os Itens autorizados pelo VidaLink
 EndIf
 
 lValidSitef := .F.
@@ -619,7 +626,7 @@ Return lRet
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±³Uso		 ³ Front Loja com Template Drogarias        				  ³±±
 ---------------------------------------------------------------------------*/
-Template Function DROVLMItem( aLin, nTotVenda, oTotVenda, oLbx, aVidaLinkD, nNumPbm )
+Template Function DROVLMItem( aLin, nTotVenda, oTotVenda, oLbx, aVidaLinkD )
 Local _nI 			:= 0						// Contador
 Local nBarras 		:= TamSX3("BI_CODBAR")[1]	// Dimensao do codigo de barras
 Local cCodBarras 	:= ""					 	// Codigo de barras
@@ -628,9 +635,8 @@ Local lSigaLoja		:= nModulo == 12			// Se utiliza o modulo Venda Assistida
 Local cTabelaProd	:= "SBI"					// Tabela para consulta do produto
 Local cCamDescProd	:= "BI_DESC" 				// Campo para consultado do pruduto
 Local nVlSubsidio	:= 0						//Valor do Subsidio
+Local oTEF20		:= NIL
 Local nCodFuncao	:= 0
-
-Default nNumPbm		:= 0
 
 If lSigaLoja .Or. lTotvsPDV
 	cTabelaProd := "SB1"
@@ -639,7 +645,9 @@ If lSigaLoja .Or. lTotvsPDV
 	If lSigaLoja
 		nCodFuncao := oTef:nCodFuncao
 	Else
-		nCodFuncao := nNumPbm
+		//JULIOOOOOOOO - do objeto a partir do oDados
+		oTEF20 := STBGetTEF()
+		nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
 	EndIf
 Else
 	nCodFuncao :=  oTef:nCodFuncao
@@ -671,10 +679,11 @@ If Len( aVidaLinkD ) == 4
 
 	If Len(aLin) > 0 .AND. oLbx <> Nil
 		oLbx:SetArray(aLin)
-		oLbx:bLine		:= { || { Transform( aLin[oLbx:nAt][1], '') , Transform( aLin[oLbx:nAt][2], '') , Transform( aLin[oLbx:nAt][3], ''), Transform( aLin[oLbx:nAt][4], '@E 999,999,999.99'), Transform( aLin[oLbx:nAt][5], '@E 999,999,999.99'), Transform( aLin[oLbx:nAt][6], '@E 999,999,999.99'), Transform( aLin[oLbx:nAt][7], '@E 999,999,999.99')  } }
+		oLbx:bLine		:= { || { Transform( aLin[oLbx:nAt][1], '') , Transform( aLin[oLbx:nAt][2], '') , Transform( aLin[oLbx:nAt][3], ''),;
+								 Transform( aLin[oLbx:nAt][4], '@E 999,999,999.99'), Transform( aLin[oLbx:nAt][5], '@E 999,999,999.99'),;
+								 Transform( aLin[oLbx:nAt][6], '@E 999,999,999.99'), Transform( aLin[oLbx:nAt][7], '@E 999,999,999.99')  } }
 		oLbx:Refresh()
 		nTotVenda := aVidaLinkD[VL_TOTVEND]
-
 		oTotVenda:Refresh()
 	Endif	
 EndIf
@@ -771,7 +780,7 @@ Return Nil
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROVLConf(	aVidaLinkC	,	aVidaLinkD	,	nVidaLink	,	nTotVenda	,;
- 								oTotVenda	,	cCodCli		,	cLojCli		,   nNumPBM 	)
+ 								oTotVenda	,	cCodCli		,	cLojCli		)
 Local lRet := .F.          	// Retorno da funcao  
 Local _nI  := 0            	// Variavel para usa no for
 Local aVdLnkDAux := {}     	// Array para auxiliar retorno dos dados
@@ -781,11 +790,10 @@ Local nCodFuncao := 0
 Local cMsg		 := ""
 Local oTEF20	 := NIL
 
-Default nNumPBM	 := 0
-
 If lTotvsPDV
-	nCodFuncao := nNumPbm
-	oTEF20 := STBGetTEF()
+	//JULIOOOOOOOO - do objeto a partir do oDados
+	oTEF20 := STBGetTEF()		
+	nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
 Else
 	nCodFuncao := oTef:nCodFuncao
 EndIf
@@ -980,30 +988,28 @@ aAdd(aRet, _aVidaLinkD)
 
 Return aRet
        
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºPrograma  ³DROVDLNK  ºAutor  ³Microsiga           º Data ³  06/25/14   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³                                                            º±±
 ±±º          ³                                                            º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºUso       ³ AP                                                        º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
-Template Function CANPSys( )
-                                                  
+±±ºUso       ³ AP                                                         º±±
+---------------------------------------------------------------------------*/
+Template Function CANPSys()
 Local aVidaLinkD := {}
+Local lTotvsPDV  := STFIsPOS()
 
 aAdd(aVidaLinkD, "" )
 aAdd(aVidaLinkD, {} )
 aAdd(aVidaLinkD, 0  )  
-aAdd(aVidaLinkD, 0  )  
-	
-oTEF:Operacoes("PHARMASYSTEM_CANCELAMENTO", aVidaLinkD, , ,"")	//PharmaSystem	
+aAdd(aVidaLinkD, 0  )
+
+If lTotvsPDV
+	//JULIOOOOOOOO - inserir tratamento aqui
+Else
+	oTEF:Operacoes("PHARMASYSTEM_CANCELAMENTO", aVidaLinkD, , ,"")	//PharmaSystem
+EndIf
 
 Return .T.
 
@@ -1020,8 +1026,8 @@ Return .T.
 ±±³Uso		 ³ Front Loja com Template Drogarias                    				      ³±±
 -------------------------------------------------------------------------------------------*/
 Template Function DROVLImp()
-Local _nVidaLink := ParamIxb[1] // nVidalink
-Local aRet := {}				// Retorno da Funcao
+Local _nVidaLink:= ParamIxb[1]  //nVidalink
+Local aRet 		:= {}			//Retorno da Funcao
 Local lTotvsPDV := STFIsPOS()
 
 If _nVidaLink = 2  				// Gravou VidaLink, por isto imprimo cupom vidalink
@@ -1307,23 +1313,14 @@ Template Function DROVLAArq(cAlias, cDriver)
 		UserException(cAlias + STR0033) //" Not Found in SX2"
 	EndIf
 Return Nil
-      
- 
- 
- 
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+
+/*---------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLPSet   ³ Autor ³ VENDAS CRM							  ³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡„o ³ Rotina usada para preencher o array aParamVL.	    				    ³±±
+±±³Descri‡„o ³ Rotina usada para preencher o array aParamVL.	    				        ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        		   		    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+---------------------------------------------------------------------------------------------*/
 Template Function DROVLPSet(	oHora			, cHora			, oDoc			, cDoc			,;
 								oCupom		 	, cCupom		, nLastTotal	, nVlrTotal		,;		
 								nLastItem	 	, nTotItens		, nVlrBruto		, oDesconto		,;		
@@ -1408,24 +1405,15 @@ Template Function DROVLPSet(	oHora			, cHora			, oDoc			, cDoc			,;
 						_aMultCanc		, nVlrDescIT	, oFntMoeda		, lBscPrdON		,;
 						oPDV			, aICMS			, lDescITReg})
   						
-Return(.T.)
+Return .T.
                    
-
-
-
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*------------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLPGet      ³ Autor ³ VENDAS CRM				             ³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Rotina usada para retornar o array aParamVL.	    				        	   ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        		   		       ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+------------------------------------------------------------------------------------------------*/
 Template Function DROVLPGet()
 Return(@aParamVL)
              
@@ -1644,3 +1632,33 @@ Template Function DrSScrExMC( lSet )
 lCanTelMeC := lSet
 
 Return lCanTelMeC
+
+/*/{Protheus.doc} DroRtOtran
+	Retorna os dados da transação que será efetuada para o TotvsPDV
+	@type  Function
+	@author Julio.Nery
+	@since 26/03/2021
+	@version 12
+	@param cOperacao, string, nome da operação (conforme LOJXTEF)
+	@param aConvInfo, array, informações do convenio
+		{_cNumAutori, _cNumConv, _cNumCartao, _cCPF, nNumPbm, cNumCRM, cUFCRM }
+	@param aTranInfo, array, informações da transação
+		{cUserName}
+	@return oDados, objeto, contem os dados da transação
+/*/
+Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo)
+Local aDadosVDLk:= {}
+Local nCodFuncao:= 0
+Local cDoc		:= ""
+Local oDados	:= NIL
+
+nCodFuncao := STPbmRtFun(cOperacao)
+
+aAdd(aDadosVDLk,{aConvInfo[1,1], aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
+				 nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
+
+cDoc := STBPbmNDoc()
+oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
+									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
+									aConvInfo[1,1], "1"		, aDadosVDLk )
+Return oDados

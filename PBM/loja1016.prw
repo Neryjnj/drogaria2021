@@ -29,6 +29,7 @@ Class LJCSitefPBM
 	Method TrataRet(oDadosTran)										//Metodo que ira tratar o retorno da autocom do enviasitefdireto
 	Method TratRetCat(cTrilha1, cTrilha2)							//Metodo que ira tratar o retorno da leitura do cartao
 	Method VDLinkCons(oDadosTran)
+	Method PharmSCons(oDadosTran)
 	
 EndClass
 
@@ -397,5 +398,24 @@ Method VDLinkCons(oDadosTran) Class LJCSitefPBM
 
 //Envia a transacao para o sitef
 oDadosTran:nRetorno := Self:oClisitef:EnvVDLCons(@oDadosTran)
+
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} PharmSCons
+Consulta PBM PharmaSystem
+
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		26/03/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method PharmSCons(oDadosTran) Class LJCSitefPBM
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:IniciaFunc(nFuncao, cRestricao)
 
 Return Nil
