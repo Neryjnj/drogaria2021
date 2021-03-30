@@ -33,7 +33,7 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method FimTrans(lConfirma)										//Metodo que ira confirmar ou desfazer a transacao
 	Method LeCartDir(cMensagem, cTrilha1, cTrilha2)					//Metodo que ira fazer a leitura direta do cartao
 	Method ConsVDLink()
-	Method PharmSCons()
+	Method ConsPharmS()
 EndClass
 
 /*---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 	//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
 	If ::oDadosTran:nRetorno <= 0
 		//"Problema de comunicação com Sitef"
-		MsgAlert(STR0001)
+		MsgAlert(STR0001,"TEF")
 	Else
 		lRetorno := .T.	
 	EndIf
@@ -313,6 +313,7 @@ Local lRet := .F.	//Retorno da funcao
 ::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
 ::oDadosTran:cCodProd		:= ::cCodProd
 ::oDadosTran:aVDLink		:= ::aVDLink
+::oDadosTran:nValor			:= ::nValor
 
 //Envia a transacao
 ::oSitefPbm:VDLinkCons(@::oDadosTran)
@@ -335,39 +336,22 @@ Return lRet
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
-Method PharmSCons() Class LJCSitefDireto
-Local cDadosTX := ""			//Dados da transacao
-Local lRetorno := .F.			//Retorno da funcao
+Method ConsPharmS() Class LJCSitefDireto
+Local lRetorno := .F.	//Retorno da funcao
 
 //Estancia o objeto
 ::oDadosTran := LJCDadosSitefDireto():DadosSitef()
 
-//Prepara os dados de envio
-cDadosTX += AllTrim(Str(::nIndTrans))
-cDadosTX += SEPARADOR
-cDadosTX += AllTrim(Str(nTransacao))
-	
-If !Empty(cDados)
-	cDadosTX += SEPARADOR
-	cDadosTX += cDados
-EndIf
-
 //Atribui o dados da transacao ao objeto criado
-::oDadosTran:nRedeDest 		:= ::nRedeDest
-::oDadosTran:nFuncSitef 	:= FUNCSITEF
-::oDadosTran:nOffSetCar		:= nOffSetCar
-::oDadosTran:cDadosTx		:= cDadosTX
-::oDadosTran:nTaDadosTx		:= Len(cDadosTX)
-::oDadosTran:cCupomFisc		:= ::cNumCupom
+::oDadosTran:nFuncSitef 	:= ::nFuncao
+::oDadosTran:cCupomFisc		:= ::cCupom
 ::oDadosTran:cDataFisc		:= ::cData
 ::oDadosTran:cHorario		:= ::cHora
-::oDadosTran:cOperador		:= AllTrim(Str(::nCodOper))
-::oDadosTran:nTpTrans		:= 1
+::oDadosTran:cOperador		:= AllTrim(::cOperador)
 
 //Envia a transacao
-::oSitefPbm:EnvTrans(@::oDadosTran)
+::oSitefPbm:PharmSCons(@::oDadosTran)
 
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef

@@ -2,19 +2,13 @@
   
 User Function LOJA1016 ; Return  			// "dummy" function - Internal Use
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*----------------------------------------------------------------------------------
 ฑฑบClasse    ณLJCSitefPBM      บAutor  ณVendas Clientes     บ Data ณ  06/09/07   บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณClasse responsavel em fazer a comunicacao com o sitef.        	 บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณSigaLoja / FrontLoja                                        		 บฑฑ
-ฑฑศออออออออออฯอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+----------------------------------------------------------------------------------*/
 Class LJCSitefPBM
 	
 	Data oGlobal													//Objeto do tipo global
@@ -409,13 +403,16 @@ Consulta PBM PharmaSystem
 @author		Julio.Nery
 @version	12
 @since		26/03/2021
-@return		nRetDLL		- C๓digo do retorno ao comando enviado a DLL	
-@obs     
+@return		nRetDLL		- C๓digo do retorno ao comando enviado a DLL
 /*/
 //-------------------------------------------------------------------
 Method PharmSCons(oDadosTran) Class LJCSitefPBM
+Local oTrans := NIL
+//JULIOOOOOOOOOOOOOOOOOOOOO - continuar aqui - 30/03/2021
+oTrans := LJADadosTransacao():New(oDadosTran:nValor,Val(oDadosTran:cCupomFisc) , dData, cHora)
+Self:oCliSitef:SetTrans(oTrans)
 
 //Envia a transacao para o sitef
-oDadosTran:nRetorno := Self:oClisitef:IniciaFunc(nFuncao, cRestricao)
+oDadosTran:nRetorno := Self:oClisitef:IniciaFunc(oDadosTran:nFuncSitef, oDadosTran:cRestri)
 
 Return Nil

@@ -1650,19 +1650,17 @@ cDoc := STBPbmNDoc()
 
 If cOperacao == "PHARMASYSTEM_CONSULTA"
 	oDados := LJCDadosSitefDireto():DadosSitef()
-	oDados:nRedeDest  := ::nRedeDest
 	oDados:nFuncSitef := nCodFuncao
-	oDados:nOffSetCar := nOffSetCar
-	oDados:cDadosTx	  := cDadosTX
-	oDados:nTaDadosTx := Len(cDadosTX)
 	oDados:cCupomFisc := cDoc
 	oDados:cDataFisc  := Dtos(Date())
 	oDados:cHorario	  := StrTran(Time(),":")
-	oDados:cOperador  := AllTrim(Str(::nCodOper))
-	oDados:nTpTrans	  := 1
+	oDados:cOperador  := AllTrim(aTranInfo[1,1])
+	oDados:cRestri	  := ""
+	oDados:nValor	  := 0
 Else
 	oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
 										/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
 										aConvInfo[1,1], "1"		, aDadosVDLk )
 EndIf
+
 Return oDados

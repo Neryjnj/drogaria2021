@@ -30,20 +30,20 @@ Class LJCDadosSitefDireto
 	Data cCodAut							//c๓digo da autoriza็ใo VIDALINK
 	Data cCodProd							//c๓digo do produto VIDALINK
 	Data aVDLink							//outros dados PBM
+	Data cRestri							//Restri็ใo para enviar conteudo na PBM
+	Data nValor								//Valor 
 	
 	Method DadosSitef()						//Metodo construtor
 
 EndClass
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบMetodo    ณDadosSitefบAutor  ณVendas Clientes     บ Data ณ  04/09/07   บฑฑ
-ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDesc.     ณConstrutor da classe LJCDadosSitefDireto.		              บฑฑ
-ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
-ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบParametrosณ														      บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+/*-------------------------------------------------------------------------
+|Metodo    ณDadosSitefบAutor  ณVendas Clientes     บ Data ณ  04/09/07     |
+---------------------------------------------------------------------------
+|Desc.     ณConstrutor da classe LJCDadosSitefDireto.		              |
+---------------------------------------------------------------------------
+|Uso       ณSigaLoja / FrontLoja                                          |
+-------------------------------------------------------------------------*/
 Method DadosSitef() Class LJCDadosSitefDireto
 
 	::nRetorno			:= 0
@@ -64,5 +64,7 @@ Method DadosSitef() Class LJCDadosSitefDireto
 	::cCodAut			:= ""
 	::cCodProd			:= ""
 	::aVDLink			:= {}
+	::cRestri			:= ""
+	::nValor			:= 0
 
 Return Self

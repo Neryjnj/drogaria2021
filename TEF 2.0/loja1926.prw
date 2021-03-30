@@ -852,8 +852,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 	
 		    	::oFrmTef:Fechar()  
 		    	lSaida := .T.
-		    EndIf 
-		    
+		    EndIf
 		End
 		 
 	    If ValType(oParamsApi) == "O"

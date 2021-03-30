@@ -404,8 +404,8 @@ Return Nil
 Method PharmSCons(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.
 
-lRetorno := ::oPbm:PharmSCons(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
-							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
+lRetorno := ::oPbm:PharmSCons(oDadosTran:nFuncSitef, oDadosTran:nValor, oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
+							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri)
 
 If lRetorno
 	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e

@@ -43,7 +43,7 @@ Class LJCPBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
 	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
-	Method PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+	Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -259,9 +259,6 @@ Method ConfVend(lConfirma) Class LJCPBM
 
 Return Nil
 
-
-
-
 /*
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
@@ -290,7 +287,7 @@ Method CarregaCBO() Class LJCPBM
 		
 	Next
 
-Return(aComboPbm)
+Return aComboPbm
 
 /*
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
@@ -422,11 +419,11 @@ Return lRet
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
-Method PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class LJCPBM
+Method PharmSCons(nFuncao	, nValor	, cCupom	, dData	,;
+				  cHora	, cOperador	, cRestri) Class LJCPBM
 Local lRet := .F.
 
-lRet := ::oPBM:PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+lRet := ::oPBM:PharmSCons(nFuncao, nValor, cCupom, dData, cHora, cOperador, cRestri)
 
 Return lRet
