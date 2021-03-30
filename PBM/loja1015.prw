@@ -320,7 +320,7 @@ Local lRet := .F.	//Retorno da funcao
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
 If ::oDadosTran:nRetorno <= 0	
-	MsgAlert(STR0001) //#"Problema de comunicação com Sitef"
+	MsgAlert(STR0001,"TEF") //#"Problema de comunicação com Sitef"
 Else
 	lRet := .T.	
 EndIf
@@ -338,28 +338,44 @@ Return lRet
 
 /*/
 Method PharmSCons() Class LJCSitefDireto
-Local lRet := .F.	//Retorno da funcao
+Local cDadosTX := ""			//Dados da transacao
+Local lRetorno := .F.			//Retorno da funcao
 
 //Estancia o objeto
 ::oDadosTran := LJCDadosSitefDireto():DadosSitef()
 
-::oDadosTran:cCupomFisc		:= AllTrim(::cCupom)
+//Prepara os dados de envio
+cDadosTX += AllTrim(Str(::nIndTrans))
+cDadosTX += SEPARADOR
+cDadosTX += AllTrim(Str(nTransacao))
+	
+If !Empty(cDados)
+	cDadosTX += SEPARADOR
+	cDadosTX += cDados
+EndIf
+
+//Atribui o dados da transacao ao objeto criado
+::oDadosTran:nRedeDest 		:= ::nRedeDest
+::oDadosTran:nFuncSitef 	:= FUNCSITEF
+::oDadosTran:nOffSetCar		:= nOffSetCar
+::oDadosTran:cDadosTx		:= cDadosTX
+::oDadosTran:nTaDadosTx		:= Len(cDadosTX)
+::oDadosTran:cCupomFisc		:= ::cNumCupom
 ::oDadosTran:cDataFisc		:= ::cData
 ::oDadosTran:cHorario		:= ::cHora
-::oDadosTran:cOperador		:= AllTrim(::cOperador)
-::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
-::oDadosTran:cCodProd		:= ::cCodProd
-::oDadosTran:aVDLink		:= ::aVDLink
+::oDadosTran:cOperador		:= AllTrim(Str(::nCodOper))
+::oDadosTran:nTpTrans		:= 1
 
 //Envia a transacao
-::oSitefPbm:PharmSCons(@::oDadosTran)
+::oSitefPbm:EnvTrans(@::oDadosTran)
 
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
-If ::oDadosTran:nRetorno <= 0	
-	MsgAlert(STR0001) //#"Problema de comunicação com Sitef"
+If ::oDadosTran:nRetorno <= 0
+	//"Problema de comunicação com Sitef"
+	MsgAlert(STR0001,"TEF")
 Else
-	lRet := .T.	
+	lRetorno := .T.	
 EndIf
 
 Return lRet

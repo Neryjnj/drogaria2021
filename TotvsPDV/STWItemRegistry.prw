@@ -144,7 +144,7 @@ EndIf
 /*Tratamento VidaLINK*/
 If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
-	If aDadoVLink[3] == 1
+	If aDadoVLink[3] == 2//No front esta 1 porem aqui o array final é salvo com 2
 		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
 		If aAux[ITEM_ENCONTRADO]
 			cItemCode := aAux[ITEM_CODIGO]
@@ -181,7 +181,12 @@ lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 /*/
 	Busca item na base de dados
 /*/
-aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
+If Len(aAux) > 0 //Se estiver preenchido tem o TPL Drogaria e é venda com PBM
+	aInfoItem := AClone(aAux)
+Else
+	aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
+EndIf
+aAux := {}
 
 // Encontrou o item?
 If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]    

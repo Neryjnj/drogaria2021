@@ -257,10 +257,11 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		If lSigaLoja
 			bGrvVend := {|| LJMsgRun("Adicionando itens ao orçamento...",,{|| DroAddProd(@aParamVL[1][VLP_AVLD][2]) }),oDlg:End()}
 		
-		ElseIf lTotvsPDV
-			bGrvVend := {|| STFMessage("DROVLGet1", "RUN", "Adicionando itens ao orçamento...",;
-							 {|| DroAddProd(@aParamVL[1][VLP_AVLD][2]) }, STFShowMessage("DROVLGet1"), oDlg:End() )}
-		Else
+		ElseIf lTotvsPDV //JULIOOOOOOOOOOOO - verificar trecho
+			// bGrvVend := {|| STFMessage("DROVLGet1", "RUN", "Adicionando itens ao orçamento...",;
+			// 				 {|| STBPbmRegIt(aParamVL) }, STFShowMessage("DROVLGet1"), oDlg:End() )}
+			bGrvVend := {|| STWItemReg(aParamVL[1][VLP_AVLD][1],aParamVL[1][VLP_AVLD][2]), oDlg:End()}
+		ElseIf !lTotvsPDV
 
 			bGrvVend := {|| ;
 						FR271HCarrega(oDlg					, Nil						, @aParamVL[1][27]			, @aParamVL[1][145]	,;
@@ -447,20 +448,24 @@ If lContinua
 	ElseIf nNumPbm == 541
 		If lTotvsPDV
 			oDados := T_DroRtOtran("PHARMASYSTEM_CONSULTA",aVidaLinkD,aInfo)
-			oPBM:VDLinkCons(oDados)
+			oPBM:PharmSCons(oDados)
 		Else
-			oTEF:Operacoes("PHARMASYSTEM_CONSULTA"	, aVidaLinkD)     
+			oTEF:Operacoes("PHARMASYSTEM_CONSULTA", aVidaLinkD)     
 		EndIf
 	ElseIf nNumPbm == 540
 		If lTotvsPDV
+			oDados := T_DroRtOtran("PHARMASYSTEM_AUTORIZA",aVidaLinkD,aInfo)
+			oPBM:VDLinkCons(oDados)
 		Else
-			oTEF:Operacoes("PHARMASYSTEM_AUTORIZA"	, aVidaLinkD)
+			oTEF:Operacoes("PHARMASYSTEM_AUTORIZA", aVidaLinkD)
 		EndIf
 	//Consulta Funcional Card
 	ElseIf nNumPbm == 560
 		If lTotvsPDV
+			oDados := T_DroRtOtran("FUNCARD_CONSULTA",aVidaLinkD,aInfo)
+			oPBM:VDLinkCons(oDados)
 		Else
-			oTEF:Operacoes("FUNCARD_CONSULTA"		, aVidaLinkD)
+			oTEF:Operacoes("FUNCARD_CONSULTA", aVidaLinkD)
 		EndIf
 	Endif
 
@@ -484,7 +489,7 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		,;  // nPreco de Venda da Farmacia
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut     	,;  // Quantidade sem alteracao 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValTot		,;	// Preco de venda VidaLink			 
-								0																		,;	// Valor do Subusidio
+								0																		,;	// Valor do Subsidio
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		})	// Valor pago a vista
 		
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
@@ -521,7 +526,7 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut 			,;  // Quantidade sem alteracao 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nPrecoMax  		,;	// Preco de venda VidaLink			 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValSubsidio +;
-										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subusidio
+										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subsidio
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum			})	// Valor pago a vista
 					
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm
@@ -645,7 +650,6 @@ If lSigaLoja .Or. lTotvsPDV
 	If lSigaLoja
 		nCodFuncao := oTef:nCodFuncao
 	Else
-		//JULIOOOOOOOO - do objeto a partir do oDados
 		oTEF20 := STBGetTEF()
 		nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
 	EndIf
@@ -791,8 +795,7 @@ Local cMsg		 := ""
 Local oTEF20	 := NIL
 
 If lTotvsPDV
-	//JULIOOOOOOOO - do objeto a partir do oDados
-	oTEF20 := STBGetTEF()		
+	oTEF20 := STBGetTEF()
 	nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
 Else
 	nCodFuncao := oTef:nCodFuncao
@@ -882,7 +885,7 @@ Else
 EndIf
 	
 Return lRet
-
+                      
 /*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±³Fun‡„o	 ³DROVLCanc ³ Autor ³ VENDAS CRM		                    ³ Data ³28/04/2005³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
@@ -1406,7 +1409,7 @@ Template Function DROVLPSet(	oHora			, cHora			, oDoc			, cDoc			,;
 						oPDV			, aICMS			, lDescITReg})
   						
 Return .T.
-                   
+
 /*------------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLPGet      ³ Autor ³ VENDAS CRM				             ³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
@@ -1442,6 +1445,7 @@ Local nMoedaCor  := 1                                               // Moeda cor
 Local nDecimais  := MsDecimais(nMoedaCor)							// Numero de casas decimais
 Local lVidaLink  := nVidaLink == 1
 Local nPrcTab	 := 0
+Local lTotvsPDV  := STFIsPOS()
 
 Default cDoc	:= ""
 Default cSerie	:= ""
@@ -1546,7 +1550,6 @@ Local nTotal		:= 0	//total pbm
 Local nTotalProt	:= 0	//total protheus
 Local lRet			:= .F.
 Local nPosUni 		:= aScan( aHeader, {|x| Alltrim(Upper(x[2])) == "LR_VRUNIT"   } ) //Posicao do campo LR_VRUNIT
-Local lPBMDesc		:= T_DroPbmDe()
 
 Default aProd 		:= {} 
 
@@ -1554,21 +1557,16 @@ LjGrvLog( "PBM_FUNCIONAL_CARD", "Inseri produtos na venda")
 
 If Len(aProd) > 0
 	For nX := 1 To Len(aProd)
-		 If lPBMDesc	
-		 	lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
-		 Else
-		 	lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T.)
-		 EndIf
-		 If lRet
-		 	aAdd(aProd[nX],n)
-		 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
-	    	nTotalProt += aCols[N][nPosUni] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do Protheus
-	    	nTotal += aProd[nX][VL_PRVENDA] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do PBM Funcional Card
-		 Else
-		 
-		 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
-		 EndIf
-		 
+		lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
+
+		If lRet
+			aAdd(aProd[nX],n)
+			LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
+			nTotalProt += aCols[N][nPosUni] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do Protheus
+			nTotal += aProd[nX][VL_PRVENDA] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do PBM Funcional Card
+		Else		 
+			LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
+		EndIf
 	Next nX
 	
 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
@@ -1576,10 +1574,6 @@ If Len(aProd) > 0
 	
 	If nTotalProt < nTotal
 		MsgAlert(Upper(STR0002) + " : " + STR0045) //"ATENÇÃO: O valor dos produtos do Protheus está menor que o valor do PBM Funcional Card, isto pode ocasionar divergência no valor a ser pago na finalização da venda."
-	EndIf
-
-	If !lPBMDesc
-		Lj7CondPg(2,"CO",,,,,,Abs(nTotal-nTotalProt))
 	EndIf
 EndIf	
 	
@@ -1595,12 +1589,7 @@ Verifica se as alterações de desconto no item PBM estao implementadas
 /*/
 //-------------------------------------------------------------------
 Template Function DroPbmDe()
-Local aPrgInfo := {}
-
-If _LOJA701PB == NIL
-	aPrgInfo := GetAPOInfo("LOJA701.PRW")
-	_LOJA701PB := aPrgInfo[04] >= Ctod("25/05/2018")
-EndIf
+_LOJA701PB := .T.
 
 Return _LOJA701PB
 
@@ -1658,7 +1647,22 @@ aAdd(aDadosVDLk,{aConvInfo[1,1], aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],
 				 nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
 
 cDoc := STBPbmNDoc()
-oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
-									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
-									aConvInfo[1,1], "1"		, aDadosVDLk )
+
+If cOperacao == "PHARMASYSTEM_CONSULTA"
+	oDados := LJCDadosSitefDireto():DadosSitef()
+	oDados:nRedeDest  := ::nRedeDest
+	oDados:nFuncSitef := nCodFuncao
+	oDados:nOffSetCar := nOffSetCar
+	oDados:cDadosTx	  := cDadosTX
+	oDados:nTaDadosTx := Len(cDadosTX)
+	oDados:cCupomFisc := cDoc
+	oDados:cDataFisc  := Dtos(Date())
+	oDados:cHorario	  := StrTran(Time(),":")
+	oDados:cOperador  := AllTrim(Str(::nCodOper))
+	oDados:nTpTrans	  := 1
+Else
+	oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
+										/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
+										aConvInfo[1,1], "1"		, aDadosVDLk )
+EndIf
 Return oDados
