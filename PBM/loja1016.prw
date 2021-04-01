@@ -23,14 +23,14 @@ Class LJCSitefPBM
 	Method TrataRet(oDadosTran)										//Metodo que ira tratar o retorno da autocom do enviasitefdireto
 	Method TratRetCat(cTrilha1, cTrilha2)							//Metodo que ira tratar o retorno da leitura do cartao
 	Method VDLinkCons(oDadosTran)
+	Method VDLinkProd(oDadosTran)
+	Method VDLinkVenda(oDadosTran)
 	Method PharmSCons(oDadosTran)
+	Method FuncCrCons(oDadosTran)
 	
 EndClass
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณSitefPBM  บAutor  ณVendas Clientes     บ Data ณ  06/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConstrutor da classe LJCSitefPBM.				              บฑฑ
@@ -38,13 +38,7 @@ EndClass
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบParametrosณ														      บฑฑ
-ฑฑฬออออออออออุออออออหออออออออหออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบ DATA     ณ BOPS บProgram.บALTERACAO                                   บฑฑ
-ฑฑฬออออออออออุออออออหออออออออหออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑศออออออออออฯออออออสออออออออสออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method SitefPBM(oClisitef) Class LJCSitefPBM
 	
 	Default oClisitef := Nil
@@ -396,6 +390,44 @@ oDadosTran:nRetorno := Self:oClisitef:EnvVDLCons(@oDadosTran)
 Return Nil
 
 //-------------------------------------------------------------------
+/*/{Protheus.doc} VDLinkProd
+Produto PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transa็ใo
+@author		Julio.Nery
+@version	12
+@since		16/03/2021
+@return		nRetDLL		- C๓digo do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method VDLinkProd(oDadosTran) Class LJCSitefPBM
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:EnvVDLProd(@oDadosTran)
+
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} VDLinkVenda
+Venda Produto PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transa็ใo
+@author		Julio.Nery
+@version	12
+@since		16/03/2021
+@return		nRetDLL		- C๓digo do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method VDLinkVenda(oDadosTran) Class LJCSitefPBM
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:EnvVDLVenda(@oDadosTran)
+
+Return Nil
+
+//-------------------------------------------------------------------
 /*/{Protheus.doc} PharmSCons
 Consulta PBM PharmaSystem
 
@@ -408,8 +440,32 @@ Consulta PBM PharmaSystem
 //-------------------------------------------------------------------
 Method PharmSCons(oDadosTran) Class LJCSitefPBM
 Local oTrans := NIL
-//JULIOOOOOOOOOOOOOOOOOOOOO - continuar aqui - 30/03/2021
-oTrans := LJADadosTransacao():New(oDadosTran:nValor,Val(oDadosTran:cCupomFisc) , dData, cHora)
+
+oTrans := LJADadosTransacao():New(oDadosTran:nValor,Val(oDadosTran:cCupomFisc), Stod(oDadosTran:cDataFisc),oDadosTran:cHorario,;
+								  1,,"",,oDadosTran:cOperador,,,oDadosTran:aVDLink)
+Self:oCliSitef:SetTrans(oTrans)
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:IniciaFunc(oDadosTran:nFuncSitef, oDadosTran:cRestri)
+
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} FuncCrCons
+Consulta PBM Funcional Card
+
+@param		oDados, objeto, contem os dados da transa็ใo
+@author		Julio.Nery
+@version	12
+@since		26/03/2021
+@return		nRetDLL		- C๓digo do retorno ao comando enviado a DLL
+/*/
+//-------------------------------------------------------------------
+Method FuncCrCons(oDadosTran) Class LJCSitefPBM
+Local oTrans := NIL
+
+oTrans := LJADadosTransacao():New(oDadosTran:nValor,Val(oDadosTran:cCupomFisc), Stod(oDadosTran:cDataFisc),oDadosTran:cHorario,;
+								  1,,"",,oDadosTran:cOperador,,,oDadosTran:aVDLink)
 Self:oCliSitef:SetTrans(oTrans)
 
 //Envia a transacao para o sitef

@@ -33,9 +33,11 @@ EndClass
 ±±ºRetorno   ³Objeto														     º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Method New(nValor, nCupom, dData, cHora, lUltimaTrn,;
-			 cRede, cTpDoc, cOperador, cCodAut,	cCodProd, aVDLink) Class LJCDadosTransacaoPBM
+			 cRede, cTpDoc, cOperador, cCodAut,	cCodProd,;
+			 aVDLink) Class LJCDadosTransacaoPBM
     
 	_Super:New(nValor, nCupom, dData, cHora, _PBM, lUltimaTrn,;
-				 cRede, cTpDoc, cOperador, cCodAut,	cCodProd,aVDLink)
+				 cRede, cTpDoc, cOperador, cCodAut,	cCodProd,;
+				 aVDLink)
    	
 Return Self

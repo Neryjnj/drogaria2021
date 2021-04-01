@@ -5,19 +5,13 @@
 
 Function LOJA1925 ; Return                     
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออออหอออออออัอออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณLJCClisitefPbm บAutor  ณVENDAS CRM     บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออออสอออออออฯอออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณInterface para transacao com Pbm							  บฑฑ 
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿     
-*/
+---------------------------------------------------------------------------*/
 Class LJCClisitefPbm From LJAPbm
 
 	Data oTransSitef							//Objeto do tipo LJCTransClisitef
@@ -40,24 +34,21 @@ Class LJCClisitefPbm From LJAPbm
 	Method Desfazer()
  	Method IniciouVen()
 	Method VDLinkCons(oDadosTran)
+	Method VDLinkProd(oDadosTran)
+	Method VDLinkVenda(oDadosTran)
 	Method PharmSCons(oDadosTran)
+	Method FuncCrCons(oDadosTran)
       
 EndClass       
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณNew          บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณMetodo construtor da classe.                                บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method New(oCliSitef, oPbms) Class LJCClisitefPbm 
 
    	_Super:New()
@@ -371,12 +362,64 @@ Return lIniciou
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
 Method VDLinkCons(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.
 
 lRetorno := ::oPbm:VDLinkCons(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
+							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
+
+If lRetorno
+	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
+	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
+	::oDadosTran := oDadosTran
+	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
+	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
+Else
+	::oPbm:oPbm := Nil
+EndIf	
+
+Return Nil
+
+/*/{Protheus.doc} VDLinkProd
+	Executa consulta do produto VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method VDLinkProd(oDadosTran) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPbm:VDLinkProd(oDadosTran:aVDLink)
+
+If lRetorno
+	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
+	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
+	::oDadosTran := oDadosTran
+	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
+	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
+Else
+	::oPbm:oPbm := Nil
+EndIf	
+
+Return Nil
+
+/*/{Protheus.doc} VDLinkVenda
+	Executa venda do produto VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method VDLinkVenda(oDadosTran) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPbm:VDLinkVenda(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
 							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
 
 If lRetorno
@@ -399,22 +442,44 @@ Return Nil
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
 Method PharmSCons(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.
 
 lRetorno := ::oPbm:PharmSCons(oDadosTran:nFuncSitef, oDadosTran:nValor, oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
-							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri)
+							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri,oDadosTran:aVDLink)
 
 If lRetorno
 	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
 	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
 	::oDadosTran := oDadosTran
-	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
-	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
 Else
 	::oPbm:oPbm := Nil
 EndIf
 
 Return Nil
+
+/*/{Protheus.doc} FuncCrCons
+	Executa consulta do Funcional Card
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method FuncCrCons(oDadosTran) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPbm:FuncCrCons(oDadosTran:nFuncSitef, oDadosTran:nValor, oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
+							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri,oDadosTran:aVDLink)
+
+If lRetorno
+	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
+	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
+	::oDadosTran := oDadosTran
+Else
+	::oPbm:oPbm := Nil
+EndIf
+
+Return NIL

@@ -34,9 +34,10 @@ Class LJCPharmSys From LJCSitefDireto
 	DATA cHora
 	DATA cOperador
 	DATA cRestri
+	DATA aVDLink
 
 	Method PharmaSystem(oClisitef)						//Metodo construtor
-    Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri)
+    Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
 
     /*
 	Method IniciaVend(cCupom, cOperador)							//Inica a venda com o PBM
@@ -89,10 +90,11 @@ Method PharmaSystem(oClisitef) Class LJCPharmSys
 ::cHora := ""
 ::cOperador:= ""
 ::cRestri := ""
+::aVDLink := {}
 
 Return Self
 
-/*/{Protheus.doc} VDLinkCons
+/*/{Protheus.doc} PharmSCons
 	Classe de consulta de dados PharmaSystem
 	@type  Class
 	@author Julio.Nery
@@ -101,7 +103,7 @@ Return Self
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
 /*/
-Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri) Class LJCPharmSys
+Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink) Class LJCPharmSys
 Local lRet := .T.
 
 ::nFuncao := nFuncao
@@ -112,6 +114,7 @@ Local lRet := .T.
 ::cOperador:= cOperador
 ::cRestri := cRestri
 ::cNumCupom := cCupom
+::aVDLink := aVDLink
 
 lRet := ::ConsPharmS()
 

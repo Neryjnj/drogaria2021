@@ -42,8 +42,8 @@ Return
     @author Julio Nery
     @since 16/03/2021
     @version 12
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @param nenhum
+    @return nenhum
 /*/
 Static Function STBConPbm()
 Local aRetVDLink:= {}
@@ -59,6 +59,8 @@ lContinua := STBVerConVnd(.T.,,@nOpPBM)
 If lContinua
     T_DroVLGet(nOpPBM)
     aRetVDLink := STGDadosVL()
+
+    //JULIOOOOO - verificar se será necessário manter esse trecho - 31/03/2021
     T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
                 ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
                 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
@@ -258,8 +260,7 @@ Function STBFimVdPB(cDoc, cSerie, cKeyDoc)
 Local lRet := .F.	// Retorno da funcao
 
 lRet := oTPLPBM:FinalVend(cDoc, cSerie, cKeyDoc)
-
-//LjMsgRodaP (bkp_oDlgFrt, bkp_oFntGet, STR0001) //"Protheus Front Loja"
+STFCleanInterfaceMessage()
 
 Return lRet
 
@@ -399,7 +400,7 @@ Else
 		nVidaLink  := aVidaLink[1]
 	Else
 		nVidaLink  := 2
-	EndIf	
+	EndIf
 EndIf	
 Return Nil
 
@@ -611,6 +612,7 @@ ElseIf cOperacao == "VIDALINK_CANCELAMENTO"
 // Cancelamento de captura da Pre-Autorizacao  (PharmaSystem)
 ElseIf cOperacao == "PHARMASYSTEM_AUTORIZA"
 	nFuncao := 540
+
 ElseIf cOperacao == "PHARMASYSTEM_CONSULTA"
 	nFuncao := 541
 

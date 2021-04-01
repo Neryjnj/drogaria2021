@@ -9,20 +9,14 @@
 
 User Function LOJA1007 ; Return  // "dummy" function - Internal Use
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณLJCPBM    บAutor  ณVendas Clientes     บ Data ณ  03/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณCria a classe LJCPBM                                        บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ SIGALOJA/FRONTLOJA                                         บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Class LJCPBM
 
 	Data oPbm														// Obejeto PBM
@@ -43,7 +37,10 @@ Class LJCPBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
 	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
-	Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri)
+	Method VDLinkProd(aVDLink)
+	Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+	Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
+	Method FuncCrCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
 	
 	//Metodos internos
 	Method CarregaCBO()												// Carrega as informacoes do arquivo SLZ
@@ -93,10 +90,7 @@ lRet := ::oPbm:IniciaVend(cCupom, cOperador, cTpDoc)
 	
 Return lRet                                                        
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณVendProd  บAutor  ณVendas Clientes        บ Data ณ  09/04/07บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณ Realiza a venda do Produto                                 บฑฑ
@@ -109,24 +103,15 @@ Return lRet
 ฑฑบ          ณ 5.ExpL1 - Se o item foi enviado para pbm                   บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ SIGALOJA/FRONTLOJA                                         บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method VendProd( cCodBarra, nQtde, nPrUnit, nPercDesc, ;
 				 lItemPbm, lPrioPbm ) Class LJCPBM
-	
-	Local lRet := .T.		// Retorno da funcao
-    
-	lRet := ::oPbm:VendProd( cCodBarra, nQtde, nPrUnit, @nPercDesc, @lItemPbm, lPrioPbm )
+Local lRet := .T.		// Retorno da funcao
+lRet := ::oPbm:VendProd( cCodBarra, nQtde, nPrUnit, @nPercDesc, @lItemPbm, lPrioPbm )
 
 Return lRet
 
-
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณCancProd  บAutor  ณVendas Clientes     บ Data ณ  09/04/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณ Realiza o cancelamento dos produtos vendidos no PBM        บฑฑ
@@ -136,18 +121,14 @@ Return lRet
 ฑฑบ          ณ 2.ExpN1 (nQtde)	- Quantidade do produto                   บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ SIGALOJA/FRONTLOJA                                         บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method CancProd( cCodBarra, nQtde ) Class LJCPBM
 
 	Local lRet	 := .T.		//Retorno da funcao
 	
 	lRet := ::oPbm:CancProd( cCodBarra, nQtde )
 
-Return(lRet)
-
+Return lRet
 
 /*
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
@@ -169,7 +150,7 @@ Method FinalVend(cDoc, cSerie, cKeyDoc) Class LJCPBM
 	
 	lRet := ::oPbm:FinalVend(cDoc, cSerie, cKeyDoc)
 
-Return(lRet)
+Return lRet
 
 /*
 ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
@@ -401,13 +382,44 @@ Return ::nTpOpera
 	@since 16/03/2021
 	@version 12
 	@param param, param_type, param_descr
-	@return return, return_type, return_description
-
+	@return lRet, logico, executado com sucesso ?
 /*/
 Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class LJCPBM
 Local lRet := .F.
 
 lRet := ::oPBM:VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+
+Return lRet
+
+/*/{Protheus.doc} VDLinkProd
+	Validacao Produto VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return lRet, logico, executado com sucesso ?
+/*/
+Method VDLinkProd(aVDLink) Class LJCPBM
+Local lRet := .F.
+
+lRet := ::oPBM:VDLinkProd(aVDLink)
+
+Return lRet
+
+/*/{Protheus.doc} VDLinkVenda
+	Validacao Produto VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return lRet, logico, executado com sucesso ?
+/*/
+Method VDLinkVenda() Class LJCPBM
+Local lRet := .F.
+
+lRet := ::oPBM:VDLinkVenda(aVDLink)
 
 Return lRet
 
@@ -421,9 +433,26 @@ Return lRet
 	@return return, return_type, return_description
 /*/
 Method PharmSCons(nFuncao	, nValor	, cCupom	, dData	,;
-				  cHora	, cOperador	, cRestri) Class LJCPBM
+				  cHora	, cOperador	, cRestri, aVDLink) Class LJCPBM
 Local lRet := .F.
 
-lRet := ::oPBM:PharmSCons(nFuncao, nValor, cCupom, dData, cHora, cOperador, cRestri)
+lRet := ::oPBM:PharmSCons(nFuncao, nValor, cCupom, dData, cHora, cOperador, cRestri, aVDLink)
+
+Return lRet
+
+/*/{Protheus.doc} FuncCrCons
+	Executa consulta do Funcional Card
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method FuncCrCons(nFuncao	, nValor	, cCupom	, dData	,;
+				  cHora	, cOperador	, cRestri, aVDLink) Class LJCPBM
+Local lRet := .F.
+
+lRet := ::oPBM:FuncCrCons(nFuncao, nValor, cCupom, dData, cHora, cOperador, cRestri, aVDLink)
 
 Return lRet
