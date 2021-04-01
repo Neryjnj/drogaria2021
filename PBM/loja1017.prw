@@ -30,20 +30,27 @@ Class LJCDadosSitefDireto
 	Data cCodAut							//c๓digo da autoriza็ใo VIDALINK
 	Data cCodProd							//c๓digo do produto VIDALINK
 	Data aVDLink							//outros dados PBM
+	Data cRestri							//Restri็ใo para enviar conteudo na PBM
+	Data nValor								//Valor
+	Data nCupom								//Numero do Cupom 
 	
 	Method DadosSitef()						//Metodo construtor
+	Method IniDadoSitef(nRetorno, nRedeDest, nFuncSitef, nOffSetCar,;
+					cDadosTx, nTaDadosTx, cDadosRx,nTaDadosRx,;
+					nCodResp,nTempEspRx, cCupomFisc, cDataFisc,;
+					cHorario,cOperador, nTpTrans, cCodAut,;
+					cCodProd, aVDLink, cRestri, nValor,;
+					nCupom)
 
 EndClass
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑบMetodo    ณDadosSitefบAutor  ณVendas Clientes     บ Data ณ  04/09/07   บฑฑ
-ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
-ฑฑบDesc.     ณConstrutor da classe LJCDadosSitefDireto.		              บฑฑ
-ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
-ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
-ฑฑบParametrosณ														      บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+/*-------------------------------------------------------------------------
+|Metodo    ณDadosSitefบAutor  ณVendas Clientes     บ Data ณ  04/09/07     |
+---------------------------------------------------------------------------
+|Desc.     ณConstrutor da classe LJCDadosSitefDireto.		              |
+---------------------------------------------------------------------------
+|Uso       ณSigaLoja / FrontLoja                                          |
+-------------------------------------------------------------------------*/
 Method DadosSitef() Class LJCDadosSitefDireto
 
 	::nRetorno			:= 0
@@ -64,5 +71,69 @@ Method DadosSitef() Class LJCDadosSitefDireto
 	::cCodAut			:= ""
 	::cCodProd			:= ""
 	::aVDLink			:= {}
+	::cRestri			:= ""
+	::nValor			:= 0
+	::nCupom			:= 0
 
+Return Self
+
+/*/{Protheus.doc} IniDadoSitef
+	Metodo para inicializa็ใo com valores do objeto da classe	
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method IniDadoSitef(nRetorno, nRedeDest, nFuncSitef, nOffSetCar,;
+					cDadosTx, nTaDadosTx, cDadosRx,nTaDadosRx,;
+					nCodResp,nTempEspRx, cCupomFisc, cDataFisc,;
+					cHorario,cOperador, nTpTrans, cCodAut,;
+					cCodProd, aVDLink, cRestri, nValor,;
+					nCupom ) Class LJCDadosSitefDireto
+
+Default nRetorno 	:= 0
+Default nRedeDest 	:= 0
+Default nFuncSitef 	:= 0
+Default nOffSetCar	:= 0
+Default cDadosTx	:= ""
+Default nTaDadosTx	:= 0
+Default cDadosRx	:= ""
+Default nTaDadosRx	:= 0
+Default nCodResp	:= 0
+Default nTempEspRx	:= 0
+Default cCupomFisc	:= ""
+Default cDataFisc	:= ""
+Default cHorario	:= ""
+Default cOperador	:= ""
+Default nTpTrans	:= 0
+Default cCodAut		:= ""
+Default cCodProd	:= ""
+Default aVDLink		:= {}
+Default cRestri		:= ""
+Default nValor		:= 0
+Default nCupom		:= 0
+
+::nRetorno			:= nRetorno
+::nRedeDest 		:= nRedeDest
+::nFuncSitef 		:= nFuncSitef
+::nOffSetCar		:= nOffSetCar
+::cDadosTx			:= cDadosTX
+::nTaDadosTx		:= nTaDadosTx
+::cDadosRx			:= cDadosRx
+::nTaDadosRx		:= nTaDadosRx
+::nCodResp			:= nCodResp
+::nTempEspRx		:= nTempEspRx
+::cCupomFisc		:= cCupomFisc
+::cDataFisc			:= cDataFisc
+::cHorario			:= cHorario
+::cOperador			:= cOperador
+::nTpTrans			:= nTpTrans
+::cCodAut			:= cCodAut
+::cCodProd			:= cCodProd
+::aVDLink			:= aVDLink
+::cRestri			:= cRestri
+::nValor			:= nValor
+::nCupom			:= nCupom
 Return Self

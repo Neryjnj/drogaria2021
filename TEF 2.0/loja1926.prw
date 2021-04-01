@@ -92,6 +92,8 @@ Class LJCComClisitef
 	Method GetRetorno()
 	Method Fechar()
 	Method EnvVDLCons(oDadosTran)
+	Method EnvVDLProd(oDadosTran)
+	Method EnvVDLVenda(oDadosTran)
 	
 	//Metodos internos
 	Method RedeTpCart()
@@ -504,9 +506,9 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 							
 							//Informado o numero do cartao do convenio
 							If ::oTransacao:aVDLink[1,5] == 560	//Funcional card, solicita digitacao do cartao do convenio              
-								::cBuffer	:= "2"               				   
+								::cBuffer	:= "2"
 							ElseIf !Empty(::oTransacao:aVDLink[1,3])
-								::cBuffer	:= "1"               
+								::cBuffer	:= "1"
 							//Informado o numero do CPF do cliente
 							Else
 								::cBuffer  	:= "2"
@@ -852,8 +854,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 	
 		    	::oFrmTef:Fechar()  
 		    	lSaida := .T.
-		    EndIf 
-		    
+		    EndIf
 		End
 		 
 	    If ValType(oParamsApi) == "O"
@@ -866,10 +867,7 @@ Method ContinFunc(cBuffer, nContinua) Class LJCComClisitef
 				  
 Return nRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³MsgPinPad	       ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Envia uma mensagem para o pinpad					 				 º±±
@@ -879,10 +877,7 @@ Return nRetorno
 ±±ºParametros³EXPC1 (1 - cMensagem) - Mensagem do pinpad.	     				 º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³Numerico														     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method MsgPinPad(cMensagem) Class LJCComClisitef
 	
 	Local oParamsApi 	:= Nil			//Objeto do tipo LJCParamsAPI
@@ -898,10 +893,7 @@ Method MsgPinPad(cMensagem) Class LJCComClisitef
 	
 Return Val(cRetorno)
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³LeCartao	       ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Le o cartao no pinpad								 				 º±±
@@ -913,10 +905,7 @@ Return Val(cRetorno)
 ±±º			 ³EXPC3 (3 - cTrilha2) - Trilha 2 do cartao.	     				 º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³Numerico														     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method LeCartao(cMensagem, cTrilha1, cTrilha2) Class LJCComClisitef
 
 	Local oParamsApi 	:= Nil			//Objeto do tipo LJCParamsAPI
@@ -1926,10 +1915,7 @@ Method TratarRet(nRetorno, cTipo) Class LJCComClisitef
 
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºMetodo    ³SetTrans  ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Recebe o objeto com os dados da transacao   				  º±±
@@ -1937,22 +1923,14 @@ Return Nil
 ±±ºUso       ³SigaLoja / FrontLoja                                        º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºParametros³ExpO1 (1 - oTransacao) - Objeto do tipo LJADadosTransacao	  º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºRetorno   ³		                                                      º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+---------------------------------------------------------------------------*/
 Method SetTrans(oTransacao) Class LJCComClisitef
 
 	::oTransacao := oTransacao
 		
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³GravarLog	       ºAutor  ³Vendas Clientes     º Data ³  18/11/08   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Grava o log do Tef									    	     º±±
@@ -1960,12 +1938,7 @@ Return Nil
 ±±ºUso       ³SigaLoja / FrontLoja                                        		 º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºParametros³EXPC1 (1 - cTexto) - Mensagem do log.          				 	 º±±
-±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºRetorno   ³																     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method GravarLog(cTexto) Class LJCComClisitef
 
 	
@@ -3335,7 +3308,6 @@ Trata a Administrador Financeira
 /*/
 //-------------------------------------------------------------------
 Method TrataAdm(nParcela) Class LJCComClisitef
-
 			
 If (::oTransacao:nTipoTrans > 0 .AND. ::oTransacao:nTipoTrans <= 5) .Or. (::oTransacao:nTipoTrans == 7) //7 = Recarga Celular
 	
@@ -3344,7 +3316,6 @@ If (::oTransacao:nTipoTrans > 0 .AND. ::oTransacao:nTipoTrans <= 5) .Or. (::oTra
    ::oRetorno:aAdmin := aClone( Self:RetornaAdm(::oRetorno:cTpCartao, ::oTransacao:cFormaPgto, nParcela, ::oRetorno:cInstit) )
 
 EndIf
-
 
 If Len(::oRetorno:aAdmin) == 1
 	::oRetorno:cAdmFin := ::oRetorno:aAdmin[1][7]
@@ -3411,6 +3382,92 @@ Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
 //Prepara os parametros de envio
 oParamsApi := ::PrepParam({CLISITEF, "IniciaFuncaoSiTefInterativoConsultaVidalink", oDadosTran:cCodAut, ;
 								oDadosTran:cCodProd, oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
+								oDadosTran:cHorario, oDadosTran:cOperador})
+
+cRetorno := ::EnviarCom(oParamsApi)
+
+//Carrega o retorno
+oDadosTran:cCodAut 	:= oParamsApi:Elements(3):cParametro
+oDadosTran:cCodProd := Val(oParamsApi:Elements(4):cParametro)
+oDadosTran:cCupomFisc:= oParamsApi:Elements(5):cParametro
+oDadosTran:cDataFisc:= oParamsApi:Elements(6):cParametro
+oDadosTran:cHorario := oParamsApi:Elements(7):cParametro
+oDadosTran:cOperador:= oParamsApi:Elements(8):cParametro
+oParamsApi:Destroy()
+oParamsApi := FreeObj(oParamsApi)
+
+nRet := Val(cRetorno)
+
+If nRet == 10000
+	//Gravar arquivo de controle para confirmar ou desfazer a transacao
+	
+	If ValType( ::oTransacao ) <> "O"
+		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , SToD(oDadosTran:cDataFisc), StrTran(oDadosTran:cHorario,":"))
+	EndIf
+
+	::oTransacao:aVDLink := oDadosTran:aVDLink
+
+	::GrvArqCtrl()
+	//Carrega tela do sitef para troca de informacoes
+	::Show()
+Else
+	::TratarRet(nRet, _TRANSACAO)
+EndIf
+
+Return nRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} EnvVDLProd
+Produto PBM Vidalink
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		31/03/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL
+/*/
+//-------------------------------------------------------------------
+Method EnvVDLProd(oDadosTran) Class LJCComClisitef
+Local nRet		:= 0
+Local cRetorno 	:= ""       	//Retorno do comando enviado
+Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
+
+::oRetorno := LJCRetornoSitef():New()
+
+//Prepara os parametros de envio
+oParamsApi := ::PrepParam({CLISITEF, "InformaProdutoVendaVidalink", cValToChar(oDadosTran:aVDLink[1,1]), ;
+							oDadosTran:aVDLink[1,2], oDadosTran:aVDLink[1,3], Str(oDadosTran:aVDLink[1,4]*100, 12, 0)})
+
+cRetorno := ::EnviarCom(oParamsApi)
+oParamsApi:Destroy()
+oParamsApi := FreeObj(oParamsApi)
+nRet := Val(cRetorno)
+Return nRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} EnvVDLVenda
+Venda PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		31/03/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method EnvVDLVenda(oDadosTran) Class LJCComClisitef
+Local nRet		:= 0
+Local cRetorno 	:= ""       	//Retorno do comando enviado
+Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
+
+::oRetorno := LJCRetornoSitef():New()
+
+//Prepara os parametros de envio
+//"IniciaFuncaoSiTefInterativoVendaVidalink", {cCodigoAutorizacao, Alltrim(Str(nNumeroProdutos)), cCuponFiscal, cDataFiscal, cHorario, cOperador} )
+
+//JULIOOOOOOOOOO - tentar pegar a qtde de itens no array aVDLink
+oParamsApi := ::PrepParam({CLISITEF, "IniciaFuncaoSiTefInterativoVendaVidalink", oDadosTran:cCodAut, ;
+								Len(oDadosTran:aVDLink), oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
 								oDadosTran:cHorario, oDadosTran:cOperador})
 
 cRetorno := ::EnviarCom(oParamsApi)

@@ -27,16 +27,17 @@ User Function LOJA1971 ; Return  	// "dummy" function - Internal Use
 --------------------------------------------------------------------------------*/
 Class LJCPharmSys From LJCSitefDireto
 	
-	DATA cCodAut
-	DATA cCodProd
+	DATA nFuncao
+	DATA nValor
 	DATA cCupom
 	DATA cData
 	DATA cHora
 	DATA cOperador
+	DATA cRestri
 	DATA aVDLink
 
 	Method PharmaSystem(oClisitef)						//Metodo construtor
-    Method PharmSCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+    Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
 
     /*
 	Method IniciaVend(cCupom, cOperador)							//Inica a venda com o PBM
@@ -82,17 +83,18 @@ Method PharmaSystem(oClisitef) Class LJCPharmSys
 
 ::SitefDireto(oClisitef)
 
-::cCodAut			:= ""
-::cCodProd			:= ""
-::cCupom			:= ""
-::cData				:= ""
-::cHora				:= ""
-::cOperador			:= ""
-::aVDLink			:= {}
+::nFuncao := 0
+::nValor := 0
+::cCupom := ""
+::cData := ""
+::cHora := ""
+::cOperador:= ""
+::cRestri := ""
+::aVDLink := {}
 
 Return Self
 
-/*/{Protheus.doc} VDLinkCons
+/*/{Protheus.doc} PharmSCons
 	Classe de consulta de dados PharmaSystem
 	@type  Class
 	@author Julio.Nery
@@ -101,17 +103,19 @@ Return Self
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
 /*/
-Method PharmSCons(cCodAut,cCodProd,nCupom,dData,cHora,cOperador,aVDLink) Class LJCPharmSys
+Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink) Class LJCPharmSys
 Local lRet := .T.
 
-::cCodAut	:= cCodAut
-::cCodProd	:= cCodProd
-::cCupom	:= cValToChar(nCupom)
-::cData		:= DToS(dData)
-::cHora		:= StrTran(cHora,":")
-::cOperador	:= cOperador
-::aVDLink	:= aVDLink
+::nFuncao := nFuncao
+::nValor := nValor
+::cCupom := cCupom
+::cData := cData
+::cHora := cHora
+::cOperador:= cOperador
+::cRestri := cRestri
+::cNumCupom := cCupom
+::aVDLink := aVDLink
 
-lRet := ::ConsVDLink()
+lRet := ::ConsPharmS()
 
 Return lRet

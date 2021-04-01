@@ -3,6 +3,18 @@
 #INCLUDE "STPOS.CH"
 #INCLUDE "STWITEMREGISTRY.CH"
 #INCLUDE "STBDEFPBM.CH"
+#INCLUDE "FRTDEF.CH"
+
+//DEFINES Usados no Template de Drogaria.
+#DEFINE VDLNK_CABEC_CODCLI	 1
+#DEFINE VDLNK_CABEC_LOJA	 2
+#DEFINE VDLNK_INDICEPRODU	 1
+#DEFINE VDLNK_CODIGOEAN  	 2
+#DEFINE VDLNK_QUANTIDADE 	 3
+#DEFINE VDLNK_PRECO      	 4
+#DEFINE VDLNK_AUTORIZACAO    1
+#DEFINE VDLNK_DETALHE    	 2
+#DEFINE VDLNK_TOTALVENDA   	 3
 
 Static lReceiptIsOpen	:= .F.		// Define se foi realizada abertura de cupom fiscal
 
@@ -144,7 +156,7 @@ EndIf
 /*Tratamento VidaLINK*/
 If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
-	If aDadoVLink[3] == 1
+	If aDadoVLink[3] == 2//No front esta 1 porem aqui o array final é salvo com 2
 		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
 		If aAux[ITEM_ENCONTRADO]
 			cItemCode := aAux[ITEM_CODIGO]
@@ -156,7 +168,7 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 		
 		If nItemLine == 1 //Somente quando for o primeiro item que posiciona
 			SA1->(DbSetOrder(1))
-			If SA1->(DbSeek(xFilial("SA1")+cCliente+cLojaCli))
+			If SA1->(DbSeek(xFilial("SA1")+cCliCode+cCliLoja))
 				cCliType := SA1->A1_TIPO
 			EndIf
 			STDSPBasket("SL1","L1_TIPOCLI",cCliType) //Tipo do Cliente na Cesta
@@ -181,7 +193,12 @@ lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 /*/
 	Busca item na base de dados
 /*/
-aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
+If Len(aAux) > 0 //Se estiver preenchido tem o TPL Drogaria e é venda com PBM
+	aInfoItem := AClone(aAux)
+Else
+	aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
+EndIf
+aAux := {}
 
 // Encontrou o item?
 If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]    
@@ -491,7 +508,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 				If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
 								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
-					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM, o desconto da loja será zerado")
+					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM e o desconto da loja será zerado")
 					nDiscount := 0
 					lRet := .F.
 				EndIf

@@ -257,11 +257,9 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		If lSigaLoja
 			bGrvVend := {|| LJMsgRun("Adicionando itens ao orçamento...",,{|| DroAddProd(@aParamVL[1][VLP_AVLD][2]) }),oDlg:End()}
 		
-		ElseIf lTotvsPDV
-			bGrvVend := {|| STFMessage("DROVLGet1", "RUN", "Adicionando itens ao orçamento...",;
-							 {|| DroAddProd(@aParamVL[1][VLP_AVLD][2]) }, STFShowMessage("DROVLGet1"), oDlg:End() )}
+		ElseIf lTotvsPDV //JULIOOOOOOOOOOOO - verificar trecho
+			bGrvVend := {|| DroAddProd(@aParamVL[1][VLP_AVLD][2],{aParamVL[1][VLP_CCLIEN],aParamVL[1][VLP_CLOJAC]}), oDlg:End()}
 		Else
-
 			bGrvVend := {|| ;
 						FR271HCarrega(oDlg					, Nil						, @aParamVL[1][27]			, @aParamVL[1][145]	,;
 									 @aParamVL[1][1]		, @aParamVL[1][2]			, @aParamVL[1][3]			, @aParamVL[1][4]	,;
@@ -447,20 +445,25 @@ If lContinua
 	ElseIf nNumPbm == 541
 		If lTotvsPDV
 			oDados := T_DroRtOtran("PHARMASYSTEM_CONSULTA",aVidaLinkD,aInfo)
-			oPBM:VDLinkCons(oDados)
+			oPBM:PharmSCons(oDados)
 		Else
-			oTEF:Operacoes("PHARMASYSTEM_CONSULTA"	, aVidaLinkD)     
+			oTEF:Operacoes("PHARMASYSTEM_CONSULTA", aVidaLinkD)     
 		EndIf
 	ElseIf nNumPbm == 540
 		If lTotvsPDV
+			oDados := T_DroRtOtran("PHARMASYSTEM_AUTORIZA",aVidaLinkD,aInfo)
+			oPBM:PharmSCons(oDados)
 		Else
-			oTEF:Operacoes("PHARMASYSTEM_AUTORIZA"	, aVidaLinkD)
+			oTEF:Operacoes("PHARMASYSTEM_AUTORIZA", aVidaLinkD)
 		EndIf
+
 	//Consulta Funcional Card
 	ElseIf nNumPbm == 560
 		If lTotvsPDV
+			oDados := T_DroRtOtran("FUNCARD_CONSULTA",aVidaLinkD,aInfo)
+			oPBM:FuncCrCons(oDados)
 		Else
-			oTEF:Operacoes("FUNCARD_CONSULTA"		, aVidaLinkD)
+			oTEF:Operacoes("FUNCARD_CONSULTA", aVidaLinkD)
 		EndIf
 	Endif
 
@@ -484,7 +487,7 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		,;  // nPreco de Venda da Farmacia
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut     	,;  // Quantidade sem alteracao 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValTot		,;	// Preco de venda VidaLink			 
-								0																		,;	// Valor do Subusidio
+								0																		,;	// Valor do Subsidio
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq		})	// Valor pago a vista
 		
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
@@ -521,7 +524,7 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut 			,;  // Quantidade sem alteracao 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nPrecoMax  		,;	// Preco de venda VidaLink			 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValSubsidio +;
-										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subusidio
+										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subsidio
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum			})	// Valor pago a vista
 					
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm
@@ -645,9 +648,10 @@ If lSigaLoja .Or. lTotvsPDV
 	If lSigaLoja
 		nCodFuncao := oTef:nCodFuncao
 	Else
-		//JULIOOOOOOOO - do objeto a partir do oDados
 		oTEF20 := STBGetTEF()
-		nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
+		If AttIsMemberOf(oTEF20:PBM():oPBM:oPBM , "aVDLINK")
+			nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
+		EndIf
 	EndIf
 Else
 	nCodFuncao :=  oTef:nCodFuncao
@@ -791,29 +795,37 @@ Local cMsg		 := ""
 Local oTEF20	 := NIL
 
 If lTotvsPDV
-	//JULIOOOOOOOO - do objeto a partir do oDados
-	oTEF20 := STBGetTEF()		
-	nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
+	oTEF20 := STBGetTEF()
+	If AttIsMemberOf(oTEF20:PBM():oPBM:oPBM , "aVDLINK")
+		nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
+		lRet := .T.
+	Else
+		lRet := .F.
+	EndIf
 Else
 	nCodFuncao := oTef:nCodFuncao
+	lRet := .T.
 EndIf
 
-nTotVenda := 0
-If Len(aVidaLinkD) >= 4
-	If !Empty(aVidaLinkD[VL_DETALHE])
-		For _nI := 1 to Len(aVidaLinkD[VL_DETALHE])
-			nTotVenda += aVidaLinkD[VL_DETALHE, _nI, VL_QUANTID ] * (aVidaLinkD[VL_DETALHE, _nI, VL_PRVENDA ])
-		Next		
+If lRet
+	nTotVenda := 0
+	If Len(aVidaLinkD) >= 4
+		If !Empty(aVidaLinkD[VL_DETALHE])
+			For _nI := 1 to Len(aVidaLinkD[VL_DETALHE])
+				nTotVenda += aVidaLinkD[VL_DETALHE, _nI, VL_QUANTID ] * (aVidaLinkD[VL_DETALHE, _nI, VL_PRVENDA ])
+			Next		
 
-		aVidaLinkD[VL_TOTVEND] := nTotVenda  // Atualiza o totalizador do array aVidaLink tambem
-		If oTotVenda <> Nil 
-			oTotVenda:Refresh()
-		Endif	  
-		
-		If nTotVenda > 0
-			lRet := .T.
-		Else
-			MsgStop(STR0009,STR0002) // Nao existem itens de venda para este numero de Autorização
+			aVidaLinkD[VL_TOTVEND] := nTotVenda  // Atualiza o totalizador do array aVidaLink tambem
+			If oTotVenda <> Nil 
+				oTotVenda:Refresh()
+			Endif	  
+			
+			If nTotVenda > 0
+				lRet := .T.
+			Else
+				MsgStop(STR0009,STR0002) // Nao existem itens de venda para este numero de Autorização
+				lRet := .F.
+			EndIf
 		EndIf
 	EndIf
 EndIf
@@ -882,7 +894,7 @@ Else
 EndIf
 	
 Return lRet
-
+                      
 /*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±³Fun‡„o	 ³DROVLCanc ³ Autor ³ VENDAS CRM		                    ³ Data ³28/04/2005³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
@@ -940,15 +952,33 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROVLVen()
 Local aRet := {}					// Retorno da funcao
+Local aInfo:= {}
 Local _aVidaLinkC := ParamIxb[2]	// aVidalinkC
 Local _aVidaLinkD := ParamIxb[3]	// aVidalinkD
 Local _nVidaLink  := ParamIxb[1]	// nVidalink
 Local _cDoc		  := ParamIxb[4]	// Numero do Cupom Fiscal
+Local oTEF20	  := NIL
+Local oDados 	  := NIL
+Local lTotvsPDV   := STFIsPOS()
+Local nX		  := 0
 
-If _nVidaLink = 2  // Gravou VidaLink
+If lTotvsPDV
+	oTEF20 := STBGetTEF()
+	Aadd(aInfo,{cUserName,_cDoc})
+EndIf
+
+If _nVidaLink == 2  // Gravou VidaLink
 	If nNumPbm == 1
 		If lTotvsPDV
-			//JULIOOOO - inserir 
+			//JULIOOOO - testar
+			//verificar se o conteudo de _aVidaLinkD permite fazer looping 
+			//e em seguida internamente fazer com seja verificado a qtde de itens do array
+			For nX := 1 to Len(_aVidaLinkD)
+				oDados := T_DroRtOtran("",_aVidaLinkD[2,nX],aInfo,_aVidaLinkD[2,nX])
+				oTEF20:Pbm():VDLinkProd(oDados)
+			Next nX
+			oDados := T_DroRtOtran("VIDALINK_VENDA",_aVidaLinkD,aInfo)
+			oTEF20:Pbm():VDLinkVenda(oDados)
 		Else
 			oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
 		EndIf
@@ -1406,7 +1436,7 @@ Template Function DROVLPSet(	oHora			, cHora			, oDoc			, cDoc			,;
 						oPDV			, aICMS			, lDescITReg})
   						
 Return .T.
-                   
+
 /*------------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLPGet      ³ Autor ³ VENDAS CRM				             ³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
@@ -1442,6 +1472,7 @@ Local nMoedaCor  := 1                                               // Moeda cor
 Local nDecimais  := MsDecimais(nMoedaCor)							// Numero de casas decimais
 Local lVidaLink  := nVidaLink == 1
 Local nPrcTab	 := 0
+Local lTotvsPDV  := STFIsPOS()
 
 Default cDoc	:= ""
 Default cSerie	:= ""
@@ -1540,46 +1571,53 @@ Inseri produtos no venda assistida
 @return  
 /*/
 //-------------------------------------------------------------------
-Static Function DroAddProd(aProd)
+Static Function DroAddProd(aProd,aCliente)
 Local nX 			:= 0	//Contador
 Local nTotal		:= 0	//total pbm
 Local nTotalProt	:= 0	//total protheus
+Local nPosUni 		:= 0
 Local lRet			:= .F.
-Local nPosUni 		:= aScan( aHeader, {|x| Alltrim(Upper(x[2])) == "LR_VRUNIT"   } ) //Posicao do campo LR_VRUNIT
-Local lPBMDesc		:= T_DroPbmDe()
+Local lTotvsPDV		:= STFIsPOS()
 
-Default aProd 		:= {} 
+Default aProd 		:= {}
+Default aCliente	:= {}
+
+If !lTotvsPDV
+	nPosUni := aScan( aHeader, {|x| Alltrim(Upper(x[2])) == "LR_VRUNIT"   } ) //Posicao do campo LR_VRUNIT
+EndIf
 
 LjGrvLog( "PBM_FUNCIONAL_CARD", "Inseri produtos na venda")
 
 If Len(aProd) > 0
 	For nX := 1 To Len(aProd)
-		 If lPBMDesc	
-		 	lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
-		 Else
-		 	lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T.)
-		 EndIf
-		 If lRet
-		 	aAdd(aProd[nX],n)
-		 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
-	    	nTotalProt += aCols[N][nPosUni] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do Protheus
-	    	nTotal += aProd[nX][VL_PRVENDA] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do PBM Funcional Card
-		 Else
-		 
-		 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
-		 EndIf
-		 
-	Next nX
+		If lTotvsPDV
+			STBSetQuant( aProd[nX][VL_QUANTID] )
+			lRet := STWItemReg(aProd[nX][VL_NDXPROD],aProd[nX][VL_EAN],aCliente[1],aCliente[2],;
+								/*nMoeda*/     	,	/*nDiscount*/  	, /*cTypeDesc*/	,	/*lAddItem*/,;
+								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA])
+		Else
+			lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
+		EndIf
+
+		If lRet
+			If !lTotvsPDV
+				aAdd(aProd[nX],n)
+				LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
+				nTotalProt += aCols[N][nPosUni] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do Protheus
+			EndIf
+			nTotal += aProd[nX][VL_PRVENDA] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do PBM Funcional Card
+		Else		 
+			LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
+		EndIf
+	Next nX	
 	
-	LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no PBM - nTotal",nTotal)
 	
-	If nTotalProt < nTotal
-		MsgAlert(Upper(STR0002) + " : " + STR0045) //"ATENÇÃO: O valor dos produtos do Protheus está menor que o valor do PBM Funcional Card, isto pode ocasionar divergência no valor a ser pago na finalização da venda."
-	EndIf
-
-	If !lPBMDesc
-		Lj7CondPg(2,"CO",,,,,,Abs(nTotal-nTotalProt))
+	If !lTotvsPDV
+		LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
+		If nTotalProt < nTotal
+			MsgAlert(Upper(STR0002) + " : " + STR0045) //"ATENÇÃO: O valor dos produtos do Protheus está menor que o valor do PBM Funcional Card, isto pode ocasionar divergência no valor a ser pago na finalização da venda."
+		EndIf
 	EndIf
 EndIf	
 	
@@ -1595,12 +1633,7 @@ Verifica se as alterações de desconto no item PBM estao implementadas
 /*/
 //-------------------------------------------------------------------
 Template Function DroPbmDe()
-Local aPrgInfo := {}
-
-If _LOJA701PB == NIL
-	aPrgInfo := GetAPOInfo("LOJA701.PRW")
-	_LOJA701PB := aPrgInfo[04] >= Ctod("25/05/2018")
-EndIf
+_LOJA701PB := .T.
 
 Return _LOJA701PB
 
@@ -1643,22 +1676,43 @@ Return lCanTelMeC
 	@param aConvInfo, array, informações do convenio
 		{_cNumAutori, _cNumConv, _cNumCartao, _cCPF, nNumPbm, cNumCRM, cUFCRM }
 	@param aTranInfo, array, informações da transação
-		{cUserName}
+		{cUserName,cDoc}
+	@param aDadoProd, array, contem os dados do produto a ser consultado na PBM
+		{nItem, CodBarra, Qtde, Valor1, Valor2, Qtde, Valor3, Valor4, Vlr.Desconto}
 	@return oDados, objeto, contem os dados da transação
 /*/
-Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo)
+Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo,aDadoProd)
 Local aDadosVDLk:= {}
 Local nCodFuncao:= 0
 Local cDoc		:= ""
 Local oDados	:= NIL
 
+Default aDadoProd := {}
+
 nCodFuncao := STPbmRtFun(cOperacao)
 
-aAdd(aDadosVDLk,{aConvInfo[1,1], aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
-				 nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
+//Se vier preenchido tem informações de produto para consulta, pois só sera usada a propriedade
+//aVDLink, que contera os dados do produto
+If Len(aDadoProd) > 0 
+	aDadosVDLk := aClone(aDadoProd)
+Else
+	aAdd(aDadosVDLk,{aConvInfo[1,1], aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
+					nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
+EndIf
 
-cDoc := STBPbmNDoc()
-oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
+If Len(aTranInfo[1]) > 1
+	cDoc := aTranInfo[1,2]
+Else
+	cDoc := STBPbmNDoc()
+EndIf
+
+If cOperacao $ ("VIDALINK_CONSULTA|VIDALINK_VENDA")
+	oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
 									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
 									aConvInfo[1,1], "1"		, aDadosVDLk )
+Else
+	oDados := LJCDadosSitefDireto():IniDadoSitef(,,nCodFuncao,,,,,,,,cDoc, Dtos(Date()),StrTran(Time(),":"),;
+												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", 0,Val(cDoc))
+EndIf
+
 Return oDados

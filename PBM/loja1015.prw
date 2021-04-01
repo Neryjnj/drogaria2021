@@ -6,19 +6,13 @@
 
 User Function LOJA1015 ; Return  // "dummy" function - Internal Use
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*----------------------------------------------------------------------------------
 ฑฑบClasse    ณLJCSitefDireto   บAutor  ณVendas Clientes     บ Data ณ  04/09/07   บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณClasse responsavel em preparar e enviar as transacoes.        	 บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณSigaLoja / FrontLoja                                        		 บฑฑ
-ฑฑศออออออออออฯอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+----------------------------------------------------------------------------------*/
 Class LJCSitefDireto From LJAAbstrataPBM
 
 	Data oSitefPbm								  					//Objeto do tipo SitefPBM
@@ -33,7 +27,10 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method FimTrans(lConfirma)										//Metodo que ira confirmar ou desfazer a transacao
 	Method LeCartDir(cMensagem, cTrilha1, cTrilha2)					//Metodo que ira fazer a leitura direta do cartao
 	Method ConsVDLink()
-	Method PharmSCons()
+	Method ProdVDLink()
+	Method VendaVDLink()
+	Method ConsPharmS()
+	Method ConsFuncCr()
 EndClass
 
 /*---------------------------------------------------------------------------
@@ -107,7 +104,7 @@ Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 	//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
 	If ::oDadosTran:nRetorno <= 0
 		//"Problema de comunica็ใo com Sitef"
-		MsgAlert(STR0001)
+		MsgAlert(STR0001,"TEF")
 	Else
 		lRetorno := .T.	
 	EndIf
@@ -290,7 +287,7 @@ Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefDireto
 	
 Return nRetorno
 
-/*/{Protheus.doc} VDLinkCons
+/*/{Protheus.doc} ConsVDLink
 	Executa consulta do Vida Link
 	@type  Metodo
 	@author Julio.Nery
@@ -298,7 +295,6 @@ Return nRetorno
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
 Method ConsVDLink() Class LJCSitefDireto
 Local lRet := .F.	//Retorno da funcao
@@ -320,24 +316,52 @@ Local lRet := .F.	//Retorno da funcao
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
 If ::oDadosTran:nRetorno <= 0	
-	MsgAlert(STR0001) //#"Problema de comunica็ใo com Sitef"
+	MsgAlert(STR0001,"TEF") //#"Problema de comunica็ใo com Sitef"
 Else
 	lRet := .T.	
 EndIf
 
 Return lRet
 
-/*/{Protheus.doc} PharmSCons
-	Executa consulta do PharmaSystem
+/*/{Protheus.doc} ProdVDLink
+	Produto consulta VidaLink
 	@type  Metodo
 	@author Julio.Nery
-	@since 26/03/2021
+	@since 31/03/2021
 	@version 12
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
-
 /*/
-Method PharmSCons() Class LJCSitefDireto
+Method ProdVDLink() Class LJCSitefDireto
+Local lRet := .F.	//Retorno da funcao
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+::oDadosTran:aVDLink := ::aVDLink
+
+//Envia a transacao
+::oSitefPbm:VDLinkProd(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0	
+	MsgAlert(STR0001,"TEF") //#"Problema de comunica็ใo com Sitef"
+Else
+	lRet := .T.	
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} VendaVDLink
+	Venda Produto VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method VendaVDLink() Class LJCSitefDireto
 Local lRet := .F.	//Retorno da funcao
 
 //Estancia o objeto
@@ -350,16 +374,92 @@ Local lRet := .F.	//Retorno da funcao
 ::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
 ::oDadosTran:cCodProd		:= ::cCodProd
 ::oDadosTran:aVDLink		:= ::aVDLink
+::oDadosTran:nValor			:= ::nValor
+
+//Envia a transacao
+::oSitefPbm:VDLinkVenda(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0	
+	MsgAlert(STR0001,"TEF") //#"Problema de comunica็ใo com Sitef"
+Else
+	lRet := .T.	
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} ConsPharmS
+	Executa consulta do PharmaSystem
+	@type  Metodo
+	@author Julio.Nery
+	@since 26/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method ConsPharmS() Class LJCSitefDireto
+Local lRet := .F.	//Retorno da funcao
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+
+//Atribui o dados da transacao ao objeto criado
+::oDadosTran:nFuncSitef 	:= ::nFuncao
+::oDadosTran:cCupomFisc		:= ::cCupom
+::oDadosTran:cDataFisc		:= ::cData
+::oDadosTran:cHorario		:= ::cHora
+::oDadosTran:cOperador		:= AllTrim(::cOperador)
+::oDadosTran:aVDLink		:= ::aVDLink
 
 //Envia a transacao
 ::oSitefPbm:PharmSCons(@::oDadosTran)
 
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
-If ::oDadosTran:nRetorno <= 0	
-	MsgAlert(STR0001) //#"Problema de comunica็ใo com Sitef"
+If ::oDadosTran:nRetorno <= 0
+	//"Problema de comunica็ใo com Sitef"
+	MsgAlert(STR0001,"TEF")
 Else
 	lRet := .T.	
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} ConsFuncCr
+	Executa consulta do Funcional Card
+	@type  Metodo
+	@author Julio.Nery
+	@since 31/03/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method ConsFuncCr() Class LJCSitefDireto
+Local lRet := .F.	//Retorno da funcao
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+
+//Atribui o dados da transacao ao objeto criado
+::oDadosTran:nFuncSitef 	:= ::nFuncao
+::oDadosTran:cCupomFisc		:= ::cCupom
+::oDadosTran:cDataFisc		:= ::cData
+::oDadosTran:cHorario		:= ::cHora
+::oDadosTran:cOperador		:= AllTrim(::cOperador)
+::oDadosTran:aVDLink		:= ::aVDLink
+::oDadosTran:nCupom			:= Val(::cCupom)
+
+//Envia a transacao
+::oSitefPbm:FuncCrCons(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0
+	//"Problema de comunica็ใo com Sitef"
+	MsgAlert(STR0001,"TEF")
+Else
+	lRet := .T.
 EndIf
 
 Return lRet

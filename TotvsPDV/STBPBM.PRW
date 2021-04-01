@@ -42,8 +42,8 @@ Return
     @author Julio Nery
     @since 16/03/2021
     @version 12
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @param nenhum
+    @return nenhum
 /*/
 Static Function STBConPbm()
 Local aRetVDLink:= {}
@@ -59,13 +59,14 @@ lContinua := STBVerConVnd(.T.,,@nOpPBM)
 If lContinua
     T_DroVLGet(nOpPBM)
     aRetVDLink := STGDadosVL()
+
+    //JULIOOOOO - verificar se será necessário manter esse trecho - 31/03/2021
     T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
                 ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
                 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
     aParamVL := T_DROVLPGet()
     If aParamVL[1][VLP_NVIDAL] == 2
-        //JULIOOOOOO - chama a função de registro do item
-        STBPRegItem(aParamVL)
+        STBPbmRegIt(aParamVL)//Efetua o registro do item
     EndIf
 EndIf
 
@@ -73,9 +74,9 @@ Return
 
 /*/{Protheus.doc} STBOPbm    
     @type  Function
-    @author user
-    @since date
-    @version version
+    @author Julio.Nery
+    @since 01/03/2021
+    @version 12
     @param param, param_type, param_descr
     @return return, return_type, return_description
 /*/
@@ -259,8 +260,7 @@ Function STBFimVdPB(cDoc, cSerie, cKeyDoc)
 Local lRet := .F.	// Retorno da funcao
 
 lRet := oTPLPBM:FinalVend(cDoc, cSerie, cKeyDoc)
-
-//LjMsgRodaP (bkp_oDlgFrt, bkp_oFntGet, STR0001) //"Protheus Front Loja"
+STFCleanInterfaceMessage()
 
 Return lRet
 
@@ -400,7 +400,7 @@ Else
 		nVidaLink  := aVidaLink[1]
 	Else
 		nVidaLink  := 2
-	EndIf	
+	EndIf
 EndIf	
 Return Nil
 
@@ -553,14 +553,16 @@ Function STBSubsidio(nVSubsidio, cFormaSub)
 Local lRetorno  := .F.					//Retorno da funcao, define se tem ou nao subsidio
 Local nI		:= 0
 Local lContinua := .F.
+Local oTEF20    := NIL
 
-If LjGetOPBM() <> Nil .Or. (nVidalink <> 0 .AND. Len(aVidaLinkD) > 0)
+If STBIsVnPBM() .Or. (nVidalink <> 0 .AND. Len(aVidaLinkD) > 0)
     lContinua := .T.
 EndIf
 
 If lContinua
     If nVidaLink <> 0 .And. nVidaLink <> 99
-        If oTef:nCodFuncao <> 560	//Se nao for Funcional Card
+        oTEF20 := STBGetTEF()
+        If oTEF20:PBM():oPBM:oPBM:aVDLink[1,5] <> 560	//Se nao for Funcional Card
             For nI := 1 to Len(aVidaLinkD[VL_DETALHE])
                 nVSubsidio += (aVidaLinkD[VL_DETALHE,nI, VL_PRVENDA ] - aVidaLinkD[VL_DETALHE,nI, VL_PRVISTA ]) * aVidaLinkD[VL_DETALHE,nI, VL_QUANTID]
             Next nI
@@ -586,8 +588,6 @@ EndIf
 
 Return lRetorno
 
-
-
 /*/{Protheus.doc} STPbmRtFun
     Retorna o numero da Função da PBM 
     @type  Function
@@ -612,6 +612,7 @@ ElseIf cOperacao == "VIDALINK_CANCELAMENTO"
 // Cancelamento de captura da Pre-Autorizacao  (PharmaSystem)
 ElseIf cOperacao == "PHARMASYSTEM_AUTORIZA"
 	nFuncao := 540
+
 ElseIf cOperacao == "PHARMASYSTEM_CONSULTA"
 	nFuncao := 541
 
@@ -630,7 +631,7 @@ EndIf
 
 Return nFuncao
 
-/*/{Protheus.doc} STBPRegItem
+/*/{Protheus.doc} STBPbmRegIt
     Efetua o registro do item PBM
     @type  Function
     @author Julio.Nery
@@ -639,61 +640,49 @@ Return nFuncao
     @param param, param_type, param_descr
     @return return, return_type, return_description
 /*/
-Function STBPRegItem(aDadosVL)
+Function STBPbmRegIt(aParamVL)
 Local nI    := 0
-Local aItem := {}
-Local lRet  := .T.
 
-For nI := 1 To Len(aSL2)
-
-    aItem := STWFindItem( aSL2[nI][nL2_PRODUTO][2] )
+For nI := 1 To Len(aParamVL[1,VLP_AVLC,2])
 		
-    // Caso nao encontre o item na base de dados, sera feito seu cadastro
-    If !aItem[1] //Item Encontrado - posicao 1
+    nVlrTotal  	:= aParamVL[1][VLP_NVLRTO]
+    nTotItens	:= aParamVL[1][VLP_NTOTIT]
+    nVlrBruto	:= aParamVL[1][VLP_NVLRBR]
+    oDesconto	:= aParamVL[1][VLP_ODESCO]
+    oTotItens	:= aParamVL[1][VLP_OTOTIT]
+    oVlrTotal	:= aParamVL[1][VLP_OVLRTO]
+    nVlrPercIT	:= aParamVL[1][VLP_NVLRPE]
+    nQuant		:= aParamVL[1][VLP_NQUANT]
+    cUnidade	:= aParamVL[1][VLP_CUNIDA]
+    nVlrUnit	:= aParamVL[1][VLP_NVLRUN]
+    nVlrItem	:= aParamVL[1][VLP_NVLRIT]
+    oProduto	:= aParamVL[1][VLP_OPRODU]
+    oQuant		:= aParamVL[1][VLP_OQUANT]
+    oUnidade	:= aParamVL[1][VLP_OUNIDA]
+    oVlrUnit	:= aParamVL[1][VLP_OVLRUN]
+    oVlrItem	:= aParamVL[1][VLP_OVLRIT]
+    oPgtos		:= aParamVL[1][VLP_OPGTOS]
+    oPgtosSint	:= aParamVL[1][VLP_OPGTO2]
+    aPgtos		:= aParamVL[1][VLP_APGTOS]
+    aPgtosSint	:= aParamVL[1][VLP_APGTO2]
+    aItens 		:= aParamVL[1][VLP_AITENS]
+    nVlrMerc	:= aParamVL[1][VLP_NVLRME]
+    lDescTotal	:= aParamVL[1][VLP_LDESCT]
+    nDesconto	:= aParamVL[1][VLP_NDESCO]
+    lAbreCup	:= aParamVL[1][VLP_LABREC]
+
+    //Seta quantidade
+    STBSetQuant( aParamVL[1,VLP_AVLC,2,nI,3] )				
+
+    // Registra Item
+    IF STWItemReg( 	nI 				, aParamVL[1,VLP_AVLC,2,nI,2] 	, aParamVL[1][VLP_AVLD][1] 	, aParamVL[1][VLP_AVLD][2]	, ;
+                    STBGetCurrency(), aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_VALDESC"	} 	)][2] 	, "V"			, NIL	, ;
+                    NIL				, cCliType,,/*Preço*/,,,,,,,,,,,,,"","")
+    
+    Else
         LjGrvLog("PBM","Item Nao encontrado na base de dados - Venda PBM não permitida")        
-        STFMessage("STBPRegItem","Item Nao encontrado - Venda PBM não permitida")
-        STFShowMessage("STBPRegItem")
-        lRet := .F.
-    EndIf
-
-    If lRet
-            nVlrTotal  	:= aParamVL[1][VLP_NVLRTO]
-			nTotItens	:= aParamVL[1][VLP_NTOTIT]
-			nVlrBruto	:= aParamVL[1][VLP_NVLRBR]
-			oDesconto	:= aParamVL[1][VLP_ODESCO]
-			oTotItens	:= aParamVL[1][VLP_OTOTIT]
-			oVlrTotal	:= aParamVL[1][VLP_OVLRTO]
-			nVlrPercIT	:= aParamVL[1][VLP_NVLRPE]
-			nQuant		:= aParamVL[1][VLP_NQUANT]
-			cUnidade	:= aParamVL[1][VLP_CUNIDA]
-			nVlrUnit	:= aParamVL[1][VLP_NVLRUN]
-			nVlrItem	:= aParamVL[1][VLP_NVLRIT]
-			oProduto	:= aParamVL[1][VLP_OPRODU]
-			oQuant		:= aParamVL[1][VLP_OQUANT]
-			oUnidade	:= aParamVL[1][VLP_OUNIDA]
-			oVlrUnit	:= aParamVL[1][VLP_OVLRUN]
-			oVlrItem	:= aParamVL[1][VLP_OVLRIT]
-			oPgtos		:= aParamVL[1][VLP_OPGTOS]
-			oPgtosSint	:= aParamVL[1][VLP_OPGTO2]
-			aPgtos		:= aParamVL[1][VLP_APGTOS]
-			aPgtosSint	:= aParamVL[1][VLP_APGTO2]
-			aItens 		:= aParamVL[1][VLP_AITENS]
-			nVlrMerc	:= aParamVL[1][VLP_NVLRME]
-			lDescTotal	:= aParamVL[1][VLP_LDESCT]
-			nDesconto	:= aParamVL[1][VLP_NDESCO]
-			lAbreCup	:= aParamVL[1][VLP_LABREC]
-
-        //Seta quantidade
-        STBSetQuant( aSL2[nI][AScan( aSL2[nI] , { |x| x[1] == "L2_QUANT"	} 	)][2] )				
-
-        // Registra Item
-        STWItemReg( 	nI 				, aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_PRODUTO"	} 	)][2] 	, cCliCode 	, cCliStore	, ;
-                        STBGetCurrency(), aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_VALDESC"	} 	)][2] 	, "V"			, NIL	, ;
-                        NIL				, cCliType,,,;
-                        ,,.T.,,;
-                        ,,,,;
-                        ,,,,;
-                        Iif(nPosIDITREL > 0,aSL2[nI][nPosIDITREL][2],""),aSL2[nI][AScan ( aSL2[1] , { |x| x[1] == "L2_VALEPRE"	})][2])
+        STFMessage("STBPbmRegIt","Item Nao encontrado - Venda PBM não permitida")
+        STFShowMessage("STBPbmRegIt")
     EndIf
 Next nI
 
