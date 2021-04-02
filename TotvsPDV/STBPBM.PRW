@@ -45,29 +45,34 @@ Return
     @param nenhum
     @return nenhum
 /*/
-Static Function STBConPbm()
+Static Function STBConPbm(lConsulta)
 Local aRetVDLink:= {}
 Local aParamVL  := {}
 Local oTEF20    := NIL
 Local lContinua := .T.
+Local lSemObjeto:= .F.
 Local nOpPBM    := 0
 
 oTEF20 := STBGetTEF()
 STBIsVnPBM(.T.,oTEF20:Pbm())
-lContinua := STBVerConVnd(.T.,,@nOpPBM)
+lContinua := STBVerConVnd(.T.,,@nOpPBM,@lSemObjeto)
+If lSemObjeto //Em algumas PBMs não pode seguir usando esse objeto
+    STBIsVnPBM(.F.,NIL)
+EndIf
 
 If lContinua
     T_DroVLGet(nOpPBM)
-    aRetVDLink := STGDadosVL()
+    
+    // aRetVDLink := STGDadosVL()
 
     //JULIOOOOO - verificar se será necessário manter esse trecho - 31/03/2021
-    T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
-                ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
-                ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
-    aParamVL := T_DROVLPGet()
-    If aParamVL[1][VLP_NVIDAL] == 2
-        STBPbmRegIt(aParamVL)//Efetua o registro do item
-    EndIf
+    // T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
+    //             ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
+    //             ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
+    // aParamVL := T_DROVLPGet()
+    // If aParamVL[1][VLP_NVIDAL] == 2
+    //     STBPbmRegIt(aParamVL)//Efetua o registro do item
+    // EndIf
 EndIf
 
 Return
@@ -477,7 +482,7 @@ Return aRet
     @param param, param_type, param_descr
     @return return, return_type, return_description
 /*/
-Static Function STBVerConVnd(lConsulta,lVenda,nOpcPBM)
+Static Function STBVerConVnd(lConsulta,lVenda,nOpcPBM,lSemObjeto)
 Local lRet := .F.
 Local lContinua:= .T.
 Local cNomePBM := ""
@@ -512,6 +517,7 @@ If lContinua
                 nOpcPBM := 560
             EndIf
             lRet := .T.
+            lSemObjeto := .T.
         Else
             STFMessage("STBVerConVnd2","STOP", "PBM Selecionada não permite essa consulta" ) //"PBM Selecionada não permite consulta"
             STFShowMessage("STBVerConVnd2")

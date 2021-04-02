@@ -873,18 +873,19 @@ EndIf
 aVidalink := {aVidaLinkD,aVidaLinkC,nVidalink}
 
 //FrontLoja
-If !lTotvsPDV
-	FRT271aVL(aVidalink)
-EndIf
+FRT271aVL(aVidalink)
 
-//Venda Assistida e TOTVSPDV
+//Venda Assistida e TotvsPDV
 If Len(aVidaLinkD) > 0
-	aVidalink := {aVidaLinkD,aVidaLinkC,2}
+	//Tenho que gravar aqui com nVidalink = 1 para que haja o registro correto do item
+	//Para o TotvsPDV deve ser registrado com 2 depois do registro do item na função DroAddProd
 	If lTotvsPDV
 		STBDadosVL(aVidalink)
 	Else
-		LJ7DadosVL(aVidalink) 
+		aVidalink := {aVidaLinkD,aVidaLinkC,2}
+		LJ7DadosVL(aVidalink)
 	EndIf
+	
 Else
 	If lTotvsPDV
 		STBDadosVL({1})
@@ -939,7 +940,7 @@ EndIf
 
 Return lRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLVen  ³ Autor ³ VENDAS CRM		                    ³ Data ³26/04/2005³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Após a conclusão da venda informa ao VidaLink os produto e quantidades     ³±±
@@ -949,7 +950,7 @@ Return lRet
 ±±³          ³      preços sem os descontos do PBM.                                       ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLVen()
 Local aRet := {}					// Retorno da funcao
 Local aInfo:= {}
@@ -1093,6 +1094,8 @@ Local oCliModel		:= NIL
 
 Default lIncProd := .F.
 
+LjGrvLog("DROVLBPro","Busca do Produto - Código de Barras ->", cCodBarra)
+
 If lTotvsPDV
 	DBSelectArea("SB1")
 	nTamCodBar := TamSx3("B1_CODBAR")[1]
@@ -1130,6 +1133,7 @@ If lEncontrou
 Else
 	cRet := ""
 EndIf
+LjGrvLog("DROVLBPro","Busca do Produto - Retorno ->", cRet)
 Return cRet
 
 /*-------------------------------------------------------------------------------------------
@@ -1168,8 +1172,16 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 	cRPCEmp		:= uParm4
     cRPCFilial	:= uParm5  
     cEAN 		:= uParm6
+	LjGrvLog("DROVLCall","DroVlCall - Param 1 - cRPCServer",cRPCServer)
+    LjGrvLog("DROVLCall","DroVlCall - Param 2 - nRPCPort",nRPCPort)
+    LjGrvLog("DROVLCall","DroVlCall - Param 3 - cRPCEnv",cRPCEnv)
+	LjGrvLog("DROVLCall","DroVlCall - Param 4 - cRPCEmp",cRPCEmp)
+	LjGrvLog("DROVLCall","DroVlCall - Param 5 - cRPCFilial",cRPCFilial)
+	LjGrvLog("DROVLCall","DroVlCall - Param 6 - cEAN",cEAN)
 	
-	nFor := FrtServRpc()		// Carrega o numero de servidores disponiveis 	
+	LjGrvLog("DROVLCall","Antes de FrtServRPC")
+	nFor := FrtServRpc()		// Carrega o numero de servidores disponiveis
+	LjGrvLog("DROVLCall","Depois de FrtServRPC",nFor)
 
 	For nX := 1 To nFor         //  Carrega os dados do server
 		aAuxSer	:= FrtDadoRpc() 
@@ -1178,11 +1190,16 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 		EndIf
 		aAuxSer := {}
 	Next nX
+	LjGrvLog("DROVLCall","Servers Encontrados",aServers)
 	
 	lNewConnect := .F.
 	If oRPCServer == Nil
 		ConOut(STR0021)				   							// "DROVLCall: Chamada ao VIDALINK"
-		ConOut(STR0022) 			   							// "DROVLCall: Abrindo nova instancia RPC..."	
+		LjGrvLog("DROVLCall",STR0021)
+
+		ConOut(STR0022) 			   							// "DROVLCall: Abrindo nova instancia RPC..."
+		LjGrvLog("DROVLCall",STR0022)
+
 		oRPCServer:=FwRpc():New( cRPCServer, nRPCPort , cRpcEnv )	// Instancia o objeto de oServer	
 		oRPCServer:SetRetryConnect(1)								// Tentativas de Conexoes
 	
@@ -1191,6 +1208,7 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 		Next nX
 	
 		ConOut(STR0023) 			   							// "DROVLCall: Conectando com o servidor..."	
+		LjGrvLog("DROVLCall",STR0023)
 		lConnect := oRPCServer:Connect()							// Tenta efetuar conexao
 		lNewConnect := .T.
 	Else
@@ -1198,40 +1216,43 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 		lNewConnect := .F.
 	EndIf
 	
+	LjGrvLog("DROVLCall","Conectado com o servidor ?", lConnect)
+
 	If lConnect
 		If lNewConnect
 			oRPCServer:CallProc("RPCSetType", 3 )
 			oRPCServer:SetEnv(cRPCEmp,cRPCFilial,"FRT")                 // Prepara o ambiente no servidor alvo
+			LjGrvLog("DROVLCall","Prepara nova conexão")
 		EndIf
 
 		ConOut(STR0025) 										// "DROVLCall: Buscando produto..."
+		LjGrvLog("DROVLCall",STR0025)
+
+		LjGrvLog("DROVLCall","Antes de CallProc - T_DROVLBPro")
 	   	cRet := oRPCServer:CallProc("T_DROVLBPro", cEAN)	   
 		ConOut("Retorno: #" + cRet + "#")						// Exibe o retorno da funcao, que sera enviado para a DLL
+		LjGrvLog("DROVLCall","Depois de CallProc - T_DROVLBPro",cRet)
 
 		ConOut(STR0034) 										// "DROVLCALL: Desconectando..."
+		LjGrvLog("DROVLCall",STR0034)
    		oRPCServer:Disconnect()			
 
 		ConOut(STR0035)											// "DROVLCall: Finalizando VIDALINK"
 		oRPCServer := Nil
 
 		ConOut(STR0035)											// "DROVLCall: Fim da chamada ao VIDALINK"        */
+		LjGrvLog("DROVLCall",STR0035)
 	EndIf	
 	
 Return cRet
 
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLATbl ³ Autor ³ VENDAS CRM							³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Rotina usada para abrir as tabelas de produto SB0 e SBI na chamada da DLL. ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLATbl(cCodEmp, cCodFil)
 	Local cDrvX2  := "DBFCDX"				// Driver de acesso
 	Local cArqX2  := "SX2" + cCodEmp + "0"	// Nome do arquivo SX2
@@ -1280,7 +1301,6 @@ Template Function DROVLATbl(cCodEmp, cCodFil)
 	If Empty(IndexKey())
 		UserException(STR0030) //"SX2 Open Index Failed"
 	EndIf
-	
 
 	#IFDEF AXS
 		cDriver := "DBFCDXAX"
@@ -1299,21 +1319,13 @@ Template Function DROVLATbl(cCodEmp, cCodFil)
 	SET DELETED OFF
 Return Nil
           
-
-
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+/*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLAArq ³ Autor ³ VENDAS CRM							³ Data ³12/05/2010³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Descri‡„o ³ Rotina usada para abrir as tabelas individualmente.	    				  ³±±
 ±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
 ±±³Uso		 ³ Front Loja com Template Drogarias                        				  ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+-------------------------------------------------------------------------------------------*/
 Template Function DROVLAArq(cAlias, cDriver)
 	Local cArquivo := ""   
 	
@@ -1578,6 +1590,7 @@ Local nTotalProt	:= 0	//total protheus
 Local nPosUni 		:= 0
 Local lRet			:= .F.
 Local lTotvsPDV		:= STFIsPOS()
+Local aDadosVDLk	:= {}
 
 Default aProd 		:= {}
 Default aCliente	:= {}
@@ -1595,6 +1608,11 @@ If Len(aProd) > 0
 			lRet := STWItemReg(aProd[nX][VL_NDXPROD],aProd[nX][VL_EAN],aCliente[1],aCliente[2],;
 								/*nMoeda*/     	,	/*nDiscount*/  	, /*cTypeDesc*/	,	/*lAddItem*/,;
 								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA])
+			If lRet
+				STIShowProdData(nX)
+				STIGridCupRefresh(nX,nX) // Sincroniza a Cesta com a interface
+				STDSaveSale(nX)
+			EndIf
 		Else
 			lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
 		EndIf
@@ -1613,7 +1631,15 @@ If Len(aProd) > 0
 	
 	LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no PBM - nTotal",nTotal)
 	
-	If !lTotvsPDV
+	If lTotvsPDV
+		//Atualizo para 2 pois o registro do item ja aconteceu e permite lançamento de outros itens
+		If lRet
+			STFRefTot()
+			aDadosVDLk := STGDadosVL()
+			aDadosVDLk[3] := 2
+			STBDadosVL(aDadosVDLk)
+		EndIf
+	Else
 		LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
 		If nTotalProt < nTotal
 			MsgAlert(Upper(STR0002) + " : " + STR0045) //"ATENÇÃO: O valor dos produtos do Protheus está menor que o valor do PBM Funcional Card, isto pode ocasionar divergência no valor a ser pago na finalização da venda."

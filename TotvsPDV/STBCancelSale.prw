@@ -1170,7 +1170,7 @@ If ExistFunc("LjIsDro") .And. LjIsDro()
 	//Cancelamento da venda PBM, se houver
 	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 		oPBM := STBGetVPBM()
-		oPbm:ConfVend( .F. )
+		oPBM:ConfVend( .F. )
 	EndIf
 
 	If ExistFunc("STBDroVars") .And. ExistTemplate("FRTCancela")

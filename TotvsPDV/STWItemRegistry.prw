@@ -156,7 +156,7 @@ EndIf
 /*Tratamento VidaLINK*/
 If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
-	If aDadoVLink[3] == 2//No front esta 1 porem aqui o array final é salvo com 2
+	If aDadoVLink[3] == 1
 		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
 		If aAux[ITEM_ENCONTRADO]
 			cItemCode := aAux[ITEM_CODIGO]
@@ -516,7 +516,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 			If lRet
 				If Len(aDadoVLink) > 0 
-					If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1).And. (nDiscount >= nDroPrProd)
+					If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1) .And. (nDiscount >= nDroPrProd)
 						MsgAlert("VIDALINK - O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
 								"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
 						nDiscount := 0
@@ -528,7 +528,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						//|  com desconto.Vale o preco menor aValPerc  						 |
 						//--------------------------------------------------------------------
 						aAux := STBDroVars(.F.)
-						aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3]	, aInfoItem[ITEM_CODIGO],;
+						//nVidaLink - aqui está com dois, mas no PE precisar estar como 1 
+						//para que a validação aconteça com sucesso
+						aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3], aInfoItem[ITEM_CODIGO],;
 													nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
 													nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
 													aAux[1]		 , (cTypeItem == "IMP") )
