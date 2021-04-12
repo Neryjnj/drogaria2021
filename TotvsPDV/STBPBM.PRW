@@ -2,6 +2,7 @@
 #INCLUDE "DEFTEF.CH"
 #INCLUDE "FRTDEF.CH"
 #include "STBDEFPBM.CH"
+#INCLUDE "DEFTEF.CH"
 
 Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
 Static aVidaLinkc	:= {}	// array cabecalho (Cliente,loja,etc) do orcamento gerado no PBM VidaLink

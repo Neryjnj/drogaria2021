@@ -1608,11 +1608,14 @@ If Len(aProd) > 0
 			lRet := STWItemReg(aProd[nX][VL_NDXPROD],aProd[nX][VL_EAN],aCliente[1],aCliente[2],;
 								/*nMoeda*/     	,	/*nDiscount*/  	, /*cTypeDesc*/	,	/*lAddItem*/,;
 								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA])
+
 			If lRet
 				STIShowProdData(nX)
 				STIGridCupRefresh(nX,nX) // Sincroniza a Cesta com a interface
-				STDSaveSale(nX)
 			EndIf
+
+			//Abre a tela de Registro de Item para permitir registrar outros itens e também para atualizar dados da interface
+			STIRegItemInterface()
 		Else
 			lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
 		EndIf
