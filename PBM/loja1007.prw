@@ -416,10 +416,11 @@ Return lRet
 	@param param, param_type, param_descr
 	@return lRet, logico, executado com sucesso ?
 /*/
-Method VDLinkVenda() Class LJCPBM
+Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,;
+					cHora,cOperador,aVDLink) Class LJCPBM
 Local lRet := .F.
-
-lRet := ::oPBM:VDLinkVenda(aVDLink)
+//JULIOOOOOO - continuar daqui 12/04/2021
+lRet := ::oPBM:VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 
 Return lRet
 

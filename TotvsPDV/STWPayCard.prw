@@ -31,14 +31,11 @@ Local lUltTran		:= IIF(ValType(oMdlMst) == 'O', STBCalcSald("2", oMdlMst:GetValu
 Local oTotal		:= STFGetTot()																			//Objeto total
 Local nTotal		:= oTotal:GetValue("L1_VLRTOT")															//Valor total da venda
 Local nValor		:= IIF(ValType(oMdlMst) == 'O', oMdlMst:GetValue("L4_VALOR"), nTotal)+STBGetInsArr()	//Valor da transacao
-Local dData			:= IIF(ValType(oMdlMst) == 'O', oMdlMst:GetValue("L4_DATA"), dDataBase) 				//DataBase
 Local lTefManu		:= SuperGetMv('MV_TEFMANU',,.F.) 	//Se utiliza POS no lugar do TEF quando ocorrer algum problema
 Local lFinVendaAut	:= SuperGetMv('MV_LJFCVDA',,1) == 1 //Se finaliza venda automaticamente caso saldo esteja zerado
 Local oPanPayment   := STIGetPan()    					//Gera uma copia do oPanPayment original
 Local aPayment		:= {}			  					//Armazena informações sobre pagamento, Ex.: Valor e parcela
 Local aLtt			:= {.T.,""}
-Local aAuxTPL		:= {}
-Local aDadoVDLink	:= {}
 
 Default oMdlMst 	:= Nil
 Default oTEF20		:= Nil
@@ -63,18 +60,6 @@ If nValor > 0
 			EndIf
 
 			If aLtt[1]
-
-				If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistTemplate("DroVLVen") .And. ExistFunc("STBPbmNDoc")
-					aAuxTPL := {STBPbmNDoc()}
-					aDadoVDLink := STGDadosVL()
-					LjGrvLog(ProcName(),"Numero de DOC retornado para PBM", aAuxTPL[1])
-					aAuxTPL := ExecTemplate("DroVLVen",.F.,.F.,{aDadoVDLink[3],aDadoVDLink[2],aDadoVDLink[1],aAuxTPL[1]})
-					aDadoVDLink[3]  := aAuxTPL[1]
-					aDadoVDLink[2] := aClone(aAuxTPL[2])
-					aDadoVDLink[1] := aClone(aAuxTPL[3])
-					STBDadosVL(aDadoVDLink)
-				EndIf
-
 				nParc := IIF(ValType(oMdlMst) == 'O', oMdlMst:GetValue("L4_PARC"), nParc)
 
 				If lMFE .And. lIntegrador .And. lLjEnvPgto

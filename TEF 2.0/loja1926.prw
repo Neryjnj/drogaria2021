@@ -3434,8 +3434,8 @@ Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
 ::oRetorno := LJCRetornoSitef():New()
 
 //Prepara os parametros de envio
-oParamsApi := ::PrepParam({CLISITEF, "InformaProdutoVendaVidalink", cValToChar(oDadosTran:aVDLink[1,1]), ;
-							oDadosTran:aVDLink[1,2], oDadosTran:aVDLink[1,3], Str(oDadosTran:aVDLink[1,4]*100, 12, 0)})
+oParamsApi := ::PrepParam({CLISITEF, "InformaProdutoVendaVidalink", cValToChar(oDadosTran:aVDLink[1]), ;
+							oDadosTran:aVDLink[2], AllTrim(Str(oDadosTran:aVDLink[3])), AllTrim(Str(oDadosTran:aVDLink[5]*100, 12, 0))})
 
 cRetorno := ::EnviarCom(oParamsApi)
 oParamsApi:Destroy()

@@ -53,6 +53,7 @@ Local lCliPadrao	:= (AllTrim(oCliModel:GetValue("SA1MASTER","A1_COD"))+AllTrim(o
 Local nDocSai		:= 0
 Local aRetTSS		:= {}
 Local aDROVLImp		:= {}
+Local aAuxTPL		:= {}
 Local cRetTSS		:= ""
 Local cMsgTSS		:= ""
 Local cRetTrans		:= ""
@@ -540,9 +541,21 @@ LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Fim - Workflow de finalizacao
 If !lPendSale
 
 	//Executa Template Function de Drogaria na finalização da venda
-	If lRet .And. ExistFunc("LjIsDro") .And. LjIsDro() 
+	If lRet .And. ExistFunc("LjIsDro") .And. LjIsDro()
+
+		//JULIOOOOOOOOOOOOOOOO
 		If ExistFunc("STGDadosVL")
+			//DroVLVen
+			aAuxTPL := {STBPbmNDoc()}
 			aDROVLImp := STGDadosVL()
+			LjGrvLog(ProcName(),"Numero de DOC retornado para PBM", aAuxTPL[1])
+			aAuxTPL := ExecTemplate("DroVLVen",.F.,.F.,{aDROVLImp[3],aDROVLImp[2],aDROVLImp[1],aAuxTPL[1]})
+			aDROVLImp[3]  := aAuxTPL[1]
+			aDROVLImp[2] := aClone(aAuxTPL[2])
+			aDROVLImp[1] := aClone(aAuxTPL[3])
+			STBDadosVL(aDROVLImp)
+
+			//DroVLImp
 			aDROVLImp := ExecTemplate("DroVLImp",.F.,.F.,{aDROVLImp[3]})
 			nRet := aDROVLImp[1]
 			aDROVLImp := STGDadosVL()

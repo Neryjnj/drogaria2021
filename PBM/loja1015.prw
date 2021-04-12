@@ -341,14 +341,7 @@ Local lRet := .F.	//Retorno da funcao
 
 //Envia a transacao
 ::oSitefPbm:VDLinkProd(@::oDadosTran)
-
-//Verifica se a transacao foi efetuada
-//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
-If ::oDadosTran:nRetorno <= 0	
-	MsgAlert(STR0001,"TEF") //#"Problema de comunicação com Sitef"
-Else
-	lRet := .T.	
-EndIf
+lRet := .T.
 
 Return lRet
 

@@ -974,7 +974,7 @@ If _nVidaLink == 2  // Gravou VidaLink
 			//JULIOOOO - testar
 			//verificar se o conteudo de _aVidaLinkD permite fazer looping 
 			//e em seguida internamente fazer com seja verificado a qtde de itens do array
-			For nX := 1 to Len(_aVidaLinkD)
+			For nX := 1 to Len(_aVidaLinkD[2])
 				oDados := T_DroRtOtran("",_aVidaLinkD[2,nX],aInfo,_aVidaLinkD[2,nX])
 				oTEF20:Pbm():VDLinkProd(oDados)
 			Next nX

@@ -1555,7 +1555,6 @@ Confirmacao dos pagamentos
 /*/
 //-----------------------------------------------------------------
 Function STIConfPay( lShowRgIt, cKey )
-
 Local oMdl 			:= Nil													//Recupera o model ativo
 Local oMdlGrd		:= Nil													//Seta o model do grid
 Local oMdlPaym		:= Nil													//Seta o model do pagamento
@@ -1649,7 +1648,7 @@ EndIf
 
 Return lRet
 
-//‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+//-----------------------------------------------------------------------------
 /*/{Protheus.doc} STIGetTotal
 Retorna o saldo dos pagamentos
 
@@ -1657,11 +1656,9 @@ Retorna o saldo dos pagamentos
 @author  	Vendas & CRM
 @version 	P12
 @since   	06/02/2013
-@return  	
-@obs     
-@sample
+@return  	nTotal, numerico, total da venda
 /*/
-//‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
+//-----------------------------------------------------------------------------
 Function STIGetTotal()
 
 Local oMdl		:= oModel 	//Recupera o model ativo
