@@ -810,7 +810,7 @@ If lRet
 								Nil,		Nil,		Nil,		.F.,;
 								Nil,		.T.,		Nil,		.F.,;
 								Nil,		Nil,		Nil )
-	oLbx:nHeight	:= (__DlgHeight(oDlg)*2) - 8
+	oLbx:nHeight	:= (__DlgHeight(oDlg)*1.4)
 	oLbx:nWidth		:= __DlgWidth(oDlg)*2
 	oLbx:lColDrag	:= .T.
 	oLbx:nFreeze	:= 1
@@ -823,7 +823,7 @@ If lRet
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	oDlg:lEscClose := .F. 
 	
-	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar( oDlg, bOk, bCancel, Nil, Nil )
+	ACTIVATE MSDIALOG oDlg CENTERED ON INIT EnchoiceBar( oDlg, bOk, bCancel, Nil, Nil )
 	
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³ Retornar a area porque para conveniado estava posicionado na empresa de convenio      ³

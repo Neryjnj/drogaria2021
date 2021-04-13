@@ -56,7 +56,7 @@ aCpo	:= AClone(aRet[1])
 
 If !Empty(aLin[1][3]) //Se houver ao menos uma linha preenchida no List de busca
 	oLbx := TwBrowse():New(035,000,000,000,,aCab,aTam,oDlg,,,,,,,,,,,,.F.,,.T.,,.F.,,,)
-	oLbx:nHeight	:= (__DlgHeight(oDlg)*2) - 8
+	oLbx:nHeight	:= (__DlgHeight(oDlg)*1.4)
 	oLbx:nWidth		:= __DlgWidth(oDlg)*2
 	oLbx:lColDrag	:= .T.
 	oLbx:nFreeze	:= 1
