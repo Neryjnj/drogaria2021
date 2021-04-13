@@ -396,14 +396,10 @@ Local lRetorno := .F.
 lRetorno := ::oPbm:VDLinkProd(oDadosTran:aVDLink)
 
 If lRetorno
-	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
 	::oDadosTran := oDadosTran
-	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
-	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
 Else
 	::oPbm:oPbm := Nil
-EndIf	
+EndIf
 
 Return Nil
 
@@ -419,12 +415,10 @@ Return Nil
 Method VDLinkVenda(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.
 
-lRetorno := ::oPbm:VDLinkVenda(oDadosTran:cCodAut,oDadosTran:cCodProd,oDadosTran:nCupom,oDadosTran:dData,;
+lRetorno := ::oPbm:VDLinkVenda(oDadosTran:cCodAut,oDadosTran:nCupom,oDadosTran:dData,;
 							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
 
 If lRetorno
-	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
 	::oDadosTran := oDadosTran
 	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
 	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
@@ -450,8 +444,6 @@ lRetorno := ::oPbm:PharmSCons(oDadosTran:nFuncSitef, oDadosTran:nValor, oDadosTr
 							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri,oDadosTran:aVDLink)
 
 If lRetorno
-	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
 	::oDadosTran := oDadosTran
 Else
 	::oPbm:oPbm := Nil
@@ -475,8 +467,6 @@ lRetorno := ::oPbm:FuncCrCons(oDadosTran:nFuncSitef, oDadosTran:nValor, oDadosTr
 							  oDadosTran:cHorario, oDadosTran:cOperador, oDadosTran:cRestri,oDadosTran:aVDLink)
 
 If lRetorno
-	//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-	//os atributos dData e cHora precisam ser alterados com os dados gerados pela PBM
 	::oDadosTran := oDadosTran
 Else
 	::oPbm:oPbm := Nil

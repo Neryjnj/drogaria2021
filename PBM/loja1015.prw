@@ -333,7 +333,7 @@ Return lRet
 	@return return, return_type, return_description
 /*/
 Method ProdVDLink() Class LJCSitefDireto
-Local lRet := .F.	//Retorno da funcao
+Local lRet := .T.	//Retorno da funcao
 
 //Estancia o objeto
 ::oDadosTran := LJCDadosSitefDireto():DadosSitef()
@@ -341,7 +341,6 @@ Local lRet := .F.	//Retorno da funcao
 
 //Envia a transacao
 ::oSitefPbm:VDLinkProd(@::oDadosTran)
-lRet := .T.
 
 Return lRet
 
@@ -365,9 +364,7 @@ Local lRet := .F.	//Retorno da funcao
 ::oDadosTran:cHorario		:= ::cHora
 ::oDadosTran:cOperador		:= AllTrim(::cOperador)
 ::oDadosTran:cCodAut		:= AllTrim(::cCodAut)
-::oDadosTran:cCodProd		:= ::cCodProd
 ::oDadosTran:aVDLink		:= ::aVDLink
-::oDadosTran:nValor			:= ::nValor
 
 //Envia a transacao
 ::oSitefPbm:VDLinkVenda(@::oDadosTran)

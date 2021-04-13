@@ -23,7 +23,7 @@ Class LJCVDLINK From LJCSitefDireto
 	Method PVidaLink()						//Metodo construtor
     Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	Method VDLinkProd(aVDLink)
-	Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+	Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
 EndClass
 
 //-------------------------------------------------------------------
@@ -66,7 +66,11 @@ Local lRet := .T.
 ::cCodAut	:= cCodAut
 ::cCodProd	:= cCodProd
 ::cCupom	:= cValToChar(nCupom)
-::cData		:= DToS(dData)
+If ValType(dData) == "C"
+	::cData := dData
+Else
+	::cData	:= DToS(dData)
+EndIf
 ::cHora		:= StrTran(cHora,":")
 ::cOperador	:= cOperador
 ::aVDLink	:= aVDLink
@@ -102,13 +106,16 @@ Return lRet
 	@param param, param_type, param_descr
 	@return return, return_type, return_description
 /*/
-Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink) Class LJCVDLINK
+Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink) Class LJCVDLINK
 Local lRet := .F.
 
 ::cCodAut	:= cCodAut
-::cCodProd	:= cCodProd
 ::cCupom	:= cValToChar(nCupom)
-::cData		:= DToS(dData)
+If ValType(dData) == "C"
+	::cData := dData
+Else
+	::cData	:= DToS(dData)
+EndIf
 ::cHora		:= StrTran(cHora,":")
 ::cOperador	:= cOperador
 ::aVDLink	:= aVDLink

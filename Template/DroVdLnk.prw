@@ -965,20 +965,19 @@ Local nX		  := 0
 
 If lTotvsPDV
 	oTEF20 := STBGetTEF()
-	Aadd(aInfo,{cUserName,_cDoc})
+	Aadd(aInfo,{cUserName,oTEF20:Pbm():oPbm:oPBM:cCupom})
 EndIf
 
 If _nVidaLink == 2  // Gravou VidaLink
 	If nNumPbm == 1
 		If lTotvsPDV
 			//JULIOOOO - testar
-			//verificar se o conteudo de _aVidaLinkD permite fazer looping 
-			//e em seguida internamente fazer com seja verificado a qtde de itens do array
 			For nX := 1 to Len(_aVidaLinkD[2])
 				oDados := T_DroRtOtran("",_aVidaLinkD[2,nX],aInfo,_aVidaLinkD[2,nX])
 				oTEF20:Pbm():VDLinkProd(oDados)
 			Next nX
-			oDados := T_DroRtOtran("VIDALINK_VENDA",_aVidaLinkD,aInfo)
+			oDados := T_DroRtOtran("VIDALINK_VENDA",_aVidaLinkD,aInfo,_aVidaLinkD) //Passa o array inteiro para ler os produtos
+			DroAObjTef(oDados,oTef20)
 			oTEF20:Pbm():VDLinkVenda(oDados)
 		Else
 			oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
@@ -1095,6 +1094,7 @@ Local oCliModel		:= NIL
 Default lIncProd := .F.
 
 LjGrvLog("DROVLBPro","Busca do Produto - Código de Barras ->", cCodBarra)
+Conout("DROVLBPro - Busca do Produto - Código de Barras -> " + cCodBarra)
 
 If lTotvsPDV
 	DBSelectArea("SB1")
@@ -1134,12 +1134,13 @@ Else
 	cRet := ""
 EndIf
 LjGrvLog("DROVLBPro","Busca do Produto - Retorno ->", cRet)
+Conout("DROVLBPro - Busca do Produto - Retorno -> " + cRet)
 Return cRet
 
 /*-------------------------------------------------------------------------------------------
 ±±³Fun‡„o	 ³DROVLCall ³ Autor ³ VENDAS CRM				            ³ Data ³12/05/2010³±±
 ---------------------------------------------------------------------------------------------
-±±³Descri‡„o ³ Rotina chamada apartir do VidaLink atravez de integração via DLL.          ³±±
+±±³Descri‡„o ³ Rotina chamada a partir do VidaLink atravez de integração via DLL.         ³±±
 ±±³          ³ Na digitação do codigo de barra do produto no VidaLink, ele passa este     ³±±
 ±±³          ³ codigo para a DLL TOTVSVIDA.dll que invoca esta funcao tambem passando o   ³±±
 ±±³          ³ codigo de barra como parametro, esperando como retorno um strig de 75 bytes³±±
@@ -1164,6 +1165,8 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
     Local aServers:= {}
     Local lNewConnect := .F.
     Local lConnect	  := .F.
+
+	Conout("DroVlCall - Inicio da Função")
     	
 	// Conexao RPC
 	cRPCServer	:= uParm1
@@ -1172,16 +1175,16 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 	cRPCEmp		:= uParm4
     cRPCFilial	:= uParm5  
     cEAN 		:= uParm6
-	LjGrvLog("DROVLCall","DroVlCall - Param 1 - cRPCServer",cRPCServer)
-    LjGrvLog("DROVLCall","DroVlCall - Param 2 - nRPCPort",nRPCPort)
-    LjGrvLog("DROVLCall","DroVlCall - Param 3 - cRPCEnv",cRPCEnv)
-	LjGrvLog("DROVLCall","DroVlCall - Param 4 - cRPCEmp",cRPCEmp)
-	LjGrvLog("DROVLCall","DroVlCall - Param 5 - cRPCFilial",cRPCFilial)
-	LjGrvLog("DROVLCall","DroVlCall - Param 6 - cEAN",cEAN)
+	Conout("DroVlCall - Param 1 - cRPCServer [" + cRPCServer + ']')
+    Conout("DroVlCall - Param 2 - nRPCPort [" + cValToChar(nRPCPort) + "]")
+    Conout("DroVlCall - Param 3 - cRPCEnv [" +cRPCEnv + "]")
+	Conout("DroVlCall - Param 4 - cRPCEmp [" +cRPCEmp + "]")
+	Conout("DroVlCall - Param 5 - cRPCFilial [" +cRPCFilial + "]")
+	Conout("DroVlCall - Param 6 - cEAN [" + cEAN + "]")
 	
-	LjGrvLog("DROVLCall","Antes de FrtServRPC")
+	Conout("DROVLCall - Antes de FrtServRPC")
 	nFor := FrtServRpc()		// Carrega o numero de servidores disponiveis
-	LjGrvLog("DROVLCall","Depois de FrtServRPC",nFor)
+	Conout("DROVLCall - Depois de FrtServRPC <- nFor [" + cValToChar(nFor) + "]")
 
 	For nX := 1 To nFor         //  Carrega os dados do server
 		aAuxSer	:= FrtDadoRpc() 
@@ -1190,15 +1193,13 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 		EndIf
 		aAuxSer := {}
 	Next nX
-	LjGrvLog("DROVLCall","Servers Encontrados",aServers)
+	Conout("DROVLCall - Servers Encontrados")
+	VarInfo("aServers",aServers)
 	
 	lNewConnect := .F.
 	If oRPCServer == Nil
 		ConOut(STR0021)				   							// "DROVLCall: Chamada ao VIDALINK"
-		LjGrvLog("DROVLCall",STR0021)
-
 		ConOut(STR0022) 			   							// "DROVLCall: Abrindo nova instancia RPC..."
-		LjGrvLog("DROVLCall",STR0022)
 
 		oRPCServer:=FwRpc():New( cRPCServer, nRPCPort , cRpcEnv )	// Instancia o objeto de oServer	
 		oRPCServer:SetRetryConnect(1)								// Tentativas de Conexoes
@@ -1207,43 +1208,38 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 			oRPCServer:AddServer( aServers[nX][1], aServers[nX][2], aServers[nX][3] )
 		Next nX
 	
-		ConOut(STR0023) 			   							// "DROVLCall: Conectando com o servidor..."	
-		LjGrvLog("DROVLCall",STR0023)
+		ConOut(STR0023) 			   							// "DROVLCall: Conectando com o servidor..."
 		lConnect := oRPCServer:Connect()							// Tenta efetuar conexao
 		lNewConnect := .T.
 	Else
 		lConnect 	:= .T.
 		lNewConnect := .F.
 	EndIf
-	
-	LjGrvLog("DROVLCall","Conectado com o servidor ?", lConnect)
 
 	If lConnect
 		If lNewConnect
 			oRPCServer:CallProc("RPCSetType", 3 )
 			oRPCServer:SetEnv(cRPCEmp,cRPCFilial,"FRT")                 // Prepara o ambiente no servidor alvo
-			LjGrvLog("DROVLCall","Prepara nova conexão")
+			Conout("DROVLCall - Prepara nova conexão")
 		EndIf
 
 		ConOut(STR0025) 										// "DROVLCall: Buscando produto..."
-		LjGrvLog("DROVLCall",STR0025)
 
-		LjGrvLog("DROVLCall","Antes de CallProc - T_DROVLBPro")
+		Conout("DROVLCall - Antes de CallProc - T_DROVLBPro -> [" + cEAN + "]")
 	   	cRet := oRPCServer:CallProc("T_DROVLBPro", cEAN)	   
 		ConOut("Retorno: #" + cRet + "#")						// Exibe o retorno da funcao, que sera enviado para a DLL
-		LjGrvLog("DROVLCall","Depois de CallProc - T_DROVLBPro",cRet)
+		Conout("DROVLCall - Depois de CallProc - T_DROVLBPro <- [" + cRet + "]")
 
 		ConOut(STR0034) 										// "DROVLCALL: Desconectando..."
-		LjGrvLog("DROVLCall",STR0034)
    		oRPCServer:Disconnect()			
 
 		ConOut(STR0035)											// "DROVLCall: Finalizando VIDALINK"
 		oRPCServer := Nil
 
-		ConOut(STR0035)											// "DROVLCall: Fim da chamada ao VIDALINK"        */
-		LjGrvLog("DROVLCall",STR0035)
+		ConOut(STR0035)											// "DROVLCall: Fim da chamada ao VIDALINK"
 	EndIf	
 	
+	Conout("DroVlCall - Final da Função")
 Return cRet
 
 /*-------------------------------------------------------------------------------------------
@@ -1744,4 +1740,20 @@ Else
 												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", 0,Val(cDoc))
 EndIf
 
+Return oDados
+
+/*/{Protheus.doc} DroAObjTef
+	Ajusta o objeto com os dados do TEF
+	@type  Function
+	@author Julio.Nery
+	@since 13/04/2021
+	@version 12
+	@param oTEF20, objeto, contem as informações do TEF do inicio da chamada
+	@param oDados, objeto, objeto de Dados
+	@return oDados, objeto, contem os dados da transação
+/*/
+Static Function DroAObjTef(oDados,oTEF20)
+oDados:cCodAut := oTEF20:Pbm():oPbm:oPBM:cCodAut
+oDados:dData := STOD(oTEF20:Pbm():oPbm:oPBM:cData)
+oDados:cHora := oTEF20:Pbm():oPbm:oPBM:cHora
 Return oDados

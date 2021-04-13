@@ -38,7 +38,7 @@ Class LJCPBM
 	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
 	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	Method VDLinkProd(aVDLink)
-	Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+	Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
 	Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
 	Method FuncCrCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
 	
@@ -416,11 +416,10 @@ Return lRet
 	@param param, param_type, param_descr
 	@return lRet, logico, executado com sucesso ?
 /*/
-Method VDLinkVenda(cCodAut,cCodProd,cCupom,dData,;
-					cHora,cOperador,aVDLink) Class LJCPBM
+Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink) Class LJCPBM
 Local lRet := .F.
-//JULIOOOOOO - continuar daqui 12/04/2021
-lRet := ::oPBM:VDLinkVenda(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
+
+lRet := ::oPBM:VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
 
 Return lRet
 

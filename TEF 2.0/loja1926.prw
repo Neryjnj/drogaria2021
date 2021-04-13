@@ -3462,19 +3462,14 @@ Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
 
 ::oRetorno := LJCRetornoSitef():New()
 
-//Prepara os parametros de envio
-//"IniciaFuncaoSiTefInterativoVendaVidalink", {cCodigoAutorizacao, Alltrim(Str(nNumeroProdutos)), cCuponFiscal, cDataFiscal, cHorario, cOperador} )
-
-//JULIOOOOOOOOOO - tentar pegar a qtde de itens no array aVDLink
 oParamsApi := ::PrepParam({CLISITEF, "IniciaFuncaoSiTefInterativoVendaVidalink", oDadosTran:cCodAut, ;
-								Len(oDadosTran:aVDLink), oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
+								cValToChar(Len(oDadosTran:aVDLink[2])), oDadosTran:cCupomFisc, oDadosTran:cDataFisc,;
 								oDadosTran:cHorario, oDadosTran:cOperador})
 
 cRetorno := ::EnviarCom(oParamsApi)
 
 //Carrega o retorno
 oDadosTran:cCodAut 	:= oParamsApi:Elements(3):cParametro
-oDadosTran:cCodProd := Val(oParamsApi:Elements(4):cParametro)
 oDadosTran:cCupomFisc:= oParamsApi:Elements(5):cParametro
 oDadosTran:cDataFisc:= oParamsApi:Elements(6):cParametro
 oDadosTran:cHorario := oParamsApi:Elements(7):cParametro
