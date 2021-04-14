@@ -971,13 +971,11 @@ EndIf
 If _nVidaLink == 2  // Gravou VidaLink
 	If nNumPbm == 1
 		If lTotvsPDV
-			//JULIOOOO - testar
 			For nX := 1 to Len(_aVidaLinkD[2])
 				oDados := T_DroRtOtran("",_aVidaLinkD[2,nX],aInfo,_aVidaLinkD[2,nX])
 				oTEF20:Pbm():VDLinkProd(oDados)
 			Next nX
-			oDados := T_DroRtOtran("VIDALINK_VENDA",_aVidaLinkD,aInfo,_aVidaLinkD) //Passa o array inteiro para ler os produtos
-			DroAObjTef(oDados,oTef20)
+			oDados := T_DroRtOtran("VIDALINK_VENDA",_aVidaLinkD,aInfo,_aVidaLinkD,oTEF20) //4 Param-Passa o array inteiro para ler os produtos
 			oTEF20:Pbm():VDLinkVenda(oDados)
 		Else
 			oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
@@ -985,27 +983,21 @@ If _nVidaLink == 2  // Gravou VidaLink
 	ElseIf nNumPbm = 541
 		If Len(_aVidaLinkD) > 0
 			If lTotvsPDV
-				//JULIOOOO - inserir 
+				oDados := T_DroRtOtran("PHARMASYSTEM_VENDA",_aVidaLinkD,aInfo,,oTEF20)
+				oTEF20:PBM():PharmSCons(oDados)
 			Else
 				oTEF:Operacoes("PHARMASYSTEM_VENDA", _aVidaLinkD, , , _cDoc)	//PharmaSystem	
 			EndIf
 		Endif
-	ElseIf nNumPbm = 560
+	ElseIf (nNumPbm == 560 .Or. nNumPBM == 592)
 		If Len(_aVidaLinkD) > 0
 			If lTotvsPDV
-				//JULIOOOO - inserir 
+				oDados := T_DroRtOtran("FUNCARD_VENDA",_aVidaLinkD,aInfo,,oTEF20)
+				oTEF20:PBM():FuncCrCons(oDados)
 			Else
 				oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card	
 			EndIf
 		Endif
-	ElseIf nNumPbm = 592
-		If Len(_aVidaLinkD) > 0
-			If lTotvsPDV
-				//JULIOOOO - inserir 
-			Else
-				oTEF:Operacoes("FUNCARD_VENDA", _aVidaLinkD, , , _cDoc)			//Funcional Card
-			EndIf
-		Endif		
 	Endif
 EndIf
 
@@ -1704,15 +1696,19 @@ Return lCanTelMeC
 		{cUserName,cDoc}
 	@param aDadoProd, array, contem os dados do produto a ser consultado na PBM
 		{nItem, CodBarra, Qtde, Valor1, Valor2, Qtde, Valor3, Valor4, Vlr.Desconto}
+	@param oObjTEF20, objeto, contem o objeto atual do TEF
 	@return oDados, objeto, contem os dados da transação
 /*/
-Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo,aDadoProd)
+Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo,aDadoProd,;
+							oObjTEF20)
 Local aDadosVDLk:= {}
 Local nCodFuncao:= 0
+Local nValor	:= 0
 Local cDoc		:= ""
 Local oDados	:= NIL
 
 Default aDadoProd := {}
+Default oObjTEF20 := NIL
 
 nCodFuncao := STPbmRtFun(cOperacao)
 
@@ -1721,7 +1717,7 @@ nCodFuncao := STPbmRtFun(cOperacao)
 If Len(aDadoProd) > 0 
 	aDadosVDLk := aClone(aDadoProd)
 Else
-	aAdd(aDadosVDLk,{aConvInfo[1,1], aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
+	aAdd(aDadosVDLk,{AllTrim(aConvInfo[1,1]), aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
 					nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
 EndIf
 
@@ -1733,27 +1729,26 @@ EndIf
 
 If cOperacao $ ("VIDALINK_CONSULTA|VIDALINK_VENDA")
 	oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
-									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  aTranInfo[1,1],;
+									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  AllTrim(aTranInfo[1,1]),;
 									aConvInfo[1,1], "1"		, aDadosVDLk )
+	
+	If ValType(oObjTEF20) == "O"
+		oDados:cCodAut := AllTrim(oObjTEF20:Pbm():oPbm:oPBM:cCodAut)
+		oDados:cHora := oObjTEF20:Pbm():oPbm:oPBM:cHora
+	EndIf
 Else
+	If cOperacao == "PHARMASYSTEM_VENDA"
+		nValor := 1
+	EndIf
+
 	oDados := LJCDadosSitefDireto():IniDadoSitef(,,nCodFuncao,,,,,,,,cDoc, Dtos(Date()),StrTran(Time(),":"),;
-												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", 0,Val(cDoc))
+												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", nValor,Val(cDoc))
+	If ValType(oObjTEF20) == "O"
+		oDados:cCodAut := AllTrim(oObjTEF20:Pbm():oPbm:oPBM:aVDLink[1,1])
+		oDados:cHorario := oObjTEF20:Pbm():oPbm:oPBM:cHora
+		oDados:cCupomFisc:= oObjTEF20:Pbm():oPbm:oPBM:cCupom
+		oDados:nCupom := Val(oObjTEF20:Pbm():oPbm:oPBM:cCupom)
+	EndIf					
 EndIf
 
-Return oDados
-
-/*/{Protheus.doc} DroAObjTef
-	Ajusta o objeto com os dados do TEF
-	@type  Function
-	@author Julio.Nery
-	@since 13/04/2021
-	@version 12
-	@param oTEF20, objeto, contem as informações do TEF do inicio da chamada
-	@param oDados, objeto, objeto de Dados
-	@return oDados, objeto, contem os dados da transação
-/*/
-Static Function DroAObjTef(oDados,oTEF20)
-oDados:cCodAut := oTEF20:Pbm():oPbm:oPBM:cCodAut
-oDados:dData := STOD(oTEF20:Pbm():oPbm:oPBM:cData)
-oDados:cHora := oTEF20:Pbm():oPbm:oPBM:cHora
 Return oDados
