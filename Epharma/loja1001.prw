@@ -162,16 +162,16 @@ If ::oProdAutor:ExisteProd(cCodBarra)
 			nPercDesc := ::oGlobal:Funcoes():CalcValor((nPrUnit - (oProdAut:nVlUnVenda + oProdAut:nVlRepasse)) / nPrUnit, 100, 3, 2)
 			lItemPbm	:= .T.
 			lRet		:= .T.
-			LjGrvLog( NIL, " Obtido valor de desconto do produto [Códgio de barras: " + cLogProd + "]  - Valor Desconto: ",nPercDesc )
+			LjGrvLog( NIL, " Obtido valor de desconto do produto [Código de barras: " + cLogProd + "]  - Valor Desconto: ",nPercDesc )
 		Else
 			lRet := .T.
 		Endif
     Else
     	lRet := .F.
-    	LjGrvLog( NIL, " Não pode vender o produto [Códgio de barras: " + cLogProd + "]  " )
+    	LjGrvLog( NIL, " Não pode vender o produto [Código de barras: " + cLogProd + "]  " )
     EndIf
 Else
-	LjGrvLog( NIL, " Não encontrou o produto [Códgio de barras: " + cLogProd + "]  para ser autorizado " )
+	LjGrvLog( NIL, " Não encontrou o produto [Código de barras: " + cLogProd + "]  para ser autorizado " )
 	lRet := .T.
 EndIf
 

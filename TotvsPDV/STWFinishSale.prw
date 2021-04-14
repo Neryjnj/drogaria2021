@@ -542,8 +542,6 @@ If !lPendSale
 
 	//Executa Template Function de Drogaria na finalização da venda
 	If lRet .And. ExistFunc("LjIsDro") .And. LjIsDro()
-
-		//JULIOOOOOOOOOOOOOOOO
 		If ExistFunc("STGDadosVL")
 			//DroVLVen
 			aAuxTPL := {STBPbmNDoc()}

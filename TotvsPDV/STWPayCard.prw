@@ -90,15 +90,6 @@ If nValor > 0
 				If oRetTran:oRetorno:nParcs < 1
 					oRetTran:oRetorno:nParcs := nParc
 				EndIf
-
-				//JULIOOOOOO - finalização Vidalink
-				If Len(aDadoVDLink) > 0 .And. aDadoVDLink[3] <> 99 .And. aDadoVDLink[3] <> 0
-					//oTEF:aRetVidaLink := Nil - Limpa o retorno do vidalink no objeto do TEF
-					aDadoVDLink[1] := {}
-					aDadoVDLink[2] := {}
-					aDadoVDLink[3] := 0
-					STBDadosVL(aDadoVDLink)
-				EndIf
 		
 				If (lRet := STBRetTef(oRetTran, oTEF20))
 					nParc := oRetTran:oRetorno:nParcs

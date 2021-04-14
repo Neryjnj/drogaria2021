@@ -888,7 +888,6 @@ Else
 EndIf
 
 If lRet .And. lTPLDrogaria
-	//JULIOOOOO - CONTINUAR AQUI - verificar se todos os campos estão preenchidos
 	aTPLCODB2 := { ;
 				nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)),;
 				AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),AllTrim(STDGPBasket("SL2","L2_DESC",nItemLine)),;

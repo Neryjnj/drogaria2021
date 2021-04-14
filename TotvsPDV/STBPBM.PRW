@@ -47,8 +47,6 @@ Return
     @return nenhum
 /*/
 Static Function STBConPbm(lConsulta)
-Local aRetVDLink:= {}
-Local aParamVL  := {}
 Local oTEF20    := NIL
 Local lContinua := .T.
 Local lSemObjeto:= .F.
@@ -63,17 +61,6 @@ EndIf
 
 If lContinua
     T_DroVLGet(nOpPBM)
-    
-    // aRetVDLink := STGDadosVL()
-
-    //JULIOOOOO - verificar se será necessário manter esse trecho - 31/03/2021
-    // T_DROVLPSet(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,;
-    //             ,,,,,,,,,,,,,,,,,,,,,,,,,@aRetVDLink[1], @aRetVDLink[2],@aRetVDLink[3],;
-    //             ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)
-    // aParamVL := T_DROVLPGet()
-    // If aParamVL[1][VLP_NVIDAL] == 2
-    //     STBPbmRegIt(aParamVL)//Efetua o registro do item
-    // EndIf
 EndIf
 
 Return
@@ -117,8 +104,8 @@ If !Empty(cDoc)
 
         //Inicializa a venda PBM
         If oTPLPBM:IniciaVend( oDadosPbm )
-            STFMessage("STBOPbm1","STOP", "Venda PBM" ) //"Venda PBM"
-		    STFShowMessage("STBOPbm1")
+            STFMessage("ItemVendaPBM","STOP", "Venda PBM") //"Venda PBM"
+		    STFShowMessage("ItemVendaPBM")
         Else
             STBIsVnPBM(.F.,NIL)
         EndIf
@@ -157,7 +144,6 @@ EndIf
 
 STBIsVnPBM(.F.,NIL)
 oTEF20 := NIL
-STFCleanInterfaceMessage()
 	
 Return Nil
 
@@ -202,7 +188,7 @@ If lItemPbm
         //JULIOOOO - validar se cancela o cupom mesmo no TOTVSPDV
         //avaliando o fluxo do frontloja, o item ja foi registrado e por isso há o cancelamento
         //no totvspdv eu consigo somente cancelar o registro do item
-        FrtCancCup( .T. ) 
+        FrtCancCup( .T. )
     Else
         STDSPBasket("SL2","L2_ITPBM",lItemPbm,nItemLine)
     EndIf

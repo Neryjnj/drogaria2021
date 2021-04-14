@@ -403,7 +403,11 @@ Default lAcessoLib	:= .F.
 //No TotvsPDV o menu será incluido normalmente pois o menu é diferente do Front porem devo tratar 
 //se tem informação da ANVISA para não mostrar a tela vazia de LK9
 If lTotvsPDV
-	lContinua := T_DroLenANVISA() > 0
+	If IsInCallStack("T_FRTFuncoes")
+		lContinua := T_DroLenANVISA() > 0
+	Else
+		lContinua := .T.
+	EndIf
 
 	If !lContinua
 		MsgAlert("Não há dados de Medicamentos Controlados")

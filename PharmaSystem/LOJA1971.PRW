@@ -38,34 +38,6 @@ Class LJCPharmSys From LJCSitefDireto
 
 	Method PharmaSystem(oClisitef)						//Metodo construtor
     Method PharmSCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
-
-    /*
-	Method IniciaVend(cCupom, cOperador)							//Inica a venda com o PBM
-	Method VendProd(cCodBarra, nQtde, nPrUnit, nPercDesc, ;			//Realiza a venda do produto
-					lItemPbm, lPrioPbm)
-	Method CancProd(cCodBarra, nQtde)								//Cancela o produto da PBM
-	Method FinalVend()												//Finaliza a venda
-	Method BuscaRel()												//Busca relatorio para impressao
-	Method BuscaSubs()												//Busca valor do subsidio
-	Method ConfProd( cCodBarra, nQtde, lOk )						//Confirma o produto vendido
-	Method ConfVend(lConfirma)										//Confirma a venda na PBM
-	Method CancPBM()												//Cancela a transacao total da PBM	
-	*/
-
-	//Metodos internos
-	// Method SelTpAutor()												//Metodo que ira solicitar como sera feito a recuperacao da pre-autorizacao
-	// Method TrataAutor()												//Metodo que ira solicitar o numero da autorizacao
-	// Method PrepPreAut(nIndCont, cNSU)								//Metodo que ira montar os dados para recuperacao da pre-autorizacao
-	// Method BuscPreAut() 											//Metodo de busca de pre-autorizacao
-	// Method TrataServ(oServEsp)										//Metodo que ira tratar os servicos especificos da TrnCentre
-	// Method LjProd()													//Confirma monta a lista de produtos vendidos
-	// Method SlCancDat()												//Metodo que ira solicitar a data que a autorizacao foi efetuada
-	// Method SlCancCup()												//Metodo que ira solicitar o numero do cupom fiscal da autorizacao a ser cancelada
-	// Method SlCancPdv()												//Metodo que ira solicitar o numero do PDV que fez a venda
-	// Method PrepAutCanc()											//Prepara a autorizacao para o cancelamento da venda
-	// Method PrVendido()												//Retorno se houve produtos vendidos
-	// Method TrataNSU()                                            	//Metodo que ira solicitar o numero do NSU da venda
-	
 EndClass
 
 //-------------------------------------------------------------------

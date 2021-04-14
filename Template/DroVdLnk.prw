@@ -257,7 +257,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		If lSigaLoja
 			bGrvVend := {|| LJMsgRun("Adicionando itens ao orçamento...",,{|| DroAddProd(@aParamVL[1][VLP_AVLD][2]) }),oDlg:End()}
 		
-		ElseIf lTotvsPDV //JULIOOOOOOOOOOOO - verificar trecho
+		ElseIf lTotvsPDV
 			bGrvVend := {|| DroAddProd(@aParamVL[1][VLP_AVLD][2],{aParamVL[1][VLP_CCLIEN],aParamVL[1][VLP_CLOJAC]}), oDlg:End()}
 		Else
 			bGrvVend := {|| ;
