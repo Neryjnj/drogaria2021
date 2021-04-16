@@ -374,7 +374,6 @@ Local lRetorno := .F.							//Variavel de retorno do metodo
 
 LjGrvLog( Nil, " Inicio da função - Cancelamento",,.T.)
 
-
 //Solicita o numero do NSU da venda
 lRetorno := ::TrataNSU()
 LjGrvLog( Nil, " Captura NSU da Transação", lRetorno)

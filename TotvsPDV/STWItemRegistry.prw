@@ -508,9 +508,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 				If STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
 								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )					
-					cTypeDesc := "P"
-					If nDiscount < 0
-						nDiscount := nDiscount * -1
+					
+					If nDiscount > 0
+						cTypeDesc := "P"
 					EndIf
 				Else
 					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM e o desconto da loja será zerado")

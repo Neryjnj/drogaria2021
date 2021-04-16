@@ -210,7 +210,7 @@ EndIf
 Return lRet
 
 /*/{Protheus.doc} STVndPrPbm
-    Cópia da funação LjVendProdPbm para a venda de produto PBM no TOTVSPDV
+    Cópia da função LjVendProdPbm para a venda de produto PBM no TOTVSPDV
     @type  Function
     @author Julio.Nery
     @since 03/03/2021
@@ -247,17 +247,19 @@ EndIf
 
 nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
 nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
-
+nVlrDescIT := IIf(nVlrDescIT < 0, (nVlrDescIT*-1), nVlrDescIT) //Se vier como negativo devo tratar para o TOTVSPDV considerar
 Return lRet
 
 /*/{Protheus.doc} STBFimVdPB
-    (long_description)
+    Cópia de LjFinVend - para finalizar venda PBM
     @type  Function
-    @author user
-    @since date
-    @version version
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @author Julio.Nery
+    @since 03/2021
+    @version 12
+    @param cDoc, string, numero da venda
+    @param cSerie, string, série da venda
+    @param cKeyDoc, string, chave da venda
+    @return lRet, lógico, Finalizou a Venda ?
 /*/
 Function STBFimVdPB(cDoc, cSerie, cKeyDoc)
 Local lRet := .F.	// Retorno da funcao
@@ -572,7 +574,7 @@ If lContinua
             Next nI
         EndIf   	    
     Else
-        nVSubsidio	:= oPbm:BuscaSubs()
+        nVSubsidio	:= oTPLPBM:BuscaSubs() //JULIOOOOO - validar
     EndIf   
 
     If nVSubsidio > 0
@@ -645,16 +647,14 @@ Return nFuncao
     @return return, return_type, return_description
 /*/
 Function STPbmReini()
-Local oPBM := NIL
 Local aDadoVDLink := {}
 
 //Zera as variaveis uCLiTPL e uProdTPL
 STBDroVars(.T.)
 
 //Zera a variável de PBM
-If STBIsVnPBM()
-    oPBM := STBGetVPBM()
-    oPBM:ConfVend( .F. )
+If oTPLPBM <> Nil
+    oTPLPBM:ConfVend( .F. )
     STBIsVnPBM(.F.,NIL)
 EndIf
 

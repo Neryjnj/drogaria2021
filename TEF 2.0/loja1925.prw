@@ -28,7 +28,9 @@ Class LJCClisitefPbm From LJAPbm
 	Method FinalVend()
 	Method BuscaSubs()
 	Method ConfProd()
+	Method ConfVend()
 	Method CancPbm()
+	Method BuscaRel()
 	Method SelecPbm(cNomePBM)
 	Method Confirmar()
 	Method Desfazer()
@@ -141,20 +143,14 @@ Method FinalVend() Class LJCClisitefPbm
 
 Return oDadosTran
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  |BuscaSubs    บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณBusca o valor do subsidio				                      บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method BuscaSubs() Class LJCClisitefPbm  
 
 	Local nRetorno := .F.						//Retorno do metodo
@@ -163,10 +159,7 @@ Method BuscaSubs() Class LJCClisitefPbm
 
 Return ::oPbm:BuscaSubs()
    
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  |ConfProd     บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConfirma o produto vendido no ECF                           บฑฑ
@@ -176,10 +169,7 @@ Return ::oPbm:BuscaSubs()
 ฑฑบ          ณ 3.ExpL1 - Se o produto foi vendido ou nao.                 บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method ConfProd(cCodBarra, nQtde, lOK) Class LJCClisitefPbm
 Local lRetorno := .F.						//Retorno do metodo
 	
@@ -187,19 +177,28 @@ lRetorno := ::oPbm:ConfProd(cCodBarra, nQtde, lOK)
 
 Return lRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*/{Protheus.doc} ConfVend
+	Confirma Venda PBM?
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/04/2021
+	@version 12
+	@param lConfirma, l๓gico, confirma a venda PBM ?
+	@return return, return_type, return_description
+/*/
+Method ConfVend(lConfirma) Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPBM:ConfVend(lConfirma)
+Return lRetorno
+
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  |CancPbm      บAutor  ณVendas CRM       บ Data ณ  01/04/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณEfetua o cancelamento da PBM		                          บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method CancPbm(oDadosTran) Class LJCClisitefPbm 
 
 	Local lRetorno := .F.						//Verifica se a transacao foi cancelada
@@ -217,7 +216,22 @@ Method CancPbm(oDadosTran) Class LJCClisitefPbm
 		::oDadosTran:nCupom := Val(::oPbm:oPbm:cNumCupom)	
 	EndIf	
 		
-Return oDadosTran 
+Return oDadosTran
+
+/*/{Protheus.doc} BuscaRel
+	Relatorio de impressใo da PBM
+	@type  Metodo
+	@author Julio.Nery
+	@since 16/04/2021
+	@version 12
+	@param nenhum
+	@return lRetorno, string, execu็ใo com sucesso ?
+/*/
+Method BuscaRel() Class LJCClisitefPbm
+Local lRetorno := .F.
+
+lRetorno := ::oPBM:BuscaRel()
+Return lRetorno
 
 /*---------------------------------------------------------------------------
 ฑฑบPrograma  |SelecPbm     บAutor  ณVendas CRM       บ Data ณ  01/04/10   บฑฑ
@@ -268,20 +282,14 @@ Method SelecPbm(cNomePBM) Class LJCClisitefPbm
 	
 Return lRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  |Confirmar    บAutor  ณVendas CRM       บ Data ณ  01/04/2010 บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConfirmar a operacao de PBM.                                บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method Confirmar() Class LJCClisitefPbm 
 	
 	//Confirma a transacao
