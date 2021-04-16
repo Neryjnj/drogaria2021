@@ -17,7 +17,7 @@ Function STFRestart()
 Local lFinServ	:= AliasIndic("MG8") .AND. SuperGetMV("MV_LJCSF",,.F.)	// Define se habilita o controle de servicos financeiros
 Local lLimSang	:= SuperGetMV( "MV_LJLISAN",, .F.) // Utiliza controle para limite de sangria 
 Local lSelNcc	:= ExistBlock("STSelNcc")		//Existe ponto de entrada para selecao da NCC?
-Local aDadoVDLink := {}
+
 /*/
 	Motivo de Venda Perdida
 /*/
@@ -267,21 +267,9 @@ If ExistFunc("STBSetDiscTotPDV")
 EndIf
 
 //Limpa Variaveis utilizadas no Template de Drogaria
-If ExistFunc("LJIsDro") .And. LJIsDro() .And. ExistFunc("STBDroVars")
-    //Zera as variaveis uCLiTPL e uProdTPL
-	STBDroVars(.T.)
-
-	//Zera a variável de PBM
-	If STBIsVnPBM()
-		STBIsVnPBM(.F.,NIL)
-	EndIf
-	
-	//Zera a variavel do VidaLink
-	aDadoVDLink := STGDadosVL()
-	aDadoVDLink[1] := {}
-	aDadoVDLink[2] := {}
-	aDadoVDLink[3] := 0
-	STBDadosVL(aDadoVDLink)
+If ExistFunc("LJIsDro") .And. LJIsDro() .And. ExistFunc("STPbmReini")
+	//Reinicializa Variaveis do Template
+	STPbmReini()	
 EndIf
 
 Return Nil

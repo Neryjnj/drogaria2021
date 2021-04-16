@@ -963,12 +963,12 @@ Local oDados 	  := NIL
 Local lTotvsPDV   := STFIsPOS()
 Local nX		  := 0
 
-If lTotvsPDV
-	oTEF20 := STBGetTEF()
-	Aadd(aInfo,{cUserName,oTEF20:Pbm():oPbm:oPBM:cCupom})
-EndIf
-
 If _nVidaLink == 2  // Gravou VidaLink
+	If lTotvsPDV
+		oTEF20 := STBGetTEF()
+		Aadd(aInfo,{cUserName,oTEF20:Pbm():oPbm:oPBM:cCupom})
+	EndIf
+
 	If nNumPbm == 1
 		If lTotvsPDV
 			For nX := 1 to Len(_aVidaLinkD[2])

@@ -327,7 +327,7 @@ If ValType(lSet) == "L"
     lIsVndPBM:= lSet
     oTPLPBM  := oVARPBM
 EndIf
-//JULIOOOOO - continuar daqui e entender aonde seta com .F. para que cancele a venda PBM - oPBM:ConfVend( .F. )
+
 lRet := lIsVndPBM
 Return lRet
 
@@ -635,59 +635,37 @@ EndIf
 
 Return nFuncao
 
-/*/{Protheus.doc} STBPbmRegIt
-    Efetua o registro do item PBM
+/*/{Protheus.doc} STPbmReini
+    Reinicializa as variáveis do Template
     @type  Function
     @author Julio.Nery
-    @since 26/03/2021
+    @since 16/04/2021
     @version 12
     @param param, param_type, param_descr
     @return return, return_type, return_description
 /*/
-Function STBPbmRegIt(aParamVL)
-Local nI    := 0
+Function STPbmReini()
+Local oPBM := NIL
+Local aDadoVDLink := {}
 
-For nI := 1 To Len(aParamVL[1,VLP_AVLC,2])
-		
-    nVlrTotal  	:= aParamVL[1][VLP_NVLRTO]
-    nTotItens	:= aParamVL[1][VLP_NTOTIT]
-    nVlrBruto	:= aParamVL[1][VLP_NVLRBR]
-    oDesconto	:= aParamVL[1][VLP_ODESCO]
-    oTotItens	:= aParamVL[1][VLP_OTOTIT]
-    oVlrTotal	:= aParamVL[1][VLP_OVLRTO]
-    nVlrPercIT	:= aParamVL[1][VLP_NVLRPE]
-    nQuant		:= aParamVL[1][VLP_NQUANT]
-    cUnidade	:= aParamVL[1][VLP_CUNIDA]
-    nVlrUnit	:= aParamVL[1][VLP_NVLRUN]
-    nVlrItem	:= aParamVL[1][VLP_NVLRIT]
-    oProduto	:= aParamVL[1][VLP_OPRODU]
-    oQuant		:= aParamVL[1][VLP_OQUANT]
-    oUnidade	:= aParamVL[1][VLP_OUNIDA]
-    oVlrUnit	:= aParamVL[1][VLP_OVLRUN]
-    oVlrItem	:= aParamVL[1][VLP_OVLRIT]
-    oPgtos		:= aParamVL[1][VLP_OPGTOS]
-    oPgtosSint	:= aParamVL[1][VLP_OPGTO2]
-    aPgtos		:= aParamVL[1][VLP_APGTOS]
-    aPgtosSint	:= aParamVL[1][VLP_APGTO2]
-    aItens 		:= aParamVL[1][VLP_AITENS]
-    nVlrMerc	:= aParamVL[1][VLP_NVLRME]
-    lDescTotal	:= aParamVL[1][VLP_LDESCT]
-    nDesconto	:= aParamVL[1][VLP_NDESCO]
-    lAbreCup	:= aParamVL[1][VLP_LABREC]
+//Zera as variaveis uCLiTPL e uProdTPL
+STBDroVars(.T.)
 
-    //Seta quantidade
-    STBSetQuant( aParamVL[1,VLP_AVLC,2,nI,3] )				
+//Zera a variável de PBM
+If STBIsVnPBM()
+    oPBM := STBGetVPBM()
+    oPBM:ConfVend( .F. )
+    STBIsVnPBM(.F.,NIL)
+EndIf
 
-    // Registra Item
-    IF STWItemReg( 	nI 				, aParamVL[1,VLP_AVLC,2,nI,2] 	, aParamVL[1][VLP_AVLD][1] 	, aParamVL[1][VLP_AVLD][2]	, ;
-                    STBGetCurrency(), aSL2[nI][AScan( aSL2[1] , { |x| x[1] == "L2_VALDESC"	} 	)][2] 	, "V"			, NIL	, ;
-                    NIL				, cCliType,,/*Preço*/,,,,,,,,,,,,,"","")
-    
-    Else
-        LjGrvLog("PBM","Item Nao encontrado na base de dados - Venda PBM não permitida")        
-        STFMessage("STBPbmRegIt","Item Nao encontrado - Venda PBM não permitida")
-        STFShowMessage("STBPbmRegIt")
-    EndIf
-Next nI
+//Zera a variavel do VidaLink
+aDadoVDLink := STGDadosVL()
+aDadoVDLink[1] := {}
+aDadoVDLink[2] := {}
+aDadoVDLink[3] := 0
+STBDadosVL(aDadoVDLink)
 
-Return NIL
+//Limpeza para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
+T_DroDelANVISA(.T., NIL)
+
+Return 

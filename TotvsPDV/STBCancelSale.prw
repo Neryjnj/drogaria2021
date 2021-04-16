@@ -1162,17 +1162,10 @@ Return lRet
 /*/
 Function STCSCanDro(aDados)
 Local aSTBDroVar := {}
-Local oPBM		 := NIL
 
 Default aDados := {}
 
-If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM")
-	//Cancelamento da venda PBM, se houver
-	If STBIsVnPBM()
-		oPBM := STBGetVPBM()
-		oPBM:ConfVend( .F. )
-	EndIf
-
+If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STPbmReini")
 	If ExistTemplate("FRTCancela")
 		aSTBDroVar := STBDroVars(.T.)
 		aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,STFProfile(42)[2],,aSTBDroVar[1]})
@@ -1182,8 +1175,8 @@ If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM")
 	//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
 	T_DROCancANVISA(,,aDados)
 
-	//Limpeza para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
-	T_DroDelANVISA(.T., NIL)
+	//Reinicializa Variaveis do Template
+	STPbmReini()
 EndIf
 
 Return NIL
