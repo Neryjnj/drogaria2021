@@ -506,10 +506,16 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					nDiscount := 0
 				EndiF
 
-				If !STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
-								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )
+				If STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
+								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )					
+					cTypeDesc := "P"
+					If nDiscount < 0
+						nDiscount := nDiscount * -1
+					EndIf
+				Else
 					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM e o desconto da loja será zerado")
 					nDiscount := 0
+					cTypeDesc := ""
 					lRet := .F.
 				EndIf
 			EndIF

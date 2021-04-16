@@ -112,7 +112,6 @@ If !Empty(cDoc)
     EndIf
 EndIf
 
-STFCleanInterfaceMessage()    
 Return
 
 /*/{Protheus.doc} STBCancPbm
@@ -178,19 +177,31 @@ Return lRet
 /*/
 Function STCnfPrPBM( cCodBarra, nQtde, lOk, lItemPbm,;
                     nItemLine )
-Local lRet := .F.
+Local cGetCanc  := ""
+Local cGetSerie := ""
+Local cSerConf  := ""
+Local lRet      := .F.
+Local lNFeActive:= .F.
 
 If lItemPbm
     lRet := oTPLPBM:ConfProd( cCodBarra, nQtde, lOk )
-    If !lRet        
-        MsgAlert("Produto não confirmado na PBM. Cupom fiscal sera cancelado.")
-        //Cancela o Cupom Fiscal e PBM
-        //JULIOOOO - validar se cancela o cupom mesmo no TOTVSPDV
-        //avaliando o fluxo do frontloja, o item ja foi registrado e por isso há o cancelamento
-        //no totvspdv eu consigo somente cancelar o registro do item
-        FrtCancCup( .T. )
+    If lRet        
+       STDSPBasket("SL2","L2_ITPBM",lItemPbm,nItemLine) 
     Else
-        STDSPBasket("SL2","L2_ITPBM",lItemPbm,nItemLine)
+        MsgAlert("Produto não confirmado na PBM. Cupom fiscal sera cancelado.")
+
+        //Cancela o Cupom Fiscal e PBM
+        cSerConf := GetNewPar("MV_LOJANF","UNI")
+        lNFeActive := SuperGetMV("MV_FISNOTA", .F., .F.) .and. !Empty(cSerConf) .and. cSerConf <> "UNI
+        if lNFeActive
+            cGetCanc := STDLastSat("L1_DOC", @cGetSerie)
+        elseif STFGetCfg("lUseSAT",.F.)
+            cGetCanc := STDLastSat("L1_DOC")
+        else
+            cGetCanc := STDCSLastSale("L1_DOC")
+        EndIf
+
+        STBActionCancel(cGetCanc,cGetSerie)
     EndIf
 Else
     lRet := .T.
@@ -236,7 +247,7 @@ EndIf
 
 nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
 nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
-		
+
 Return lRet
 
 /*/{Protheus.doc} STBFimVdPB
@@ -316,7 +327,7 @@ If ValType(lSet) == "L"
     lIsVndPBM:= lSet
     oTPLPBM  := oVARPBM
 EndIf
-
+//JULIOOOOO - continuar daqui e entender aonde seta com .F. para que cancele a venda PBM - oPBM:ConfVend( .F. )
 lRet := lIsVndPBM
 Return lRet
 

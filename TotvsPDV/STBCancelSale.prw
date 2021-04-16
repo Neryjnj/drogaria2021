@@ -1166,14 +1166,14 @@ Local oPBM		 := NIL
 
 Default aDados := {}
 
-If ExistFunc("LjIsDro") .And. LjIsDro()
+If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM")
 	//Cancelamento da venda PBM, se houver
-	If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+	If STBIsVnPBM()
 		oPBM := STBGetVPBM()
 		oPBM:ConfVend( .F. )
 	EndIf
 
-	If ExistFunc("STBDroVars") .And. ExistTemplate("FRTCancela")
+	If ExistTemplate("FRTCancela")
 		aSTBDroVar := STBDroVars(.T.)
 		aSTBDroVar[1] := ExecTemplate("FRTCancela",.F.,.F.,{2,STFProfile(42)[2],,aSTBDroVar[1]})
 		STBDroVars(.F.,.T.,aSTBDroVar[1],NIL)
@@ -1181,9 +1181,8 @@ If ExistFunc("LjIsDro") .And. LjIsDro()
 	
 	//Cancela, se houver, algum registro de log da ANVISA (tabela LK9)
 	T_DROCancANVISA(,,aDados)
-	
-	//no FrontLoja não tem a limpeza da variável aANVISA mas aqui insiro a limpeza
-	//para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
+
+	//Limpeza para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
 	T_DroDelANVISA(.T., NIL)
 EndIf
 
