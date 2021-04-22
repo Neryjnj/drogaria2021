@@ -117,10 +117,7 @@ Method EnvTrans(oDadosTran) Class LJCSitefPBM
 		
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณFimTrans  บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em confirmar ou desfazer a transacao.           บฑฑ
@@ -132,10 +129,7 @@ Return Nil
 ฑฑบ			 ณExpC1 (2 - cCupomFisc) - Numero do cupom fiscal.            บฑฑ
 ฑฑบ			 ณExpC2 (3 - cDataFisc)  - Data da transacao.(AAAAMMDD)       บฑฑ
 ฑฑบ			 ณExpC3 (4 - cHorario)   - Hora da transacao.(HHMMSS)         บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method FimTrans(lConfirma, cCupomFisc, cDataFisc, cHorario) Class LJCSitefPBM
 	
 	Local nConfirma := 0					//Indica se a transacao devera ser confirmada(1) ou desfeita(0)
@@ -147,17 +141,7 @@ Method FimTrans(lConfirma, cCupomFisc, cDataFisc, cHorario) Class LJCSitefPBM
 	If lConfirma
 		nConfirma := 1
 	EndIf
-	
-	//Guarda os valores que estao no objeto oTef
-	cCupomTef	:= oTef:cCupom
-	cDataTef	:= oTef:cData
-	cHoraTef	:= oTef:cHora
-	
-	//Atribui os dados para o objeto do tef
-	oTef:cCupom	:= cCupomFisc
-	oTef:cData	:= cDataFisc
-	oTef:cHora	:= cHorario
-	
+
 	//Grava o log
 	If nConfirma == 1
 		cLog := "Transacao PBM Confirmada"
@@ -165,22 +149,32 @@ Method FimTrans(lConfirma, cCupomFisc, cDataFisc, cHorario) Class LJCSitefPBM
 		cLog := "Transacao PBM Desfeita"
 	EndIf
 	
-	::oGlobal:GravarArq():Log():Tef():_Gravar(cLog + " (" + cCupomFisc + " - " + cDataFisc + " - " + cHorario + ")")
+	If Self:oClisitef <> Nil
+	   	Self:oClisitef:FinTrans(nConfirma)
+	Else
+		//Guarda os valores que estao no objeto oTef
+		cCupomTef	:= oTef:cCupom
+		cDataTef	:= oTef:cData
+		cHoraTef	:= oTef:cHora
 		
-	//Confirma ou desfaz a transacao
-	oTef:FinalTrn(nConfirma)
-	
-	//Retorna os valores para o objeto oTef
-	oTef:cCupom := cCupomTef
-	oTef:cData	:= cDataTef
-	oTef:cHora	:= cHoraTef
+		//Atribui os dados para o objeto do tef
+		oTef:cCupom	:= cCupomFisc
+		oTef:cData	:= cDataFisc
+		oTef:cHora	:= cHorario
+
+		::oGlobal:GravarArq():Log():Tef():_Gravar(cLog + " (" + cCupomFisc + " - " + cDataFisc + " - " + cHorario + ")")
 		
+		//Confirma ou desfaz a transacao
+		oTef:FinalTrn(nConfirma)
+		
+		//Retorna os valores para o objeto oTef
+		oTef:cCupom := cCupomTef
+		oTef:cData	:= cDataTef
+		oTef:cHora	:= cHoraTef
+	EndIf		
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณLeCartDir บAutor  ณVendas Clientes     บ Data ณ  27/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em fazer a leitura direta do cartao.            บฑฑ
@@ -192,10 +186,7 @@ Return Nil
 ฑฑบ			 ณExpC3 (3 - cTrilha2)   - Trilha 2 do cartao. 				  บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณNumerico													  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefPBM
 	
 	Local nRetorno := 0					//Retorno do metodo
@@ -216,10 +207,7 @@ Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefPBM
 	
 Return nRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณTrataRet  บAutor  ณVendas Clientes     บ Data ณ  22/10/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel por tratar o retorno da autocom.                บฑฑ
@@ -228,10 +216,7 @@ Return nRetorno
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบParametrosณExpO1 (1 - oDadosTran ) - Objeto do tipo DadosSitefDireto   บฑฑ
 ฑฑบ			 ณcom os dados da transacao.								  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method TrataRet(oDadosTran)	Class LJCSitefPBM
 	
 	Local oDados 	:= {}						//Variavel de retorno do metodo

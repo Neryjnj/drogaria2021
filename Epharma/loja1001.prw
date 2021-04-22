@@ -544,7 +544,7 @@ If lRetorno
 		::oProdAutor:oProdutos := oXProdEph:BuscaProd()
 	Else
 		//ServicoX de produto nao retornado
-		MsgAlert(STR0008) //"Lista de produtos EPHARMA não retornada no servicoX"
+		MsgAlert(STR0008,"EPHARMA") //"Lista de produtos EPHARMA não retornada no servicoX"
 		lRetorno := .F.
 	EndIf
 Else

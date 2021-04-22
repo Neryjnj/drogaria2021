@@ -2798,10 +2798,7 @@ Method ApgArqCtrl() Class LJCComClisitef
 
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัอออออออออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*----------------------------------------------------------------------------------
 ฑฑบMetodo    ณFinTrans         บAutor  ณVendas Clientes     บ Data ณ  22/02/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConfimar ou desfaz uma transacao					 				 บฑฑ
@@ -2812,16 +2809,14 @@ Return Nil
 ฑฑบ			 ณ						  (1) ou desfeita(0)	     				 บฑฑ
 ฑฑฬออออออออออุอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณ																     บฑฑ
-ฑฑศออออออออออฯอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+----------------------------------------------------------------------------------*/
 Method FinTrans(nConfirma) Class LJCComClisitef
 	
 	Local cData			:= ""			//Data da transacao
 	Local cHora			:= "" 			//Hora da transacao
 	Local oParamsApi 	:= Nil			//Objeto do tipo LJCParamsAPI
-		
+	
+	//JULIOOOOOOO - continuar daqui pois precisa inserir o oTransacao com as infos
 	::FormatData(::oTransacao:dData, ::oTransacao:cHora, @cData, @cHora)
 					
 	//Prepara os parametros de envio
@@ -2898,7 +2893,6 @@ Method LeDadChq(cBufCMC7) Class LJCComClisitef
     Local aRet		:= {} //Array de Retorno dos Dados
     Local aDados	:= {} //Array dos Dados de Retorno
     Local lUsaCMC7	:= .T.   //Verifica se usa CMC7
-    Local nCount	:= 0     //Variavel contadora
     Local cCMC7		:= ""    //Valor do CMC7
 
 	//Limpa os dados do cheque

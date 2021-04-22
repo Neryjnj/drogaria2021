@@ -112,6 +112,7 @@ Local aTPLCODB3			:= {}
 Local lItemPbm			:= .F.
 Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
 Local lPrioPBM			:= SuperGetMV("MV_PRIOPBM" , .F., .T.) 	//Priorizacao da venda por PBM
+Local lSTBIsVnPBM		:= ExistFunc("STBIsVnPBM")
 			
 Default nItemLine 		:= 0				   										// Linha do Item na Venda
 Default cItemCode 		:= ""														// Codigo do Item
@@ -500,7 +501,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				EndIf
 			EndIf
 
-			If lRet .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+			If lRet .And. lSTBIsVnPBM .And. STBIsVnPBM()
 				If lPrioPBM .And. nDiscount > 0
 					LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
 					nDiscount := 0
@@ -827,7 +828,7 @@ EndIf
 
 If !lKitMaster
 	If lRet .And. lTPLDrogaria
-		If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+		If lSTBIsVnPBM .And. STBIsVnPBM()
 			If !STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)), STBGetQuant(), .T., lItemPbm, nItemLine)
 				lRet := .F.
 				LjGrvLog(cL1Num,"Item não confirmado na PBM, não será registrado",lRet)

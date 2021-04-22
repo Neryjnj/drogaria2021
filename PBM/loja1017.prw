@@ -32,7 +32,9 @@ Class LJCDadosSitefDireto
 	Data aVDLink							//outros dados PBM
 	Data cRestri							//Restrição para enviar conteudo na PBM
 	Data nValor								//Valor
-	Data nCupom								//Numero do Cupom 
+	Data nCupom								//Numero do Cupom
+	Data dData
+	Data cHora
 	
 	Method DadosSitef()						//Metodo construtor
 	Method IniDadoSitef(nRetorno, nRedeDest, nFuncSitef, nOffSetCar,;
@@ -74,6 +76,8 @@ Method DadosSitef() Class LJCDadosSitefDireto
 	::cRestri			:= ""
 	::nValor			:= 0
 	::nCupom			:= 0
+	::dData				:= CTOD("")
+	::cHora				:= ""
 
 Return Self
 
@@ -135,5 +139,13 @@ Default nCupom		:= 0
 ::aVDLink			:= aVDLink
 ::cRestri			:= cRestri
 ::nValor			:= nValor
-::nCupom			:= nCupom
+
+If ValType(nCupom) <> "N" .And. !Empty(AllTrim(cCupomFisc))
+	::nCupom := Val(cCupomFisc)
+Else
+	::nCupom := nCupom
+EndIf
+
+::dData	:= CTOD(AllTrim(cDataFisc))
+::cHora	:= AllTrim(StrTran(cHorario,":"))
 Return Self

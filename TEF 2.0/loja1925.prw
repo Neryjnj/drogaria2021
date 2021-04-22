@@ -63,14 +63,14 @@ Method New(oCliSitef, oPbms) Class LJCClisitefPbm
 
 Return Self      
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณIniciaVend   บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณVenda com cartใo de credito a vista.                        บฑฑ
 ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+---------------------------------------------------------------------------*/
 Method IniciaVend(oDadosTran) Class LJCClisitefPbm
 Local lRetorno := .F.						//Retorno do metodo
 
@@ -208,8 +208,7 @@ Method CancPbm(oDadosTran) Class LJCClisitefPbm
 	
 	If lRetorno
 		//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-		//os atributos dData,cHora e nCupom precisam ser alterados com os dados gerados pela PBM
-		
+		//os atributos dData,cHora e nCupom precisam ser alterados com os dados gerados pela PBM		
 		::oDadosTran := oDadosTran
 		::oDadosTran:dData 	:= CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
 		::oDadosTran:cHora 	:= Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)

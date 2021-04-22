@@ -862,7 +862,7 @@ Method BuscPreAut() Class LJCTrnCentre
 					If oServicoN != Nil
 						cNSU := oServicoN:cNSU
 					Else
-						MsgAlert(STR0011) //"NSU da consulta inicial não retornado no servicoN"
+						MsgAlert(STR0011,"TRNCentre") //"NSU da consulta inicial não retornado no servicoN"
 						lRetorno := .F.	
 						lBuscaPre := .F.
 					EndIf
@@ -874,7 +874,7 @@ Method BuscPreAut() Class LJCTrnCentre
 				EndIf 
 			Else
 				//ServicoX de produto nao retornado
-				MsgAlert(STR0010) //"Lista de produtos TRN-CENTRE não retornada no servicoX"			
+				MsgAlert(STR0010,"TRNCentre") //"Lista de produtos TRN-CENTRE não retornada no servicoX"			
 				lRetorno := .F.
 				lBuscaPre := .F.
 			EndIf

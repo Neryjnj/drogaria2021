@@ -142,7 +142,6 @@ If oTPLPBM <> Nil
 EndIf
 
 STBIsVnPBM(.F.,NIL)
-oTEF20 := NIL
 	
 Return Nil
 

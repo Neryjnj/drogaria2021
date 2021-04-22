@@ -95,6 +95,9 @@ Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 	::oDadosTran:cHorario		:= ::cHora
 	::oDadosTran:cOperador		:= AllTrim(Str(::nCodOper))
 	::oDadosTran:nTpTrans		:= 1
+	::oDadosTran:dData			:= STOD(AllTrim(::cData))
+	::oDadosTran:cHora			:= AllTrim(StrTran(::cHora,":"))
+	::oDadosTran:nCupom			:= Val(AllTrim(::cNumCupom))
 	
 	//Envia a transacao
 	::oSitefPbm:EnvTrans(@::oDadosTran)
@@ -111,10 +114,7 @@ Method EnvTrans(cDados, nTransacao, nOffSetCar) Class LJCSitefDireto
 				
 Return lRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณPcRetSitefบAutor  ณVendas Clientes     บ Data ณ  10/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณProcessa os dados de retorno do sitef.   		              บฑฑ
@@ -124,10 +124,7 @@ Return lRetorno
 ฑฑบParametrosณ															  บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico													  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method PcRetSitef() Class LJCSitefDireto
 	
 	Local lRetorno		:= .F.					//Variavel de retorno do metodo
