@@ -133,8 +133,9 @@ If oTPLPBM <> Nil
     If oTPLPBM:SelecPbm()
         STFMessage("STBCancPbm1", "STOP",  "Cancelamento de PBM") //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
-        //JULIOOOOOOOOOOO - Falar com o Alberto sobre a impressão do comprovante
-        If oTPLPBM:CancPbm() //.And. oTEF20:Cupom():Imprimir()
+        If oTPLPBM:CancPbm()
+            //JULIOOOOOOOOOOO - Falar com o Alberto sobre a impressão do comprovante
+            //oTEF20:Cupom():Imprimir()
             cMsg := "Venda PBM cancelada com sucesso" //"Cancela PBM"		    
         Else
             cMsg := "Venda PBM não cancelada"
@@ -219,6 +220,7 @@ Return lRet
 /*/
 Function STVndPrPbm( cCodBar, nQuant, nVlrUnit, lItemPbm,;
                      nVlrDescIT, lPrioPbm, nVlrPercIT )
+Local cMsg      := ""
 Local lRet 		:= .F.	// Retorno da funcao
 Local nPercDesc := 0	// Percentual de desconto
 Local nValorAux := 0	// Utilizado para calcular o valor do desconto
@@ -238,15 +240,24 @@ lRet := oTPLPBM:VendProd( 	cCodBar		, nQuant	, nVlrUnit	, @nPercDesc, ;
 
 If lItemPbm
     nVlrPercIT := nPercDesc
+    cMsg := "Registro de Item PBM"
 Else
     nValorLiq := NoRound(nVlrUnit - (nVlrUnit * (nPercDesc / 100)), 2)
     nPercDesc := NoRound(((nVlrUnit - nValorLiq) * 100) / nVlrUnit, 2)
     nVlrPercIT := nPercDesc
+    cMsg := "Registro de Item Comum"
 EndIf
 
 nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
 nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
 nVlrDescIT := IIf(nVlrDescIT < 0, (nVlrDescIT*-1), nVlrDescIT) //Se vier como negativo devo tratar para o TOTVSPDV considerar
+
+LjGrvLog(NIL,"Registro de Item " + IIF(lItemPbm,"PBM", "Comum") + " -> Produto Código de barras [" + cCodBar + "]" + Chr(10) + Chr(13) +;
+            " Valor de Desconto | Retorno ", {nVlrDescIT,lRet})
+
+STFMessage("ITPBM","STOP", cMsg)
+STFShowMessage("ITPBM")
+
 Return lRet
 
 /*/{Protheus.doc} STBFimVdPB

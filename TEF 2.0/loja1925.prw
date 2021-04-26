@@ -194,22 +194,12 @@ Return lRetorno
 ±±ºUso       ³ MP10                                                       º±±
 ---------------------------------------------------------------------------*/
 Method CancPbm(oDadosTran) Class LJCClisitefPbm 
+Local lRetorno := .F.						//Verifica se a transacao foi cancelada
+Local oDadosTran := Nil						//Retorno do metodo
 
-	Local lRetorno := .F.						//Verifica se a transacao foi cancelada
-	Local oDadosTran := Nil						//Retorno do metodo
-	
-	lRetorno := ::oPbm:CancPbm()
-	
-	If lRetorno
-		//Os dados da transacao tem que ser armazenado no atributo oDadosTrans da classe e
-		//os atributos dData,cHora e nCupom precisam ser alterados com os dados gerados pela PBM		
-		::oDadosTran := oDadosTran
-		::oDadosTran:dData 	:= CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
-		::oDadosTran:cHora 	:= Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
-		::oDadosTran:nCupom := Val(::oPbm:oPbm:cNumCupom)	
-	EndIf	
+lRetorno := ::oPbm:CancPbm()
 		
-Return oDadosTran
+Return lRetorno
 
 /*/{Protheus.doc} BuscaRel
 	Relatorio de impressão da PBM

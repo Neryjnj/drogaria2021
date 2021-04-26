@@ -106,7 +106,7 @@ Return lRet
 ---------------------------------------------------------------------------*/
 Method VendProd( cCodBarra, nQtde, nPrUnit, nPercDesc, ;
 				 lItemPbm, lPrioPbm ) Class LJCPBM
-Local lRet := .T.		// Retorno da funcao
+Local lRet := .T.
 lRet := ::oPbm:VendProd( cCodBarra, nQtde, nPrUnit, @nPercDesc, @lItemPbm, lPrioPbm )
 
 Return lRet
@@ -275,10 +275,7 @@ Method ExecutaPBM(cCupom, cOperador) Class LJCPBM
 
 Return lRet
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณCancPBM   บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณCancela a transacao da PBM.                                 บฑฑ
@@ -286,25 +283,18 @@ Return lRet
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico                                                      บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method CancPBM() Class LJCPBM
+Local lRetorno := .F.		//Variavel de retorno do metodo 	
 
-	Local lRetorno := .F.							//Variavel de retorno do metodo 	
-	
-	lRetorno := ::oPbm:CancPBM()
-	
-	//Seta o tipo de operacao como cancelamento
-    ::nTpOpera := CANCEL
+lRetorno := ::oPbm:CancPBM()
+
+//Seta o tipo de operacao como cancelamento
+::nTpOpera := CANCEL
 
 Return lRetorno
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณSelecPbm  บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณSeleciona a PBM.                                            บฑฑ
@@ -312,28 +302,24 @@ Return lRetorno
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico                                                      บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method SelecPbm(cNomePBM) Class LJCPBM
+Local lRet 		:= .F.		//Retorno do Metodo
+Local aComboPbm	:= {}		//Combo da PBM
 
-	Local lRet 		:= .F.		//Retorno do Metodo
-	Local aComboPbm	:= {}		//Combo da PBM
+aComboPbm := ::CarregaCBO()
+
+If Len( aComboPbm ) > 0
+
+	::oTelaPBM := LJCTelaSelecao():TelaSelec( aComboPbm, STR0003, STR0002  )
 	
-	aComboPbm := ::CarregaCBO()
+	lRet := ::ExecutaPBM()
 	
-	If Len( aComboPbm ) > 0
-	
-		::oTelaPBM := LJCTelaSelecao():TelaSelec( aComboPbm, STR0003, STR0002  )
-		
-		lRet := ::ExecutaPBM()
-		
-	EndIf
+EndIf
 
 Return lRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณGetTpOperaบAutor  ณVendas Clientes     บ Data ณ  26/11/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em retornar o tipo de operacao selecionado.     บฑฑ
@@ -341,7 +327,7 @@ Return lRet
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณNumerico                                                    บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+---------------------------------------------------------------------------*/
 Method GetTpOpera() Class LJCPBM
 Return ::nTpOpera
 
