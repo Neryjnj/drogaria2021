@@ -124,20 +124,24 @@ Return
     @return nenhum
 /*/
 Static Function STBCancPbm()
+Local cMsg  := ""
 Local oTEF20:= STBGetTEF()
 
 STBIsVnPBM(.T.,oTEF20:Pbm())
 
 If oTPLPBM <> Nil
     If oTPLPBM:SelecPbm()
-        STFMessage("STBCancPbm1", "STOP", "Cancela PBM" ) //"Cancela PBM"
+        STFMessage("STBCancPbm1", "STOP",  "Cancelamento de PBM") //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
-        
+        //JULIOOOOOOOOOOO - Falar com o Alberto sobre a impressão do comprovante
         If oTPLPBM:CancPbm() .And. oTEF20:Cupom():Imprimir()
-            Conout("Cancelamento de PBM efetuado com sucesso")
-            STFMessage("STBCancPbm2", "STOP", "Cancelamento de PBM efetuado com sucesso") //"Cancela PBM"
-		    STFShowMessage("STBCancPbm2")
+            cMsg := "Venda PBM cancelada com sucesso" //"Cancela PBM"		    
+        Else
+            cMsg := "Venda PBM não cancelada"
         EndIf
+
+        STFMessage("STBCancPbm2", "STOP", cMsg)
+		STFShowMessage("STBCancPbm2")
     EndIf
 EndIf
 
@@ -176,31 +180,27 @@ Return lRet
 /*/
 Function STCnfPrPBM( cCodBarra, nQtde, lOk, lItemPbm,;
                     nItemLine )
-Local cGetCanc  := ""
-Local cGetSerie := ""
-Local cSerConf  := ""
 Local lRet      := .F.
-Local lNFeActive:= .F.
 
 If lItemPbm
     lRet := oTPLPBM:ConfProd( cCodBarra, nQtde, lOk )
-    If lRet        
+    If lRet
        STDSPBasket("SL2","L2_ITPBM",lItemPbm,nItemLine) 
     Else
-        MsgAlert("Produto não confirmado na PBM. Cupom fiscal sera cancelado.")
+        MsgAlert("Produto não confirmado na PBM. Item será cancelado.")
+        LjGrvLog(NIL,"Produto [Código de Barras: " + cCodBarra + " ] não confirmado na PBM. Item " +;
+                             cValToChar(nItemLine) + " será cancelado.")
 
-        //Cancela o Cupom Fiscal e PBM
-        cSerConf := GetNewPar("MV_LOJANF","UNI")
-        lNFeActive := SuperGetMV("MV_FISNOTA", .F., .F.) .and. !Empty(cSerConf) .and. cSerConf <> "UNI
-        if lNFeActive
-            cGetCanc := STDLastSat("L1_DOC", @cGetSerie)
-        elseif STFGetCfg("lUseSAT",.F.)
-            cGetCanc := STDLastSat("L1_DOC")
-        else
-            cGetCanc := STDCSLastSale("L1_DOC")
-        EndIf
-
-        STBActionCancel(cGetCanc,cGetSerie)
+        //Cancela o Item Lançado e a PBM
+        lRet := STWCancelProcess( nItemLine )
+        LjGrvLog(NIL,"Produto [Código de Barras: " + cCodBarra + " ]  cancelado ?", lRet)
+        
+        STBIsVnPBM(.F.,NIL)
+        LjGrvLog(NIL,"Venda PBM Cancelada, caso queira lançar itens PBM, efetue a chamada no Menu PBM - Venda")
+        STFCleanInterfaceMessage()
+        STFMessage("VendaPBM","STOP", "Venda Comum") //"Venda Comum"
+        STFShowMessage("VendaPBM")
+        lRet := .F.
     EndIf
 Else
     lRet := .T.
@@ -573,7 +573,7 @@ If lContinua
             Next nI
         EndIf   	    
     Else
-        nVSubsidio	:= oTPLPBM:BuscaSubs() //JULIOOOOO - validar
+        nVSubsidio	:= oTPLPBM:BuscaSubs()
     EndIf   
 
     If nVSubsidio > 0
@@ -642,8 +642,8 @@ Return nFuncao
     @author Julio.Nery
     @since 16/04/2021
     @version 12
-    @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @param nenhum
+    @return nenhum
 /*/
 Function STPbmReini()
 Local aDadoVDLink := {}

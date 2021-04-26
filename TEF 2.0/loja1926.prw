@@ -2816,7 +2816,6 @@ Method FinTrans(nConfirma) Class LJCComClisitef
 	Local cHora			:= "" 			//Hora da transacao
 	Local oParamsApi 	:= Nil			//Objeto do tipo LJCParamsAPI
 	
-	//JULIOOOOOOO - continuar daqui pois precisa inserir o oTransacao com as infos
 	::FormatData(::oTransacao:dData, ::oTransacao:cHora, @cData, @cHora)
 					
 	//Prepara os parametros de envio

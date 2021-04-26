@@ -145,13 +145,13 @@ Method PcRetSitef() Class LJCSitefDireto
 			lRetorno := .T.		
 		Else
 			//Exibir mensagem do servico D
-			MsgAlert(::oMensagem:cMensagem)
+			MsgAlert(::oMensagem:cMensagem,"TEF")
 			lRetorno := .F.	
 		EndIf
 		//Homologacao
 		//MsgAlert(::oMensagem:cMensagem)
 	Else
-		MsgAlert(STR0002) //"Problema ao processar serviços"
+		MsgAlert(STR0002,"TEF") //"Problema ao processar serviços"
 		lRetorno := .F.
 	EndIf
 

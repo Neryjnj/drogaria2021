@@ -833,7 +833,7 @@ If !lKitMaster
 				lRet := .F.
 				LjGrvLog(cL1Num,"Item não confirmado na PBM, não será registrado",lRet)
 				STFMessage("ItemRegistered","STOP","PBM - Produto " + AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) +;
-													"Inválido - Não registrado" ) //"PBM - Produto " + + "Inválido - Não registrado"
+													" Inválido - Não registrado" ) //"PBM - Produto " + + "Inválido - Não registrado"
 			EndIf
 		EndIf
 	EndIf

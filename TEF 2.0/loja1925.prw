@@ -25,7 +25,7 @@ Class LJCClisitefPbm From LJAPbm
 	Method IniciaVend()
 	Method VendProd()
 	Method CancProd()
-	Method FinalVend()
+	Method FinalVend(cDoc, cSerie, cKeyDoc)
 	Method BuscaSubs()
 	Method ConfProd()
 	Method ConfVend()
@@ -130,18 +130,15 @@ Return lRetorno
 ฑฑบPrograma  |FinalVend    บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณFinaliza venda PBM				                          บฑฑ
-ฑฑบ          ณ                                                            บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
 ---------------------------------------------------------------------------*/
-Method FinalVend() Class LJCClisitefPbm  
-	
-	Local lRetorno := .F.						//Verifica se a transacao foi finalizada
-	Local oDadosTran := Nil						//Retorno do metodo
-	
-	lRetorno := ::oPbm:FinalVend()
+Method FinalVend(cDoc, cSerie, cKeyDoc) Class LJCClisitefPbm
+Local lRetorno := .F.		//Verifica se a transacao foi finalizada
 
-Return oDadosTran
+lRetorno := ::oPbm:FinalVend(cDoc, cSerie, cKeyDoc)
+
+Return lRetorno
 
 /*---------------------------------------------------------------------------
 ฑฑบPrograma  |BuscaSubs    บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ
@@ -152,12 +149,9 @@ Return oDadosTran
 ฑฑบUso       ณ MP10                                                       บฑฑ
 ---------------------------------------------------------------------------*/
 Method BuscaSubs() Class LJCClisitefPbm  
-
-	Local nRetorno := .F.						//Retorno do metodo
-		
-	nRetorno := ::oPbm:BuscaSubs()
-
-Return ::oPbm:BuscaSubs()
+Local nRetorno := 0						//Retorno do metodo
+nRetorno := ::oPbm:BuscaSubs()
+Return nRetorno
    
 /*---------------------------------------------------------------------------
 ฑฑบPrograma  |ConfProd     บAutor  ณVendas CRM       บ Data ณ  31/03/10   บฑฑ

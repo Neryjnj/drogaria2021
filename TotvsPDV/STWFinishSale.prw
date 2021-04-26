@@ -81,11 +81,6 @@ If nRet <> 0
 	lContinua := .F.
 EndIf
 
-//JULIOOOOO - Valida se é venda PBM e se confirma a finalização da venda
-If lContinua
-	lContinua := STFSCfmPBM()
-EndIf
-
 If lContinua
 
 	// TO DO: Chamar funcao de rateio de desconto e acrescimo e Arredondamento da impressora - Verificar com o Rondon.
@@ -234,6 +229,10 @@ If lContinua
 				STFCleanInterfaceMessage()
 			endif
 		endif
+		
+		If !STFSCfmPBM() //JULIOOOO - Validação TPL Drogaria
+			nRetNfce := -1
+		EndIf
 
 		If nRetNfce == 1 .AND. nArredondar > 0 .AND. ExistFunc("STBIANotFiscal") //Instituto Arredondar
 			cSerie		:= STDGPBasket("SL1","L1_SERIE")
@@ -312,19 +311,22 @@ If lContinua
         If Len(aRet) > 2 .And. Val(aRet[2]) == 6000 //retorno de sucesso
 			If ExistFunc("LJSATRetDoc")
 				aSATDoc := LJSATRetDoc(Decode64(aRet[5]),aRet)  //retorna o doc e serie gerado no SAT
-
 				cDoc := cDocSat	:= aSATDoc[1] 
-				cSerieSat			:= aSATDoc[2]
-
-				STDSPBasket( "SL1",  "L1_DOC"		, cDoc  )
-				STDSPBasket( "SL1",  "L1_ESPECIE"	, "SATCE"  )
-				STDSPBasket( "SL1",  "L1_SERSAT"	, cSerieSat  )
-				STDSPBasket( "SL1",  "L1_KEYNFCE"	, SubStr(aRet[7],4,Len(aRet[7])) )
-				STDSPBasket( "SL1",	"L1_HORA"   	, Left(Time(),TamSX3("L1_HORA")[1]) )
-
-				LjGrvLog( SL1->L1_NUM, "SAT - Numeração do Doc e Serie do SAT", aSATDoc )
-
+				cSerieSat		:= aSATDoc[2]
 			EndIf
+
+			lContinua := STFSCfmPBM(cDoc,,SubStr(aRet[7],4,Len(aRet[7]))) //JULIOOOOO - Validação TPL Drogaria
+		EndIf
+
+		If lContinua
+
+			STDSPBasket( "SL1",  "L1_DOC"		, cDoc  )
+			STDSPBasket( "SL1",  "L1_ESPECIE"	, "SATCE"  )
+			STDSPBasket( "SL1",  "L1_SERSAT"	, cSerieSat  )
+			STDSPBasket( "SL1",  "L1_KEYNFCE"	, SubStr(aRet[7],4,Len(aRet[7])) )
+			STDSPBasket( "SL1",	"L1_HORA"   	, Left(Time(),TamSX3("L1_HORA")[1]) )
+
+			LjGrvLog( SL1->L1_NUM, "SAT - Numeração do Doc e Serie do SAT", aSATDoc )
         
 			STFMessage("STIPayment","STOP", cSiglaSat + " - Transmitido com sucesso" ) //"SAT - Transmitido com sucesso"
     		STFShowMessage("STIPayment")
@@ -427,21 +429,27 @@ If lContinua
 
 		LjMsgRun( STR0002+ " " + SL1->L1_NUM + " " + STR0004 + " " + cDoc,,;
 				{|| nRetNfce := LjNFCeGera(SL1->L1_FILIAL,SL1->L1_NUM, @cKeyNfce,,lPrintNFCE, @cMsgErro)} )   //"Aguarde... Processando NFC-e Orcamento: "  " - Doc.: "
+		
+		If !STFSCfmPBM(,,cKeyNfce) //JULIOOOOO - Validação TPL Drogaria
+			lContinua := .F.
+			nRetNfce  := -1
+		Endif
 
-		If nRetNfce == 1 .AND. nArredondar > 0 .AND. ExistFunc("STBIANotFiscal")		//Instituto Arredondar 
-			cSerie		:= STDGPBasket("SL1","L1_SERIE")
-			cDoc		:= STDGPBasket("SL1","L1_DOC")
-			cACli 		:= STDGPBasket("SL1","L1_CLIENTE")
-			cALojaCli	:= STDGPBasket("SL1","L1_LOJA")
-			cACPFCli	:= STDGPBasket("SL1","L1_CGCCLI")
-			cAFormPg	:= STDGPBasket("SL1","L1_FORMPG")
-			
-			//Imprime cupom de doação ao Instituto Arredondar - NFC-e
-			STBIANotFiscal( nArredondar	, cSerie	, cDoc		,cACli,;
-							cALojaCli	, cACPFCli	, cAFormPg	)
-		EndIf
+		If nRetNfce == 1 
+			If nArredondar > 0 .AND. ExistFunc("STBIANotFiscal")		//Instituto Arredondar 
+				cSerie		:= STDGPBasket("SL1","L1_SERIE")
+				cDoc		:= STDGPBasket("SL1","L1_DOC")
+				cACli 		:= STDGPBasket("SL1","L1_CLIENTE")
+				cALojaCli	:= STDGPBasket("SL1","L1_LOJA")
+				cACPFCli	:= STDGPBasket("SL1","L1_CGCCLI")
+				cAFormPg	:= STDGPBasket("SL1","L1_FORMPG")
+				
+				//Imprime cupom de doação ao Instituto Arredondar - NFC-e
+				STBIANotFiscal( nArredondar	, cSerie	, cDoc		,cACli,;
+								cALojaCli	, cACPFCli	, cAFormPg	)
+			EndIf
 
-		If nRetNfce == 1 //Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
+			//Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
 			STBVTCupom(SL1->L1_DOC,.T.)
 		EndIf
 
@@ -509,8 +517,12 @@ If lContinua
 	
 	//Se nao for NF-e, NFC-e ou SAT
 	Else
-		STDFinishSale()
-		lRet := .T.
+		lContinua := STFSCfmPBM() //JULIOOOOO - Validação TPL Drogaria
+
+		If lContinua
+			STDFinishSale()
+			lRet := .T.
+		EndIf
 	EndIf
 	
 	If !lPendSale .AND. nTotalNCCs > 0 
@@ -617,7 +629,7 @@ Function STWGetDocSerie()
 Return( {cStDoc,cStSerie} )
 
 /*/{Protheus.doc} STFSCfmPBM
-	Efetua a validação para confirmar a venda PBM
+	Efetua a validação para confirmar a venda PBM - TPL Drogaria
 	@type  Function
 	@author Julio.Nery
 	@since 04/03/2021
@@ -625,7 +637,7 @@ Return( {cStDoc,cStSerie} )
 	@param nenhum
 	@return lContinua, lógico, Continua com a venda ?
 /*/
-Static Function STFSCfmPBM()
+Static Function STFSCfmPBM(cDoc,cSerie,cKeyDoc)
 Local aRelPbm  := {}
 Local cTickForm:= ""
 Local lContinua:= .T.
@@ -634,12 +646,17 @@ Local nX	   := 0
 Local nY	   := 0
 Local oPBM 	   := NIL
 
+Default cDoc   := STDGPBasket("SL1","L1_DOC")
+Default cSerie := STDGPBasket("SL1","L1_SERIE")
+Default cKeyDoc:= STDGPBasket("SL1","L1_KEYNFCE")
+
 //Se efetou a finalização do documento corretamente e tem PBM, finalizo a venda PBM
-If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
-	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm ",;
-				STDGPBasket("SL1","L1_DOC") + STDGPBasket("SL1","L1_SERIE") + STDGPBasket("SL1","L1_KEYNFCE") )
+If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
+
+	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm [DOC | SERIE | ChaveNota]",;
+				cDoc + cSerie + cKeyDoc )
 				
-	lRetPbm := STBFimVdPB(STDGPBasket("SL1","L1_DOC"), STDGPBasket("SL1","L1_SERIE") , STDGPBasket("SL1","L1_KEYNFCE"))
+	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
 	oPBM := STBGetVPBM()
 
 	If lRetPbm
@@ -655,10 +672,13 @@ If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 
 		//JULIOOOOOO - fase da impressão - verificar com o Alberto
 		//If oPBM:ImpCupTef(cTickForm)
+
 		oPBM:ConfVend( .T. )
 		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM confirmada - Venda confirmada")
 		STFMessage("STFSCfmPBM", "ALERT", "PBM confirmada - Venda confirmada") //#"PBM confirmada - Venda confirmada"
 		STFShowMessage("STFSCfmPBM")
+		STBIsVnPBM(.F.,NIL) //Limpa o objeto de venda PBM
+
 		//JULIOOOOO - Remover do comentario e tratar caso não tenha impresso
 		// Else
 		// 	oPBM:ConfVend( .F. )
@@ -666,11 +686,11 @@ If ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 		// EndIf
 	Else
 		lContinua := .F.
-		oPBM:ConfVend( .F. )
-		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM não confirmada - Venda será cancelada")
-		STFMessage("STFSCfmPBM", "ALERT", "PBM não confirmada portanto a venda será cancelada") //#"PBM não confirmada portanto a venda será cancelada"
+		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM não confirmada devido a erro no processo do TEF portanto" +;
+												" essa venda não será finalizada")
+		STFMessage("STFSCfmPBM", "ALERT", "PBM não confirmada, venda não será finalizada") //#"PBM não confirmada, venda não será finalizada"
 		STFShowMessage("STFSCfmPBM")
-	EndIf
+	EndIf	
 EndIf
 
 Return lContinua

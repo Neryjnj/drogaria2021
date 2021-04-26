@@ -1050,10 +1050,9 @@ Return .T.
 Template Function DROVLImp()
 Local _nVidaLink:= ParamIxb[1]  //nVidalink
 Local aRet 		:= {}			//Retorno da Funcao
-Local lTotvsPDV := STFIsPOS()
 
 If _nVidaLink = 2  				// Gravou VidaLink, por isto imprimo cupom vidalink
-	If lTotvsPDV
+	If STFIsPOS()
 		//JULIOOOOOOO - inserir a chamada para o TotvsPDV
 	Else
 		oTEF:ImpCupTef()

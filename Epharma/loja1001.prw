@@ -209,7 +209,7 @@ oProdAut := ::oProdAutor:oProdutos:ElementKey(cCodBarra)
 LjGrvLog( Nil, " Fim da fun็ใo ", lRet)
 Return lRet
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*---------------------------------------------------------------------------
 ฑฑบPrograma  ณFinalVend บAutor  ณVendas Clientes     บ Data ณ  06/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณFinaliza a venda no PBM.                                    บฑฑ
@@ -219,7 +219,7 @@ Return lRet
 ฑฑบParametrosณ													          บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico                                                      บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+---------------------------------------------------------------------------*/
 Method FinalVend(cDoc, cSerie, cKeyDoc) Class LJCEPharma
 Local lRetorno := .T.		//Retorno da funcao
 Local cDadosAdm	:= ""
@@ -360,7 +360,7 @@ LjGrvLog( Nil, " Confirma ou Desfaz a Venda?",lConfirma)
 LjGrvLog( Nil, " Fim da Fun็ใo")
 Return Nil
 
-/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณCancPBM   บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณCancela a transacao da PBM.                                 บฑฑ
@@ -368,7 +368,7 @@ Return Nil
 ฑฑบUso       ณSigaLoja / FrontLoja                                        บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณLogico                                                      บฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿*/
+---------------------------------------------------------------------------*/
 Method CancPBM() Class LJCEPharma
 Local lRetorno := .F.							//Variavel de retorno do metodo
 
