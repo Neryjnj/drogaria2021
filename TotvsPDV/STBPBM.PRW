@@ -134,7 +134,7 @@ If oTPLPBM <> Nil
         STFMessage("STBCancPbm1", "STOP",  "Cancelamento de PBM") //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
         //JULIOOOOOOOOOOO - Falar com o Alberto sobre a impressão do comprovante
-        If oTPLPBM:CancPbm() .And. oTEF20:Cupom():Imprimir()
+        If oTPLPBM:CancPbm() //.And. oTEF20:Cupom():Imprimir()
             cMsg := "Venda PBM cancelada com sucesso" //"Cancela PBM"		    
         Else
             cMsg := "Venda PBM não cancelada"
