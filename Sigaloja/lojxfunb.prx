@@ -3935,6 +3935,7 @@ Return NIL
 ±±³Descricao  ³ Cria alguns registros padrao                               ³±±
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±*/
 Function CriaPadrao()
+
 Local cNattef	:= ""                 // Variavel criada para auxiliar na verificacao do conteudo do parametro MV_NATTEF
 Local cNatAux	:= ""
 Local aAreaSLG	:= SLG->(GetArea())
@@ -4327,6 +4328,7 @@ Local lIsMDI 		:= Iif(ExistFunc("LjIsMDI"),LjIsMDI(),SetMDIChild(0)) //Verifica 
 Local lMvFisNota	:= SuperGetMv("MV_FISNOTA",, .F.)						//Imprime Nota Fiscal		
 Local lMvLjLbNt		:= SuperGetMv("MV_LJLBNT",,0) > 0						//Liberação de Geração de Nota.(0- Verificação Padrão, 1- Emissão de Nota para Pessoa Jurídica, 2 - Emissão de Nota para Pessoa Física e Jurídica) .	
 Local lAdmin		:= (__cUserID == "000000")								//User Admin
+Local aCodRet		:= {}
 
 Default lAuto 		:= .F.
 
@@ -4562,6 +4564,17 @@ If nModulo <> 23 .AND. !lAutoExec
 		EndIf
 	EndIf
 
+EndIf
+
+// Tratamento para popular a nova tabela MHW / Retaguarda e PDV
+If AliasInDic("MHW")
+	DbSelectArea("MHW")
+	MHW->(DbGoTop())
+
+	If MHW->(EoF())
+		aCodRet := CriaPgSEFAZ()
+		LJIncMHW(aCodRet)
+	EndIf
 EndIf
 
 If !lFtvdVer12
@@ -5273,11 +5286,15 @@ If Type("aPISCofCSL") == "A"
 
 		If dDataBase >= dDtLeiPCC
 			//Verifica se a soma dos impostos (Pis/Cofins/CSLL) ultrapassa o minimo configurado no parametro MV_VL13137
-			If aPISCofCSL[04,01] > SuperGetMv("MV_VL13137", .T., 10)
+			/* Lj7RetPCC() 
+				Verifica se Cliente NÃO está configurado como "P-EMPRESA PÚBLICA";
+			 	Verifica se Natureza não está configurada para retenção PCC(PIS/COFINS/CSLL);
+			*/	 
+			If (aPISCofCSL[04,01] > SuperGetMv("MV_VL13137", .T., 10) .AND. If(nRet == 0, Lj7RetPCC(), .T.) )
 				lRetemPCC := .T.
 			EndIf
 		Else
-			If ( aPISCofCSL[02,01] + aPISCofCSL[03,01] ) > GetNewPar("MV_VL10925", 5000)
+			If ( aPISCofCSL[02,01] + aPISCofCSL[03,01] ) > GetNewPar("MV_VL10925", 5000) .AND. If(nRet == 0, Lj7RetPCC(), .T.)
 				lRetemPCC := .T.
 			EndIf
 		EndIf
@@ -6876,8 +6893,9 @@ EndIf
 If Len(aIdSup) > 0
 	For nI := 1 to Len(aIdSup)
 		PswOrder(1)
-		PswSeek(aIdSup[nI])
-		AADD(aUsers,PswRet(1))
+		If PswSeek(aIdSup[nI])
+			AADD(aUsers,PswRet(1))
+		Endif
 	Next nI
 EndIf
 
@@ -7236,7 +7254,7 @@ EndIf
 
 If lConsulta
 	lRet := (SBI->(FieldPos("BI_PRVINFO")) > 0 .AND. LjGetStation("TIPTEF") == TEF_CLISITEF .AND. cRedes == "1" .AND. ;
-				LjGetCon() .AND. SBI->(FieldPos("BI_DTINFO")) > 0 .AND. lMVLjInfo )
+				SBI->(FieldPos("BI_DTINFO")) > 0 .AND. lMVLjInfo )
 Else
 	lRet := (SBI->(FieldPos("BI_PRVINFO")) > 0 .AND. LjGetStation("TIPTEF") == TEF_CLISITEF .AND. cRedes == "1" .AND. ;
 				SBI->(FieldPos("BI_DTINFO")) > 0 .AND. lMVLjInfo )
@@ -7509,7 +7527,7 @@ If cValid == "20130809CENTRALPDV" // CENTRAL DE PDV
 	Else
 		lRet := .T.
 		//Seta variavel estatica informando que eh central de PDV
-		LjSetCPDV()
+		//Retirada da função LjSetCPDV() que não existe mais 
 	EndIf
 
 ElseIf (cValid == '20170717REMOTEPAF') .Or. (cValid == '20190624REMOTEPAF')//Mesmo Laudo para todos os modulos
@@ -8207,3 +8225,123 @@ EndCase
 
 SC1->(RestArea(aAreaSC1))
 Return(lRet)
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} CriaPgSEFAZ
+Cria o array com as formas de pagamento para preencher a tabela MHW
+
+@author  eduardo.sales
+@since   11/03/2021
+@version P12
+@return	 Array, Array com a lista de Códigos de Meios de pagamento do Sefaz.
+/*/
+//-------------------------------------------------------------------
+Static Function CriaPgSEFAZ()
+
+Local aCodRet := {}
+
+//--------------------------------------------
+//	Meios de Pagametos SEFAZ - Tag <tPag>
+//--------------------------------------------
+aAdd( aCodRet, { "R$"	, "01" } )	// 01=Dinheiro
+aAdd( aCodRet, { "CH"	, "02" } )	// 02=Cheque
+aAdd( aCodRet, { "CC"	, "03" } )	// 03=Cartão de Crédito
+aAdd( aCodRet, { "CD"	, "04" } )	// 04=Cartão de Débito
+aAdd( aCodRet, { "CR"	, "05" } )	// 05=Crédito Loja
+aAdd( aCodRet, { "VA"	, "10" } )	// 10=Vale Alimentação
+aAdd( aCodRet, { "VR"	, "11" } )	// 11=Vale Refeição
+aAdd( aCodRet, { "VP"	, "12" } )	// 12=Vale Presente
+aAdd( aCodRet, { "VC"	, "13" } )	// 13=Vale Combustível
+aAdd( aCodRet, { "BOL"	, "15" } )	// 15=Boleto Bancário
+aAdd( aCodRet, { "DC"	, "16" } )	// 16=Depósito Bancário
+aAdd( aCodRet, { "PX"	, "17" } )	// 17=Pagamento Instantâneo (PIX)
+aAdd( aCodRet, { "PD"	, "18" } )	// 18=Transferência bancária, Carteira Digital
+aAdd( aCodRet, { "FID"	, "19" } )	// 19=Programa fidelidade, Cashback, Credito Virtual
+aAdd( aCodRet, { "SPG"	, "90" } )	// 90=Sem Pagamentos
+aAdd( aCodRet, { "OTS"	, "99" } )	// 99=Outros
+
+Return aCodRet
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} LJIncMHW
+Popula tabela MHW.
+
+@type       Function
+@author     eduardo.sales
+@since      11/03/2021
+@version    P12
+@param 		aCodRet, Array, Array com a lista de Códigos de Meios de pagamento do Sefaz.
+@return 	Nil, Nulo
+/*/
+//-------------------------------------------------------------------------------------
+Static Function LJIncMHW(aCodRet)
+
+Local nCont		:= 0  
+Local nSaveSx8 	:= GetSx8Len()
+
+INCLUI := .T.
+
+//Carga inicial na tabela MHW
+DbSelectArea("MHW")
+For nCont := 1 To Len(aCodRet)
+	MHW->(RecLock("MHW",.T.))
+	MHW->MHW_FILIAL	:= xFilial("MHW")
+	MHW->MHW_CODIGO	:= CriaVar("MHW_CODIGO")
+	MHW->MHW_FORMPG	:= aCodRet[nCont,1]
+	MHW->MHW_CDNFCE := aCodRet[nCont,2]
+	MHW->(MsUnlock())
+Next nCont
+
+While (GetSX8Len() > nSaveSx8)
+	ConfirmSx8()
+End
+                
+Return Nil
+
+//--------------------------------------------------------
+/*/{Protheus.doc} Lj7RetPCC
+	(Verifica se o se retem PCC de acordo com o cliente )
+	@type  		Function
+	@author 	Gilmar Costa
+	@since 		07/04/2021
+	@version 	P12
+	@return 	Lógico
+	/*/
+//--------------------------------------------------------
+Function Lj7RetPCC()
+Local lRet 			:= .T. 						// Retorna se Cliente diferente "P-Empresa Pública" com Naturaza configurada para calcular PCC
+Local aAreaSED		:= SED->(GetArea())			// Salva àrea SED
+Local nTamSEDCod 	:= TamSx3("ED_CODIGO")[1]	// Tamanho código Natureza
+
+/* 
+Validações do Cliente
+	Rec. PIS (A1_RECPIS) 		= "P" - Empresa Pública
+	Rec. COFINS (A1_RECCOFI) 	= "P" - Empresa Pública
+	Rec. CSLL (A1_RECCSLL) 		= "P" - Empresa Pública
+	Modo de abatimento do imposto (A1_ABATIMP) = Cálculo do sistema
+*/
+/*
+ Validações da Natureza
+	Calcula PIS (ED_CALCPIS) 			= Sim
+	Percentual de PIS (ED_PERCPIS) 		= Informe a alíquota
+	Calcula COFINS (ED_CALCCOF) 		= Sim
+	Percentual de COFINS (ED_PERCCOF) 	= Informe a alíquota
+	Calcula CSLL (ED_CALCCSL) 			= Sim
+	Percentual de CSLL (ED_PERCCSL) 	= Informe a alíquota
+*/
+
+// Validação dos dados do CLIENTE, conforme Documentação (SA1)
+If SA1->A1_ABATIMP == "1" .AND. (SA1->A1_RECCOFI == "P" .AND. SA1->A1_RECPIS == "P" .AND. SA1->A1_RECCSLL == "P")
+
+	// Validação dos dados da NATUREZA, conforme Documentação (SED)
+	If SED->( DbSeek(xFilial("SED")+ PadR(SA1->A1_NATUREZ ,nTamSEDCod) ) )
+		If (SED->ED_CALCPIS == "S" .AND. SED->ED_PERCPIS > 0) .AND. (SED->ED_CALCCOF == "S" .AND. SED->ED_PERCCOF > 0) .AND.;
+		   (SED->ED_CALCCSL == "S" .AND. SED->ED_PERCCSL > 0)
+			lRet := .F.   // Atendendo as condições, o retorno será Falso, para não subtrair valor dos impostos no Total da Venda
+		Endif
+	EndIf
+
+EndIf
+RestArea( aAreaSED )
+
+Return lRet
