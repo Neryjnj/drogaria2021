@@ -31,7 +31,7 @@ Class LJCClisitefPbm From LJAPbm
 	Method ConfVend()
 	Method CancPbm()
 	Method BuscaRel()
-	Method SelecPbm(cNomePBM)
+	Method SelecPbm(cNomePBM,lCancela)
 	Method Confirmar()
 	Method Desfazer()
  	Method IniciouVen()
@@ -195,7 +195,6 @@ Return lRetorno
 ---------------------------------------------------------------------------*/
 Method CancPbm(oDadosTran) Class LJCClisitefPbm 
 Local lRetorno := .F.						//Verifica se a transacao foi cancelada
-Local oDadosTran := Nil						//Retorno do metodo
 
 lRetorno := ::oPbm:CancPbm()
 		
@@ -223,16 +222,41 @@ Return lRetorno
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
 ---------------------------------------------------------------------------*/
-Method SelecPbm(cNomePBM) Class LJCClisitefPbm 
+Method SelecPbm(cNomePBM,lCancela) Class LJCClisitefPbm 
 	
 	Local lRetorno 	:= .F.			//Retorno do metodo
 	Local oTelaPBM	:= Nil			//Tela da PBM
+	Local aComboPbm	:= {}
+	Local aAux		:= {}
+	Local nX		:= 0
 
 	Default cNomePBM:= ""
-	
-	If ::oConfPbms:Count() > 0 
+	Default lCancela:= NIL
 
-		oTelaPBM := LJCTelaSelecao():TelaSelec(::oConfPbms:ToArray(), STR0001, STR0002)//"PBM";"Selecione a PBM"
+	If ::oConfPbms:Count() > 0
+		aComboPbm := ::oConfPbms:ToArray()
+		//Para o Cancelamento somente Epharma e TRNCentre, devido a arquitetura das PBM's (legado)
+		If ValType(lCancela) == "L" .And. lCancela
+			For nX := 1 to Len(aComboPbm)
+				If aComboPbm[nX] $ (_EPHARMA + "|" + _TRNCENTRE)
+					Aadd(aAux,aComboPbm[nX])
+				EndIf
+			Next nX
+			aComboPbm := IIf(Len(aAux)>0, aAux, ::oConfPbms:ToArray())
+		Else
+			//Conforme pr้-requisito de desenvolvimento: Nessa etapa do 
+			//Projeto para o TotvsPDV nใo serแ utilizado o PharmaSystem
+			//pois o cliente nใo utiliza. Para funcionamento remover e verificar outros 
+			//pontos que possivelmente nใo foram desenvolvidas para essa PBM
+			For nX := 1 to Len(aComboPbm)
+				If !(aComboPbm[nX] == _PHARMASYS)
+					Aadd(aAux,aComboPbm[nX])
+				EndIf
+			Next nX
+			aComboPbm := aAux
+		EndIf
+		
+		oTelaPBM := LJCTelaSelecao():TelaSelec(aComboPbm, STR0001, STR0002)//"PBM";"Selecione a PBM"
 		
 		oTelaPBM:Show()
 	
