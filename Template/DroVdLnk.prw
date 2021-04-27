@@ -980,7 +980,7 @@ If _nVidaLink == 2  // Gravou VidaLink
 		Else
 			oTEF:Operacoes("VIDALINK_VENDA", _aVidaLinkD, , , _cDoc)			//VidaLink
 		EndIf
-	ElseIf nNumPbm = 541
+	ElseIf nNumPbm == 541
 		If Len(_aVidaLinkD) > 0
 			If lTotvsPDV
 				oDados := T_DroRtOtran("PHARMASYSTEM_VENDA",_aVidaLinkD,aInfo,,oTEF20)
@@ -1028,7 +1028,9 @@ aAdd(aVidaLinkD, 0  )
 aAdd(aVidaLinkD, 0  )
 
 If lTotvsPDV
-	//JULIOOOOOOOO - inserir tratamento aqui
+	//Não será desenvolvido nessa etapa do projeto pois o cliente 
+	//não usa esse PBM, posteriormente deverá, se necessário, ser desenvolvido 
+	LjGrvLog(NIL,"Operação PHARMASYSTEM_CANCELAMENTO não integrada para TOTVSPDV")
 Else
 	oTEF:Operacoes("PHARMASYSTEM_CANCELAMENTO", aVidaLinkD, , ,"")	//PharmaSystem
 EndIf
@@ -1050,10 +1052,19 @@ Return .T.
 Template Function DROVLImp()
 Local _nVidaLink:= ParamIxb[1]  //nVidalink
 Local aRet 		:= {}			//Retorno da Funcao
+Local oTEF20	:= NIL
 
-If _nVidaLink = 2  				// Gravou VidaLink, por isto imprimo cupom vidalink
+If _nVidaLink = 2  	// Gravou VidaLink, por isto imprimo cupom vidalink
 	If STFIsPOS()
-		//JULIOOOOOOO - inserir a chamada para o TotvsPDV
+		//JULIOOOOOOO - falta inserir a função de impressão - ver com o Alberto
+		//If oTEF20:Impressao 
+
+		//JULIOOOOOOOOOOOOO - continudar daqui 27/04 verificar como chamar o metodo de confirmação
+		// oTEF20:Pbm():ConfVend(.T.) - comentado para não dar erro
+		oTEF20:oPBM():oPBM:oPBM:oSitefPBM:oClisitef:ConfVend(.T.)//testar
+		//Else
+		//oTEF20:Pbm():ConfVend(.F.)
+		//EndIf
 	Else
 		oTEF:ImpCupTef()
 	EndIf

@@ -178,7 +178,7 @@ Return lRetorno
 	@since 16/04/2021
 	@version 12
 	@param lConfirma, lógico, confirma a venda PBM ?
-	@return return, return_type, return_description
+	@return lRetorno, lógico, retorno 
 /*/
 Method ConfVend(lConfirma) Class LJCClisitefPbm
 Local lRetorno := .F.

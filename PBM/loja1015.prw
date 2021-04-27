@@ -233,10 +233,7 @@ Method RetServico(cTpServico) Class LJCSitefDireto
     
 Return oServico
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณFimTrans  บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em confirmar ou desfazer a transacao.           บฑฑ
@@ -245,21 +242,15 @@ Return oServico
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบParametrosณExpL1 (1 - lConfirma)  - Se a transacao sera confirmada ou  บฑฑ
 ฑฑบ			 ณ						   desfeita.						  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method FimTrans(lConfirma) Class LJCSitefDireto
 	
-	//Confirma ou desfaz a transacao
-	::oSitefPbm:FimTrans(lConfirma, ::cNumCupom, ::cData, ::cHora)
+//Confirma ou desfaz a transacao
+::oSitefPbm:FimTrans(lConfirma, ::cNumCupom, ::cData, ::cHora)
 	
 Return Nil
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณLeCartDir บAutor  ณVendas Clientes     บ Data ณ  21/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel em fazer a leitura direta do cartao.            บฑฑ
@@ -271,16 +262,12 @@ Return Nil
 ฑฑบ			 ณExpC3 (3 - cTrilha2)   - Trilha 2 do cartao. 				  บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบRetorno   ณNumerico													  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
-Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefDireto 
-	
-	Local nRetorno := 0					//Retorno do metodo
-	
-	//Faz a leitura direta do cartao
-	nRetorno := ::oSitefPbm:LeCartDir(cMensagem, @cTrilha1, @cTrilha2)
+---------------------------------------------------------------------------*/
+Method LeCartDir(cMensagem, cTrilha1, cTrilha2) Class LJCSitefDireto
+Local nRetorno := 0					//Retorno do metodo
+
+//Faz a leitura direta do cartao
+nRetorno := ::oSitefPbm:LeCartDir(cMensagem, @cTrilha1, @cTrilha2)
 	
 Return nRetorno
 
