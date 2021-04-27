@@ -48,6 +48,7 @@
 #DEFINE TAMANVISA  	   			32
 #DEFINE TAMAUXANVISA   			32
 
+Static aCNPJsDro		:= Nil 								//Array com os CNPJs Permitidos de usar o Template de Drogaria
 Static aANVISA 			:= {}								//Array que armazena os Logs da ANVISA
 Static aAuxANVISA		:= {}								//Array Auxiliar que armazena os Logs da ANVISA
 Static lInformouLote	:= .F.								//Verifica se deve ou nao informar a tela de lote.
@@ -5595,25 +5596,50 @@ EndIf
 
 Return .T.
 
+//------------------------------------------------------------------------------
 /*/{Protheus.doc} LjIsDro
-	Valida o template de Drogaria conforme o CNPJ
+	Valida o uso do template de Drogaria conforme o CNPJ.
 	@type  Function
 	@author Julio.Nery
 	@since 29/01/2021
 	@version 12
-	@param nenhum
-	@return lRet, logico, confirma uso de TPL Dro?
+	@param cCNPJ, Caracter, Número do CNPJ
+	@return lRet, logico, permite o uso do template de Drogaria?
 /*/
-Function LjIsDro()
-Local aSM0 := FWLoadSM0()
-Local lRet := .F.
-Local nX   := 0	
+//------------------------------------------------------------------------------
+Function LjIsDro(cCNPJ)
+Local lRet 		:= .F.
+Local nPos		:= 0
 
-For nX := 1 to Len(aSM0)
-	If AllTrim(aSM0[nX][18]) == "53113791000122"
-		lRet := .T.
-		Exit
-	EndIf
-Next nX
+Default cCNPJ := SM0->M0_CGC
+
+If aCNPJsDro == Nil
+	aCNPJsDro := {}
+	
+	AAdd( aCNPJsDro, { "53.113.791/0001-22" } ) // Totvs S.A
+	AAdd( aCNPJsDro, { "12.345.678/9012-34" } ) // Emulador EPSON TM-T81 FBII
+	AAdd( aCNPJsDro, { "82.373.077/0001-71" } ) // Emulador BEMATECH MP-2100 TH FI
+
+	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "03.767.556/0001-04" } )	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "06.142.774/0001-33" } )	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "07.380.268/0001-45" } )	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "21.734.974/0001-79" } )	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "68.712.975/0001-86" } )	// Drogaria Moderna
+	AAdd( aCNPJsDro, { "04779685" 			} )	// CNPJ raiz (Drogaria Moderna)
+	AAdd( aCNPJsDro, { "07888983" 			} )	// CNPJ raiz (Drogaria Moderna)
+EndIf
+
+//Verifica no array de CNPJs se o CNPJ esta liberado para uso do Template de Drogaria
+nPos := Ascan( aCNPJsDro, { |x| x[1] == Transform( cCNPJ, "@R 99.999.999/9999-99" ) } )
+
+//Se nao encontrar considerando o CNPJ completo, tenta buscar pelo CNPJ Raiz
+If nPos == 0
+	nPos := Ascan( aCNPJsDro, { |x| x[1] == SubStr(cCNPJ,1,8) } )
+EndIf
+
+If nPos > 0
+	lRet := .T.
+Endif
 
 Return lRet
