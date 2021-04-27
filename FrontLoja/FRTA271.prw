@@ -3087,8 +3087,7 @@ Function LjFinVend(cDoc, cSerie, cKeyDoc)
 	
 	LjMsgRodaP (bkp_oDlgFrt, bkp_oFntGet, STR0001) //"   Protheus Front Loja"
 
-	lRet := .F. //JULIOOOOOOO - REMOVER somente para Teste
-Return( lRet )    
+Return lRet
 
 /*
 ‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹

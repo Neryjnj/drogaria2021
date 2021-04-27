@@ -1,5 +1,6 @@
 #INCLUDE "MSOBJECT.CH"
 #INCLUDE "LOJA1007.CH"
+#INCLUDE "DEFTEF.CH"
   
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Tipo de operacao³
@@ -35,7 +36,7 @@ Class LJCPBM
 	Method ConfProd( cCodBarra, nQtde, lOk)			// Confirma os produtos vendidos
 	Method ConfVend(lConfirma)										// Confirma a venda na PBM
 	Method CancPBM()												//Cancela a transacao total da PBM		
-	Method SelecPbm(cNomePBM)												//Metodo que ira selecionar a PBM
+	Method SelecPbm(cNomePBM,lCancela)												//Metodo que ira selecionar a PBM
 	Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	Method VDLinkProd(aVDLink)
 	Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
@@ -240,20 +241,14 @@ Method CarregaCBO() Class LJCPBM
 
 Return aComboPbm
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*---------------------------------------------------------------------------
 ±±ºPrograma  ³ExecutaPBMºAutor  ³Microsiga           º Data ³  09/17/07   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³ Retorna a PBM selecionada na tela.                         º±±
 ±±º          ³                                                            º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³ AP                                                         º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+---------------------------------------------------------------------------*/
 Method ExecutaPBM(cCupom, cOperador) Class LJCPBM
 	
 	Local cSelec	:= ""		// PBM Selecionada
@@ -303,18 +298,28 @@ Return lRetorno
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³Logico                                                      º±±
 ---------------------------------------------------------------------------*/
-Method SelecPbm(cNomePBM) Class LJCPBM
+Method SelecPbm(cNomePBM,lCancela) Class LJCPBM
 Local lRet 		:= .F.		//Retorno do Metodo
 Local aComboPbm	:= {}		//Combo da PBM
+Local aAux		:= {}
+Local nX		:= 0
+
+Default lCancela := NIL
 
 aComboPbm := ::CarregaCBO()
 
-If Len( aComboPbm ) > 0
+If ValType(lCancela) == "L" .And. lCancela
+	For nX := 1 to Len(aComboPbm)
+		If aComboPbm[nX] $ (_EPHARMA + "|" + _TRNCENTRE)
+			Aadd(aAux,aComboPbm[nX])
+		EndIf
+	Next nX
+	aComboPbm := IIF(Len(aAux) > 0, aAux,aComboPbm)
+EndIf
 
+If Len( aComboPbm ) > 0
 	::oTelaPBM := LJCTelaSelecao():TelaSelec( aComboPbm, STR0003, STR0002  )
-	
 	lRet := ::ExecutaPBM()
-	
 EndIf
 
 Return lRet

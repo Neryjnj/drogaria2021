@@ -2,7 +2,6 @@
 #INCLUDE "DEFTEF.CH"
 #INCLUDE "FRTDEF.CH"
 #include "STBDEFPBM.CH"
-#INCLUDE "DEFTEF.CH"
 
 Static aVidaLinkD	:= {}	// array de detalhe (produto,qtde,preco) com o orcamento gerado no PBM VidaLink
 Static aVidaLinkc	:= {}	// array cabecalho (Cliente,loja,etc) do orcamento gerado no PBM VidaLink
@@ -24,95 +23,79 @@ Static lIsVndPBM    := .F.
 Function STBPbmMenu()
 Local oDlg := NIL
 
-DEFINE MSDIALOG oDlg TITLE "Rotinas PBM" FROM 00,00 TO 240,200 OF GetWndDefault() PIXEL	//"Rotinas PBM"
+DEFINE MSDIALOG oDlg TITLE "Rotinas PBM" FROM 00,00 TO 200,200 OF GetWndDefault() PIXEL	//"Rotinas PBM"
 
-    @ 10,10 BUTTON "Consulta PBM"	SIZE 80,20 OF oDlg PIXEL ACTION ( STBConPbm() , oDlg:End() )	//"Venda PBM"
-	@ 30,10 BUTTON "Venda PBM"	SIZE 80,20 OF oDlg PIXEL ACTION ( STBOPbm() , oDlg:End() )	//"Venda PBM"
-	@ 50,10 BUTTON "Cancelamento PBM" SIZE 80,20 OF oDlg PIXEL ACTION ( STBCancPbm(), oDlg:End() )	    //"Cancelamento PBM"
-	@ 70,10 BUTTON "&Sair"	SIZE 80,20 OF oDlg PIXEL ACTION ( oDlg:End() )	        	    //"&Sair"
+	@ 10,10 BUTTON "Venda PBM"	SIZE 80,20 OF oDlg PIXEL ACTION ( STBOPbm() , oDlg:End() )	//"Venda PBM"
+	@ 30,10 BUTTON "Cancelamento PBM" SIZE 80,20 OF oDlg PIXEL ACTION ( STBCancPbm(), oDlg:End() )	    //"Cancelamento PBM"
+	@ 50,10 BUTTON "&Sair"	SIZE 80,20 OF oDlg PIXEL ACTION ( oDlg:End() )	        	    //"&Sair"
 
 ACTIVATE MSDIALOG oDlg CENTERED
 
 Return
 
-/*/{Protheus.doc} STBConPbm    
-    Esta função serve para executar as opções das PBM's que tem consulta que estavam presentes no PE TPL FRTFuncoes
+/*/{Protheus.doc} STBOPbm
+    - Esta função serve para executar as opções das PBM's que tem consulta que estavam presentes no PE TPL FRTFuncoes
     porem para adequação da tela colocamos todos no mesmo menu ("PBM's") no TOTVSPDV
     e a chamada da função DroVLGet é feita por essa menu diretamente de acordo com a PBM selecionada no combo
-    @type  Function
-    @author Julio Nery
-    @since 16/03/2021
-    @version 12
-    @param nenhum
-    @return nenhum
-/*/
-Static Function STBConPbm(lConsulta)
-Local oTEF20    := NIL
-Local lContinua := .T.
-Local lSemObjeto:= .F.
-Local nOpPBM    := 0
 
-oTEF20 := STBGetTEF()
-STBIsVnPBM(.T.,oTEF20:Pbm())
-lContinua := STBVerConVnd(.T.,,@nOpPBM,@lSemObjeto)
-If lSemObjeto //Em algumas PBMs não pode seguir usando esse objeto
-    STBIsVnPBM(.F.,NIL)
-EndIf
-
-If lContinua
-    T_DroVLGet(nOpPBM)
-EndIf
-
-Return
-
-/*/{Protheus.doc} STBOPbm    
+    - Chama a função de venda para os PBM's Epharma e TRNCentre, que é diferente a chamada
     @type  Function
     @author Julio.Nery
     @since 01/03/2021
     @version 12
     @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @return NIL
 /*/
 Static Function STBOPbm()
-Local cDoc 		:= ""						// Retorna o numero do cupom fiscal
-Local cOperador := STFGetStation("PDV")		// Guada o codigo do pdv para passar para a PBM
-Local cSerie	:= STFGetStation("SERIE")	// retorna a SERIE fiscal da estação
-Local cTpDoc	:= "0" //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 -sat
-Local nTamCupPBM:= 6 //Tamanho do cupom PBM
+Local cDoc 		:= ""	// Retorna o numero do cupom fiscal
+Local cOperador := ""	// Guada o codigo do pdv para passar para a PBM
+Local cSerie	:= ""   // retorna a SERIE fiscal da estação
+Local cTpDoc	:= "0"  //tipo de documento utilizado no pbm = 0 - ecf, 1 - nfce, 2 -sat
+Local nTamCupPBM:= 6    //Tamanho do cupom PBM
+Local nOpPBM    := 0
 Local oTEF20    := NIL
 Local oDadosPbm := NIL
 Local lContinua := .T.
+Local lConsulta := .F.
+Local lVenda    := .F.
 
-/* Busca o numero do documento fiscal */	
-cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
+oTEF20 := STBGetTEF()
+STBIsVnPBM(.T.,oTEF20:Pbm())
+lContinua := STBVerConVnd(@lConsulta,@lVenda,@nOpPBM)
 
-//Pega o numero do cupom
-If !Empty(cDoc)
-    oTEF20 := STBGetTEF()
-    STBIsVnPBM(.T.,oTEF20:Pbm())
-    lContinua := STBVerConVnd(,.T.)
+If lContinua
+    Do Case
+        Case lConsulta 
+            STBIsVnPBM(.F.,NIL) //Nessas PBMs não pode seguir usando esse objeto
+            T_DroVLGet(nOpPBM)
 
-    If lContinua
-        If STFGetCfg("lUseSAT",.F.)
-            cTpDoc := "2"
-        ElseIf LjEmitNFCe()
-            cTpDoc := "1"
-        EndIf
+        Case lVenda
+            /* Busca o numero do documento fiscal */
+            cOperador := STFGetStation("PDV")
+            cSerie	:= STFGetStation("SERIE")
+            cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
+            If !Empty(cDoc)
+                If STFGetCfg("lUseSAT",.F.)
+                    cTpDoc := "2"
+                ElseIf LjEmitNFCe()
+                    cTpDoc := "1"
+                EndIf
 
-        oDadosPbm := LJCDadosTransacaoPBM():New(0               , cDoc         , Date()  ,  Time(),;
-                                                /*lUltimaTrn*/  ,/*cRede*/     , cTpDoc  ,  cOperador )
+                oDadosPbm := LJCDadosTransacaoPBM():New(0               , cDoc         , Date()  ,  Time(),;
+                                                        /*lUltimaTrn*/  ,/*cRede*/     , cTpDoc  ,  cOperador )
 
-        //Inicializa a venda PBM
-        If oTPLPBM:IniciaVend( oDadosPbm )
-            STFMessage("ItemVendaPBM","STOP", "Venda PBM") //"Venda PBM"
-		    STFShowMessage("ItemVendaPBM")
-        Else
-            STBIsVnPBM(.F.,NIL)
-        EndIf
-    EndIf
+                //Inicializa a venda PBM
+                If oTPLPBM:IniciaVend( oDadosPbm )
+                    STFMessage("ItemVendaPBM","STOP", "Venda PBM") //"Venda PBM"
+                    STFShowMessage("ItemVendaPBM")
+                Else
+                    STBIsVnPBM(.F.,NIL)
+                EndIf
+            EndIf
+    EndCase
 EndIf
 
-Return
+Return NIL
 
 /*/{Protheus.doc} STBCancPbm
     Cancelamento da PBM
@@ -130,7 +113,7 @@ Local oTEF20:= STBGetTEF()
 STBIsVnPBM(.T.,oTEF20:Pbm())
 
 If oTPLPBM <> Nil
-    If oTPLPBM:SelecPbm()
+    If oTPLPBM:SelecPbm(,.T.)
         STFMessage("STBCancPbm1", "STOP",  "Cancelamento de PBM") //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
         If oTPLPBM:CancPbm()
@@ -490,9 +473,9 @@ Return aRet
     @since 16/03/2021
     @version 12
     @param param, param_type, param_descr
-    @return return, return_type, return_description
+    @return lRet, lógico, Retorno ok ?
 /*/
-Static Function STBVerConVnd(lConsulta,lVenda,nOpcPBM,lSemObjeto)
+Static Function STBVerConVnd(lConsulta,lVenda,nOpcPBM)
 Local lRet := .F.
 Local lContinua:= .T.
 Local cNomePBM := ""
@@ -502,46 +485,31 @@ Default lVenda    := .F.
 Default nOpcPBM   := 0
 
 If !oTPLPBM:SelecPbm(@cNomePBM) //Seleciona a PBM
-    If lConsulta
-        ConOut("Nenhuma PBM selecionada para consulta")
-        STFMessage("STBVerConVnd","STOP", "Nenhuma PBM selecionada para consulta" ) //"Nenhuma PBM selecionada para consulta"
-    EndIf
-
-    If lVenda
-        ConOut("Nenhuma PBM selecionada para venda")
-        STFMessage("STBVerConVnd","STOP", "Nenhuma PBM selecionada para venda" ) //"Nenhuma PBM selecionada para venda"
-    EndIf
-
+    ConOut("Nenhuma PBM selecionada")
+    STFMessage("STBVerConVnd","STOP", "Nenhuma PBM selecionada" ) //"Nenhuma PBM selecionada"
     STFShowMessage("STBVerConVnd")
     lContinua := .F.
 Endif
 
 If lContinua 
-    If lConsulta 
-        If cNomePBM $ (_VIDALINK + "|" + _PHARMASYS + "|" + _FUNCCARD)
-            if cNomePBM == _VIDALINK
-                nOpcPBM := 1
-            ElseIf cNomePBM == _PHARMASYS
-                nOpcPBM := 541
-            ElseIf cNomePBM == _FUNCCARD
-                nOpcPBM := 560
-            EndIf
-            lRet := .T.
-            lSemObjeto := .T.
-        Else
-            STFMessage("STBVerConVnd2","STOP", "PBM Selecionada não permite essa consulta" ) //"PBM Selecionada não permite consulta"
-            STFShowMessage("STBVerConVnd2")
+
+    If cNomePBM $ (_VIDALINK + "|" + _PHARMASYS + "|" + _FUNCCARD)
+        if cNomePBM == _VIDALINK
+            nOpcPBM := 1
+        ElseIf cNomePBM == _PHARMASYS
+            nOpcPBM := 541
+        ElseIf cNomePBM == _FUNCCARD
+            nOpcPBM := 560
         EndIf
+        lRet := .T.
+        lConsulta := .T.
     EndIf
 
-    If lVenda
-        If cNomePBM $ (_EPHARMA + "|" + _TRNCENTRE)
-            lRet := .T.
-        Else
-            STFMessage("STBVerConVnd2","STOP", "Venda de PBM não pode ser efetuada por esse menu" ) //"Venda de PBM não pode ser efetuada por esse menu"
-            STFShowMessage("STBVerConVnd2")
-        EndIf
+    If cNomePBM $ (_EPHARMA + "|" + _TRNCENTRE)
+        lRet := .T.
+        lVenda:= .T.
     EndIf
+
 EndIf
 
 If !lRet
