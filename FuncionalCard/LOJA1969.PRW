@@ -1,20 +1,5 @@
 #INCLUDE "MSOBJECT.CH"
 #INCLUDE "LOJA1001.CH"
-  
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Tipo de transacoes enviadas³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-#DEFINE CONSULTA 		1
-#DEFINE VENDA	 		2
-#DEFINE CANCELAMENTO	3
-#DEFINE SEPARADOR 		CHR(0)
-
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Meios para buscar pre-autorizacao³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-#DEFINE CARTAOMAG		1
-#DEFINE CARTAO			2
-#DEFINE AUTORIZACAO		3
 
 User Function LOJA1969 ; Return  			// "dummy" function - Internal Use
 
@@ -38,6 +23,7 @@ Class LJCFunCard From LJCSitefDireto
 
 	Method FuncCard(oClisitef)										//Metodo construtor
 	Method FuncCrCons(nFuncao,nValor,cCupom,cData,cHora,cOperador,cRestri,aVDLink)
+	Method ConfVend(lConfirma)
 EndClass
 
 /*/{Protheus.doc} LJCFunCard
@@ -88,3 +74,18 @@ Local lRet := .T.
 lRet := ::ConsFuncCr()
 
 Return lRet
+
+/*/{Protheus.doc} ConfVend
+	Confirma ou não a transação TEF
+	@type  Class
+	@author Julio.Nery
+	@since 28/04/2021
+	@version 12
+	@param lConfirma, lógico, confirma ou não a transação ?
+	@return NIL
+/*/
+Method ConfVend(lConfirma) Class LJCFunCard
+
+::FimTrans(lConfirma)
+
+Return Nil

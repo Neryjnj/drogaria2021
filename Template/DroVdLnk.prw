@@ -1059,7 +1059,7 @@ If _nVidaLink = 2  	// Gravou VidaLink, por isto imprimo cupom vidalink
 		oTEF20 := STBGetTEF()
 		//JULIOOOOOOO - falta inserir a função de impressão - ver com o Alberto		
 		//If oTEF20:Impressao 		
-		oTEF20:Pbm():ConfVend(.T.)		
+		oTEF20:Pbm():ConfVend(.T.)
 		//Else
 		//oTEF20:Pbm():ConfVend(.F.)
 		//EndIf

@@ -2453,10 +2453,7 @@ Method VerPend() Class LJCComClisitef
 Return Nil
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+/*----------------------------------------------------------------------------------
 ±±ºMetodo    ³FormatData	   ºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºDesc.     ³Formata data e hora												 º±±
@@ -2469,26 +2466,25 @@ Return Nil
 ±±º			 ³EXPC3 (4 - cHoraAux) - Hora formatada.		     				 º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºRetorno   ³																     º±±
-±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+----------------------------------------------------------------------------------*/
 Method FormatData(dData, cHora, cDataAux, cHoraAux) Class LJCComClisitef
-	If !Empty(dData)
-	
+If !Empty(dData)
 	cDataAux	:= Str(Year(dData),4) + StrZero(Month(dData),2) + StrZero(Day(dData),2)
-	Else
-		cDataAux	:= space(8)
-	EndIf
+Else
+	cDataAux	:= space(8)
+EndIf
 
-	If !Empty(cHora)
+If !Empty(cHora)
+	If At(":",cHora) > 0
 		cHoraAux	:= SubStr(cHora,1,2) + SubStr(cHora,4,2) + SubStr(cHora,7,2)
 	Else
-		cHoraAux	:= space(6)
+		cHoraAux	:= cHora
 	EndIf
+Else
+	cHoraAux	:= space(6)
+EndIf
 		
 Return Nil
-
 
 /*---------------------------------------------------------------------------
 ±±ºMetodo    ³GrvArqCtrlºAutor  ³Vendas Clientes     º Data ³  22/02/10   º±±
