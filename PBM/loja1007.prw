@@ -209,13 +209,19 @@ Return lRet
 ±±ºUso       ³ SIGALOJA/FRONTLOJA                                         º±±
 ---------------------------------------------------------------------------*/
 Method ConfVend(lConfirma) Class LJCPBM
+Local lRet := .T.
 
 If ::oPbm:oSitefPbm:oClisitef <> Nil //TOTVSPDV
 	::oPbm:oSitefPbm:oClisitef:oTransacao := ::oPbm:oDadosTran
+	If !Empty(AllTrim(::oPbm:oSitefPbm:oClisitef:oTransacao:cCupomFisc))
+		::oPbm:oSitefPbm:oClisitef:oTransacao:nCupom := Val(::oPbm:oSitefPbm:oClisitef:oTransacao:cCupomFisc)
+	EndIf
+	::oPbm:oSitefPbm:oClisitef:oTransacao:cHora := ::oPbm:oSitefPbm:oClisitef:oTransacao:cHorario
+	::oPbm:oSitefPbm:oClisitef:oTransacao:dData := SToD(::oPbm:oSitefPbm:oClisitef:oTransacao:cDataFisc)
 EndIf
 ::oPbm:ConfVend(lConfirma)
 
-Return Nil
+Return lRet
 
 /*---------------------------------------------------------------------------
 ±±ºPrograma  ³CARREGACBOºAutor  ³Vendas Clientes     º Data ³  17/09/07   º±±

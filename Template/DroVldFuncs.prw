@@ -5566,8 +5566,8 @@ If !Empty(_cDoc) .AND. !Empty(_cSerie)
 	nTamANVISA := T_DroLenANVISA() 
 	
 	For nLinha := 1 to nTamANVISA
-		aANVISA[nLinha][NUMDOC]     := _cDoc
-		aANVISA[nLinha][SERIE]      := _cSerie
+		aANVISA[nLinha][NUMDOC] := _cDoc
+		aANVISA[nLinha][SERIE]  := _cSerie
 	Next nLinha
 EndIf
 

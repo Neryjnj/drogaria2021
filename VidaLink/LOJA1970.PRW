@@ -24,6 +24,7 @@ Class LJCVDLINK From LJCSitefDireto
     Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	Method VDLinkProd(aVDLink)
 	Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
+	Method ConfVend(lConfirma)
 EndClass
 
 //-------------------------------------------------------------------
@@ -122,3 +123,18 @@ EndIf
 
 lRet := ::VendaVDLink()
 Return lRet
+
+/*/{Protheus.doc} ConfVend
+	Confirma ou não a transação TEF
+	@type  Class
+	@author Julio.Nery
+	@since 28/04/2021
+	@version 12
+	@param lConfirma, lógico, confirma ou não a transação ?
+	@return NIL
+/*/
+Method ConfVend(lConfirma) Class LJCVDLINK
+
+::FimTrans(lConfirma)
+
+Return Nil

@@ -1056,12 +1056,10 @@ Local oTEF20	:= NIL
 
 If _nVidaLink = 2  	// Gravou VidaLink, por isto imprimo cupom vidalink
 	If STFIsPOS()
-		//JULIOOOOOOO - falta inserir a função de impressão - ver com o Alberto
-		//If oTEF20:Impressao 
-
-		//JULIOOOOOOOOOOOOO - continudar daqui 27/04 verificar como chamar o metodo de confirmação
-		// oTEF20:Pbm():ConfVend(.T.) - comentado para não dar erro
-		oTEF20:oPBM():oPBM:oPBM:oSitefPBM:oClisitef:ConfVend(.T.)//testar
+		oTEF20 := STBGetTEF()
+		//JULIOOOOOOO - falta inserir a função de impressão - ver com o Alberto		
+		//If oTEF20:Impressao 		
+		oTEF20:Pbm():ConfVend(.T.)		
 		//Else
 		//oTEF20:Pbm():ConfVend(.F.)
 		//EndIf
