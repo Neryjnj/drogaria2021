@@ -1725,8 +1725,11 @@ nCodFuncao := STPbmRtFun(cOperacao)
 If Len(aDadoProd) > 0 
 	aDadosVDLk := aClone(aDadoProd)
 Else
+	//Faço o tratamento do código 561 - FuncionalCard pois internamente para os
+	//tratamentos do SITEF deve considerar 560 senão não finaliza a PBM,
+	//isso esta de acordo com o TEF-LOJXTEF
 	aAdd(aDadosVDLk,{AllTrim(aConvInfo[1,1]), aConvInfo[1,2], aConvInfo[1,3], aConvInfo[1,4],;
-					nCodFuncao, aConvInfo[1,6], aConvInfo[1,7] })
+					IIf(nCodFuncao == 561, 560, nCodFuncao), aConvInfo[1,6], aConvInfo[1,7] })
 EndIf
 
 If Len(aTranInfo[1]) > 1
