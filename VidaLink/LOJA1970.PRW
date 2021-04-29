@@ -24,6 +24,7 @@ Class LJCVDLINK From LJCSitefDireto
     Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)
 	Method VDLinkProd(aVDLink)
 	Method VDLinkVenda(cCodAut,nCupom,dData,cHora,cOperador,aVDLink)
+	Method VDLinkCanc(lCancTotal,nCupom,dData,cHora,cOperador,aVDLink)
 	Method ConfVend(lConfirma)
 EndClass
 
@@ -42,13 +43,14 @@ Method PVidaLink(oClisitef) Class LJCVDLINK
 
 ::SitefDireto(oClisitef)
 
-::cCodAut			:= ""
-::cCodProd			:= ""
-::cCupom			:= ""
-::cData				:= ""
-::cHora				:= ""
-::cOperador			:= ""
-::aVDLink			:= {}
+::cCodAut		:= ""
+::cCodProd		:= ""
+::cCupom		:= ""
+::cData			:= ""
+::cHora			:= ""
+::cOperador		:= ""
+::aVDLink		:= {}
+::lCancTotal	:= .T.
 
 Return Self
 
@@ -122,6 +124,32 @@ EndIf
 ::aVDLink	:= aVDLink
 
 lRet := ::VendaVDLink()
+Return lRet
+
+/*/{Protheus.doc} VDLinkCanc
+	Cancelamento de Venda Vidalink
+	@type  Class
+	@author Julio.Nery
+	@since 29/04/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method VDLinkCanc(lCancTotal,nCupom,dData,cHora,cOperador,aVDLink) Class LJCVDLINK
+Local lRet := .F.
+
+::lCancTotal:= lCancTotal
+::cCupom	:= cValToChar(nCupom)
+If ValType(dData) == "C"
+	::cData := dData
+Else
+	::cData	:= DToS(dData)
+EndIf
+::cHora		:= StrTran(cHora,":")
+::cOperador	:= cOperador
+::aVDLink	:= aVDLink
+
+lRet := ::CancVDLink()
 Return lRet
 
 /*/{Protheus.doc} ConfVend

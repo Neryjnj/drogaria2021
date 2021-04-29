@@ -94,6 +94,7 @@ Class LJCComClisitef
 	Method EnvVDLCons(oDadosTran)
 	Method EnvVDLProd(oDadosTran)
 	Method EnvVDLVenda(oDadosTran)
+	Method EnvVDLCanc(oDadosTran)
 	
 	//Metodos internos
 	Method RedeTpCart()
@@ -3467,6 +3468,55 @@ If nRet == 10000
 	
 	If ValType( ::oTransacao ) <> "O"
 		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , SToD(oDadosTran:cDataFisc), StrTran(oDadosTran:cHorario,":"))
+	EndIf
+
+	::oTransacao:aVDLink := oDadosTran:aVDLink
+
+	::GrvArqCtrl()
+	//Carrega tela do sitef para troca de informacoes
+	::Show()
+Else
+	::TratarRet(nRet, _TRANSACAO)
+EndIf
+
+Return nRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} EnvVDLCanc
+Cancelamento Venda PBM Vidalink
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		29/04/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL
+/*/
+//-------------------------------------------------------------------
+Method EnvVDLCanc(oDadosTran) Class LJCComClisitef
+Local nRet		:= 0
+Local cRetorno 	:= ""       	//Retorno do comando enviado
+Local oParamsApi:= Nil			//Objeto do tipo LJCParamsAPI
+Local nTotParc  := 0
+
+If oDadosTran:lCancTotal
+	nTotParc := 1
+EndIf
+
+::oRetorno := LJCRetornoSitef():New()
+
+oParamsApi := ::PrepParam({CLISITEF, "IniciaFuncaoSiTefInterativoCancelamentoVidalink", cValToChar(nTotParc), ;
+								oDadosTran:cCupomFisc, oDadosTran:cDataFisc,oDadosTran:cHorario, oDadosTran:cOperador})
+
+cRetorno := ::EnviarCom(oParamsApi)
+oParamsApi:Destroy()
+oParamsApi := FreeObj(oParamsApi)
+nRet := Val(cRetorno)
+
+If nRet == 10000
+	//Gravar arquivo de controle para confirmar ou desfazer a transacao
+	
+	If ValType( ::oTransacao ) <> "O"
+		::oTransacao := LJCDadosTransacaoGenerica():New(Nil, Val(oDadosTran:cCupomFisc) , ;
+									SToD(oDadosTran:cDataFisc), StrTran(oDadosTran:cHorario,":"))
 	EndIf
 
 	::oTransacao:aVDLink := oDadosTran:aVDLink

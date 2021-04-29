@@ -25,6 +25,7 @@ Class LJCSitefPBM
 	Method VDLinkCons(oDadosTran)
 	Method VDLinkProd(oDadosTran)
 	Method VDLinkVenda(oDadosTran)
+	Method VDLinkCanc(oDadosTran)
 	Method PharmSCons(oDadosTran)
 	Method FuncCrCons(oDadosTran)
 	
@@ -409,6 +410,25 @@ Method VDLinkVenda(oDadosTran) Class LJCSitefPBM
 
 //Envia a transacao para o sitef
 oDadosTran:nRetorno := Self:oClisitef:EnvVDLVenda(@oDadosTran)
+
+Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} VDLinkCanc
+Cancelamento da Venda PBM Vidalink
+
+@param		oDados, objeto, contem os dados da transação
+@author		Julio.Nery
+@version	12
+@since		29/04/2021
+@return		nRetDLL		- Código do retorno ao comando enviado a DLL	
+@obs     
+/*/
+//-------------------------------------------------------------------
+Method VDLinkCanc(oDadosTran) Class LJCSitefPBM
+
+//Envia a transacao para o sitef
+oDadosTran:nRetorno := Self:oClisitef:EnvVDLCanc(@oDadosTran)
 
 Return Nil
 

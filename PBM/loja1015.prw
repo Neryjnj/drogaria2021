@@ -29,6 +29,7 @@ Class LJCSitefDireto From LJAAbstrataPBM
 	Method ConsVDLink()
 	Method ProdVDLink()
 	Method VendaVDLink()
+	Method CancVDLink()
 	Method ConsPharmS()
 	Method ConsFuncCr()
 EndClass
@@ -335,7 +336,7 @@ Return lRet
 	@since 31/03/2021
 	@version 12
 	@param param, param_type, param_descr
-	@return return, return_type, return_description
+	@return lRet, lógico, retorno ok?
 /*/
 Method VendaVDLink() Class LJCSitefDireto
 Local lRet := .F.	//Retorno da funcao
@@ -352,6 +353,41 @@ Local lRet := .F.	//Retorno da funcao
 
 //Envia a transacao
 ::oSitefPbm:VDLinkVenda(@::oDadosTran)
+
+//Verifica se a transacao foi efetuada
+//Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef
+If ::oDadosTran:nRetorno <= 0	
+	MsgAlert(STR0001,"TEF") //#"Problema de comunicação com Sitef"
+Else
+	lRet := .T.	
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} CancVDLink
+	Cancelamento de Venda Vidalink
+	@type  Class
+	@author Julio.Nery
+	@since 29/04/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method CancVDLink() Class LJCSitefDireto
+Local lRet := .F.
+
+//Estancia o objeto
+::oDadosTran := LJCDadosSitefDireto():DadosSitef()
+
+::oDadosTran:lCancTotal := ::lCancTotal
+::oDadosTran:cCupomFisc	:= AllTrim(::cCupom)
+::oDadosTran:cDataFisc	:= ::cData
+::oDadosTran:cHorario	:= ::cHora
+::oDadosTran:cOperador	:= AllTrim(::cOperador)
+::oDadosTran:aVDLink	:= ::aVDLink
+
+//Envia a transacao
+::oSitefPbm:VDLinkCanc(@::oDadosTran)
 
 //Verifica se a transacao foi efetuada
 //Se menor ou igual a zero, ocorreu algum problema de comunicacao com o sitef

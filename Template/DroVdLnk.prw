@@ -1708,7 +1708,7 @@ Return lCanTelMeC
 	@return oDados, objeto, contem os dados da transação
 /*/
 Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo,aDadoProd,;
-							oObjTEF20)
+							oObjTEF20,lCancTotal)
 Local aDadosVDLk:= {}
 Local nCodFuncao:= 0
 Local nValor	:= 0
@@ -1717,6 +1717,7 @@ Local oDados	:= NIL
 
 Default aDadoProd := {}
 Default oObjTEF20 := NIL
+Default	lCancTotal:= .T.
 
 nCodFuncao := STPbmRtFun(cOperacao)
 
@@ -1738,10 +1739,10 @@ Else
 	cDoc := STBPbmNDoc()
 EndIf
 
-If cOperacao $ ("VIDALINK_CONSULTA|VIDALINK_VENDA")
-	oDados := LJCDadosTransacaoPBM():New(0    		  , cDoc	, Date()  		,  Time(),;
+If cOperacao $ ("VIDALINK_CONSULTA|VIDALINK_VENDA|VIDALINK_CANCELAMENTO")
+	oDados := LJCDadosTransacaoPBM():New(0    	  , cDoc	, Date()  		,  Time(),;
 									/*lUltimaTrn*/,/*cRede*/, "" /*cTpDoc*/ ,  AllTrim(aTranInfo[1,1]),;
-									aConvInfo[1,1], "1"		, aDadosVDLk )
+									aConvInfo[1,1], "1"		, aDadosVDLk 	, lCancTotal)
 	
 	If ValType(oObjTEF20) == "O"
 		oDados:cCodAut := AllTrim(oObjTEF20:Pbm():oPbm:oPBM:cCodAut)
@@ -1753,7 +1754,8 @@ Else
 	EndIf
 
 	oDados := LJCDadosSitefDireto():IniDadoSitef(,,nCodFuncao,,,,,,,,cDoc, Dtos(Date()),StrTran(Time(),":"),;
-												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", nValor,Val(cDoc))
+												AllTrim(aTranInfo[1,1]),,,, aDadosVDLk, "", nValor,Val(cDoc),;
+												lCancTotal)
 	If ValType(oObjTEF20) == "O"
 		oDados:cCodAut := AllTrim(oObjTEF20:Pbm():oPbm:oPBM:aVDLink[1,1])
 		oDados:cHorario := oObjTEF20:Pbm():oPbm:oPBM:cHora

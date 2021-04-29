@@ -35,7 +35,8 @@ Class LJCDadosSitefDireto
 	Data nCupom								//Numero do Cupom
 	Data dData
 	Data cHora
-	
+	Data lCancTotal							//Cancelamento total ? Senao parcial - VIDALINK
+
 	Method DadosSitef()						//Metodo construtor
 	Method IniDadoSitef(nRetorno, nRedeDest, nFuncSitef, nOffSetCar,;
 					cDadosTx, nTaDadosTx, cDadosRx,nTaDadosRx,;
@@ -78,6 +79,7 @@ Method DadosSitef() Class LJCDadosSitefDireto
 	::nCupom			:= 0
 	::dData				:= CTOD("")
 	::cHora				:= ""
+	::lCancTotal		:= .T.
 
 Return Self
 
@@ -95,7 +97,7 @@ Method IniDadoSitef(nRetorno, nRedeDest, nFuncSitef, nOffSetCar,;
 					nCodResp,nTempEspRx, cCupomFisc, cDataFisc,;
 					cHorario,cOperador, nTpTrans, cCodAut,;
 					cCodProd, aVDLink, cRestri, nValor,;
-					nCupom ) Class LJCDadosSitefDireto
+					nCupom, lCancTotal) Class LJCDadosSitefDireto
 
 Default nRetorno 	:= 0
 Default nRedeDest 	:= 0
@@ -118,6 +120,7 @@ Default aVDLink		:= {}
 Default cRestri		:= ""
 Default nValor		:= 0
 Default nCupom		:= 0
+Default lCancTotal  := .T.
 
 ::nRetorno			:= nRetorno
 ::nRedeDest 		:= nRedeDest
@@ -148,4 +151,5 @@ EndIf
 
 ::dData	:= CTOD(AllTrim(cDataFisc))
 ::cHora	:= AllTrim(StrTran(cHorario,":"))
+::lCancTotal := lCancTotal
 Return Self

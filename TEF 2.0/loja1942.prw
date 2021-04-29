@@ -28,6 +28,7 @@ Class LJADadosTransacao
 	Data cCodAut													//código da autorização - VIDALINK
 	Data cCodProd													//código do produto - VIDALINK
 	Data aVDLink													//outros dados da PBM
+	Data lCancTotal													//Cancelamento total ? Senao parcial - VIDALINK
 	
 	Method New()
 	Method Retorno()
@@ -44,12 +45,14 @@ EndClass
 ---------------------------------------------------------------------------*/
 Method New(	nValor		, 	nCupom		, 	dData	,	cHora, ;
 			nTipoTrans	,	lUltimaTrn	,	cRede	,	cTpDoc, ;
-			cOperador	, 	cCodAut		,	cCodProd,	aVDLink	) Class LJADadosTransacao 
+			cOperador	, 	cCodAut		,	cCodProd,	aVDLink, ;
+			lCancTotal	) Class LJADadosTransacao 
 			
 Default lUltimaTrn := .T. //Valida apenas para gerenciador Direcao
 Default cTpDoc	   := "1" //Insiro padrão NFCE
 Default cCodAut	   := ""
 Default cCodProd   := ""
+Default lCancTotal := .T.
 
 Self:nValor		:= nValor
 Self:nCupom		:= nCupom
@@ -66,6 +69,7 @@ Self:cTpDoc		:= cTpDoc //tipo de documento utilizado no pbm => 0 - ecf, 1 - nfce
 Self:cCodAut	:= cCodAut
 Self:cCodProd	:= cCodProd
 Self:aVDLink	:= aVDLink
+Self:lCancTotal := lCancTotal
 
 Return Self 
 

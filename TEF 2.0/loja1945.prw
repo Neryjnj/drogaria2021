@@ -14,7 +14,7 @@ Class LJCDadosTransacaoPBM From LJADadosTransacao
 	   			
 	Method New(nValor, nCupom, dData, cHora, lUltimaTrn,;
 				cRede, cTpDoc, cOperador, cCodAut,	cCodProd,;
-				aVDLink)	//Metodo construtor
+				aVDLink, lCancTotal)	//Metodo construtor
 	
 EndClass
 
@@ -34,10 +34,10 @@ EndClass
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Method New(nValor, nCupom, dData, cHora, lUltimaTrn,;
 			 cRede, cTpDoc, cOperador, cCodAut,	cCodProd,;
-			 aVDLink) Class LJCDadosTransacaoPBM
+			 aVDLink, lCancTotal) Class LJCDadosTransacaoPBM
     
 	_Super:New(nValor, nCupom, dData, cHora, _PBM, lUltimaTrn,;
 				 cRede, cTpDoc, cOperador, cCodAut,	cCodProd,;
-				 aVDLink)
+				 aVDLink, lCancTotal)
    	
 Return Self

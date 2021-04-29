@@ -38,6 +38,7 @@ Class LJCClisitefPbm From LJAPbm
 	Method VDLinkCons(oDadosTran)
 	Method VDLinkProd(oDadosTran)
 	Method VDLinkVenda(oDadosTran)
+	Method VDLinkCanc(oDadosTran)
 	Method PharmSCons(oDadosTran)
 	Method FuncCrCons(oDadosTran)
       
@@ -418,6 +419,30 @@ If lRetorno
 Else
 	::oPbm:oPbm := Nil
 EndIf	
+
+Return Nil
+
+/*/{Protheus.doc} VDLinkCanc
+	Cancelamento da venda VidaLink
+	@type  Metodo
+	@author Julio.Nery
+	@since 29/04/2021
+	@version 12
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+/*/
+Method VDLinkCanc(oDadosTran) Class LJCClisitefPbm
+
+lRetorno := ::oPbm:VDLinkCanc(oDadosTran:lCancTotal,oDadosTran:nCupom,oDadosTran:dData,;
+							oDadosTran:cHora,oDadosTran:cOperador,oDadosTran:aVDLink)
+
+If lRetorno
+	::oDadosTran := oDadosTran
+	::oDadosTran:dData := CTOD(SubStr(::oPbm:oPbm:cData, 7, 2) + "/" + SubStr(::oPbm:oPbm:cData, 5, 2) + "/" + SubStr(::oPbm:oPbm:cData, 1, 4))
+	::oDadosTran:cHora := Substr(::oPbm:oPbm:cHora, 1, 2) + ":" + Substr(::oPbm:oPbm:cHora, 3, 2) + ":" + Substr(::oPbm:oPbm:cHora, 5, 2)
+Else
+	::oPbm:oPbm := Nil
+EndIf
 
 Return Nil
 
