@@ -19,6 +19,7 @@ Class LJCVDLINK From LJCSitefDireto
 	DATA cHora
 	DATA cOperador
 	DATA aVDLink
+	DATA lCancTotal
 
 	Method PVidaLink()						//Metodo construtor
     Method VDLinkCons(cCodAut,cCodProd,cCupom,dData,cHora,cOperador,aVDLink)

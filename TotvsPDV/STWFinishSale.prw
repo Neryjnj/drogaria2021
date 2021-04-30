@@ -230,7 +230,7 @@ If lContinua
 			endif
 		endif
 		
-		If !STFSCfmPBM() //JULIOOOO - Validação TPL Drogaria
+		If !STFSCfmPBM() //Validação TPL Drogaria
 			nRetNfce := -1
 		EndIf
 
@@ -315,7 +315,7 @@ If lContinua
 				cSerieSat		:= aSATDoc[2]
 			EndIf
 
-			lContinua := STFSCfmPBM(cDoc,,SubStr(aRet[7],4,Len(aRet[7]))) //JULIOOOOO - Validação TPL Drogaria
+			lContinua := STFSCfmPBM(cDoc,,SubStr(aRet[7],4,Len(aRet[7]))) //Validação TPL Drogaria
 		EndIf
 
 		If lContinua
@@ -430,7 +430,7 @@ If lContinua
 		LjMsgRun( STR0002+ " " + SL1->L1_NUM + " " + STR0004 + " " + cDoc,,;
 				{|| nRetNfce := LjNFCeGera(SL1->L1_FILIAL,SL1->L1_NUM, @cKeyNfce,,lPrintNFCE, @cMsgErro)} )   //"Aguarde... Processando NFC-e Orcamento: "  " - Doc.: "
 		
-		If !STFSCfmPBM(,,cKeyNfce) //JULIOOOOO - Validação TPL Drogaria
+		If !STFSCfmPBM(,,cKeyNfce) //Validação TPL Drogaria
 			lContinua := .F.
 			nRetNfce  := -1
 		Endif

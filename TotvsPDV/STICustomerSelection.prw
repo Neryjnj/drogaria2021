@@ -46,7 +46,7 @@ If lContinua
 	STIExchangePanel( { || STIPanCustomerSelection() } )
 EndIf
 
-Return
+Return lContinua
 
 //-------------------------------------------------------------------
 /*{Protheus.doc} STIPanCustomerSelection
@@ -414,7 +414,7 @@ Local lRet 			:= .T. 		//Retorno da função do PE STValidCli
 Local cMatricula	:= ""		//Matricula do cliente no caso de Convênio (Template Drogaria)
 Local aFRT010CL 	:= {}		//Retorno da Template Function FRT010CL
 
-//Cadastra o cliete selecionado caso não exista localmente
+//Cadastra o cliente selecionado caso não exista localmente
 If  nPos > 0 .AND. nPos <= Len(aDataCustomers) 
  	nRecno := STDVerfCadCli(aDataCustomers[nPos][2][2] + aDataCustomers[nPos][3][2])[2]
 	If nRecno == 0
@@ -441,7 +441,9 @@ If nPos > 0 .AND. !Empty(nRecno)
 	SA1->(DbGoTo(nRecno))
 
 	If ExistBlock("STValidCli")
+		LjGrvLog( NIL, "Antes da execução do PE STValidCli", {SA1->A1_COD,SA1->A1_LOJA})
 		lRet := ExecBlock("STValidCli",.F.,.F.,{SA1->A1_COD,SA1->A1_LOJA})
+		LjGrvLog( NIL, "Depois da execução do PE STValidCli", lRet)
 	EndIf
 
 	If lRet

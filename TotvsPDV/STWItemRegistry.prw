@@ -495,8 +495,11 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					T_DrSScrExMC(.T.)
 					lRet := .F.
 				Else
-					//nVlrPercIT := aTPLFRTIT[1]
-					nDiscount := aTPLFRTIT[2]
+					//aTPLFRTIT[1] //Percentual de Desconto
+					nDiscount := aTPLFRTIT[2] //Valor do Desconto
+					If nDiscount > 0
+						cTypeDesc := "V" 
+					EndIf
 					STBDroVars(.F., .T., aTPLFRTIT[4], aClone(aTPLFRTIT[3]))
 				EndIf
 			EndIf
@@ -505,13 +508,14 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				If lPrioPBM .And. nDiscount > 0
 					LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
 					nDiscount := 0
+					cTypeDesc := ""
 				EndiF
 
 				If STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
 								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )					
 					
 					If nDiscount > 0
-						cTypeDesc := "P"
+						cTypeDesc := "P" //JULIOOOOO - aqui deve ser transformado para valor - "V"
 					EndIf
 				Else
 					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM e o desconto da loja será zerado")
@@ -527,6 +531,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						MsgAlert("VIDALINK - O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
 								"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
 						nDiscount := 0
+						cTypeDesc := ""
 					EndIf
 
 					If aDadoVLink[3] == 1
@@ -541,10 +546,13 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 													nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
 													nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
 													aAux[1]		 , (cTypeItem == "IMP") )
-						nItemTotal := aDroVLPVal[1]
-						nDiscount  := aDroVLPVal[2]
-						//aDroVLPVal[3] //Percentual do Desconto				
-						nDroPrProd := aDroVLPVal[4]
+						nItemTotal := aDroVLPVal[1] //Valor do Item
+						nDiscount  := aDroVLPVal[2] //Valor do Desconto
+						If nDiscount > 0
+							cTypeDesc := "V"
+						EndIf
+									//aDroVLPVal[3] //Percentual do Desconto				
+						nDroPrProd := aDroVLPVal[4] //Valor Unitário
 					EndIf
 				EndIf
 			EndIf

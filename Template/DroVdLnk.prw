@@ -251,7 +251,7 @@ DEFINE MSDIALOG oDlg TITLE STR0003 FROM 0,0 TO 400,650 PIXEL      // Carregament
 		@ 175,130 BUTTON STR0044 SIZE 39,12 OF oDlg PIXEL ;
 				ACTION If( T_DROVLConf(  {"",""}	, aVidalinkD, @nTotVenda, nTotVenda,;
 										 @oTotVenda , "000001"	, "01"		),;
-							oDlg:End(),oDlg:End()) // STR0044 "Confirma"
+						   oDlg:End(),oDlg:End()) // STR0044 "Confirma"
 	Else
 						 
 		If lSigaLoja
@@ -385,6 +385,8 @@ Local oPBM		:= NIL
 Local oDados	:= NIL
 Local oTEF20	:= NIL
 Local nCodFuncao:= 0
+Local nValSubsidio := 0
+Local nValReembFarm:= 0
 Local aInfo		:= {}
 
 Default cCPF 	:= ""
@@ -512,9 +514,15 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum				})	// Valor pago a vista
 		
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValLiq
-		
-				Else		               
-				
+				Else
+
+					nValSubsidio := oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValSubsidio
+
+					//o fato de somar o valor de reembolso da farmacia, causava valor negativo 
+					//e diferença de preço na tela de PBM, portanto comento o código abaixo
+					//e deixo para que se futuramente esse valor queira ser utilizado já está aqui
+					nValReembFarm:= oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm
+
 					aAdd(aVidaLinkD[VL_DETALHE], ;
 							{ oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nIndice				,;
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:cCodigo		  	,;
@@ -523,8 +531,7 @@ If lContinua
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm 		,;  // nPreco de Venda da Farmacia
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut 			,;  // Quantidade sem alteracao 
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nPrecoMax  		,;	// Preco de venda VidaLink			 
-								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValSubsidio +;
-										oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValReembFarm	,;	// Valor do Subsidio
+								nValSubsidio + nValReembFarm												,;	// Valor do Subsidio
 								oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValConsum			})	// Valor pago a vista
 					
 					nTotVenda += oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nQuantAut * oPBM:oPBM:oPBM:oSitefPBM:oClisitef:oRetorno:aItemsPBM[I]:nValVendFarm
@@ -586,17 +593,18 @@ If lContinua
 					nTotVenda += oTEF:aRetVidaLink:aItems[i]:nQuantAut * oTEF:aRetVidaLink:aItems[i]:nValLiq
 		
 				Else		               
-				
+					nValSubsidio := oTEF:aRetVidaLink:aItems[i]:nValSubsidio
+					nValReembFarm := oTEF:aRetVidaLink:aItems[i]:nValReembFarm
 					aAdd(aVidaLinkD[VL_DETALHE], ;
-							{ oTEF:aRetVidaLink:aItems[i]:nIndice     												,;
-								oTEF:aRetVidaLink:aItems[i]:cCodigo     											  	,;
-								oTEF:aRetVidaLink:aItems[i]:nQuantAut   												,;
-								oTEF:aRetVidaLink:aItems[i]:nPrecoRecomend												,; 	// nValConsum
-								oTEF:aRetVidaLink:aItems[i]:nValVendFarm  												,;  // nPreco de Venda da Farmacia
-								oTEF:aRetVidaLink:aItems[i]:nQuantAut     												,;  // Quantidade sem alteracao 
-								oTEF:aRetVidaLink:aItems[i]:nPrecoMax   												,;	// Preco de venda VidaLink			 
-								oTEF:aRetVidaLink:aItems[i]:nValSubsidio + oTEF:aRetVidaLink:aItems[i]:nValReembFarm	,;	// Valor do Subusidio
-								oTEF:aRetVidaLink:aItems[i]:nValConsum 												})	// Valor pago a vista
+							{ oTEF:aRetVidaLink:aItems[i]:nIndice     				,;
+								oTEF:aRetVidaLink:aItems[i]:cCodigo     			,;
+								oTEF:aRetVidaLink:aItems[i]:nQuantAut   			,;
+								oTEF:aRetVidaLink:aItems[i]:nPrecoRecomend			,; 	// nValConsum
+								oTEF:aRetVidaLink:aItems[i]:nValVendFarm  			,;  // nPreco de Venda da Farmacia
+								oTEF:aRetVidaLink:aItems[i]:nQuantAut     			,;  // Quantidade sem alteracao 
+								oTEF:aRetVidaLink:aItems[i]:nPrecoMax   			,;	// Preco de venda VidaLink			 
+								nValSubsidio + nValReembFarm						,;	// Valor do Subsidio
+								oTEF:aRetVidaLink:aItems[i]:nValConsum 				})	// Valor pago a vista
 					
 					nTotVenda += oTEF:aRetVidaLink:aItems[i]:nQuantAut * oTEF:aRetVidaLink:aItems[i]:nValVendFarm
 		
@@ -702,11 +710,19 @@ Return .T.
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DROVLACli( cCodCli, cLojCli, cCliCodLoj, oGetCodCli,;
 							 cNomeCli, oNomeCli )
-
 Local lTotvsPDV := STFIsPOS()
+Local oModelCli := NIL
 
 If lTotvsPDV
-	//JULIO - DESENVOLVER
+	lRet := STICustomerSelection()
+	lRet := IIF(ValType(lRet) <> "L", .T., lRet) //Caso o fonte esteja desatualizado, trato pois a função não retornava nenhum valor
+	If lRet
+		oModelCli := STDGCliModel()
+		cCodCli := oModelCli:GetValue("SA1MASTER","A1_COD")
+		cLojCli := oModelCli:GetValue("SA1MASTER","A1_LOJA")
+		aParamVL[1][VLP_CCLIEN]	:= cCodCli
+		aParamVL[1][VLP_CLOJAC]	:= cLojCli
+	EndIf
 Else
 	FR271EAltCli( Nil		   				, @cCodCli		   			, @cLojCli		   			, @aParamVL[1][VLP_LOCIOS]	,;
 				@aParamVL[1][VLP_LRECEB]	, @aParamVL[1][VLP_LCXABE]	, @aParamVL[1][VLP_ACRDCL]	, @aParamVL[1][VLP_CCODCO]	,;
@@ -737,12 +753,18 @@ Template Function DROVLEQtd(aLin, aVidaLinkD, oLbx, nTotVenda, oTotVenda)
 Local nQtdeComp := aLin[oLbx:nAt][ 5 ]	// Quantidade a comprar
 Local nQtdeSug  := aLin[oLbx:nAt][ 4 ]	// Quantidade sugerida
 Local oDlgqtd                           // Objeto da tela de dialogo
+Local cMsg		:= "A quantidade a comprar deve ser menor ou igual a quantidade autorizada."
+Local cText1	:= "Quantidade a comprar"
 
-DEFINE MSDIALOG oDlgqtd FROM  69,70 TO 160,331 TITLE "Quantidade a comprar" PIXEL
+DEFINE MSDIALOG oDlgqtd FROM  69,70 TO 160,331 TITLE cText1  PIXEL
 	@ 1, 02 TO 24, 128 OF oDlgqtd	PIXEL
-	@ 7, 68 MSGET nQtdeComp Picture "@E 9999999.99" VALID IIF(nQtdeComp <= nQtdeSug .AND. nQtdeComp >= 0, .T.,  (Alert("A quantidade a comprar deve ser menor ou igual a quantidade autorizada."), .F.)) SIZE 54, 10 OF oDlgqtd PIXEL
-	@ 8, 09 SAY "Quantidade a comprar"  SIZE 54, 7 OF oDlgqtd PIXEL
-	DEFINE SBUTTON FROM 29, 71 TYPE 1 ENABLE ACTION (IIf( nQtdeComp <= nQtdeSug .And. nQtdeComp >= 0 , (aLin[oLbx:nAt][ 5 ]:=nQtdeComp,  If(!Empty(aVidaLinkD) , aVidaLinkD[VL_DETALHE, oLbx:nAt, VL_QUANTID ] :=nQtdeComp, ) , T_DROVLTot( @nTotVenda, @oTotVenda, @aVidaLinkD, @oLbx ) , oDlgqtd:End()), )) OF oDlgqtd
+	@ 7, 68 MSGET nQtdeComp Picture "@E 9999999.99" VALID (IIF(nQtdeComp <= nQtdeSug .AND. nQtdeComp >= 0, .T.,;
+						  (Alert(cMsg), .F.))) SIZE 54, 10 OF oDlgqtd PIXEL
+	@ 8, 09 SAY cText1 SIZE 54, 7 OF oDlgqtd PIXEL
+
+	DEFINE SBUTTON FROM 29, 71 TYPE 1 ENABLE ACTION (IIf( nQtdeComp <= nQtdeSug .And. nQtdeComp >= 0 , ;
+				 	(aLin[oLbx:nAt][ 5 ]:= nQtdeComp,  If(!Empty(aVidaLinkD) , aVidaLinkD[VL_DETALHE, oLbx:nAt, VL_QUANTID ] := nQtdeComp, ) ,;
+				 	T_DROVLTot( @nTotVenda, @oTotVenda, @aVidaLinkD, @oLbx ) , oDlgqtd:End()), )) OF oDlgqtd
 	DEFINE SBUTTON FROM 29, 99 TYPE 2 ENABLE ACTION ( oDlgqtd:End() ) OF oDlgqtd
 ACTIVATE MSDIALOG oDlgqtd CENTERED
 Return Nil
@@ -767,7 +789,7 @@ If Len(aVidaLinkD) >= 4
 	Endif
 Endif
 
-oLbx:AARRAY[oLbx:nAt][6 ] 	:= aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_QUANTID] *(aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_PRVENDA] - aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_SUBSIDI])
+oLbx:AARRAY[oLbx:nAt][6 ] 	:= aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_QUANTID] * (aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_PRVENDA] - aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_SUBSIDI])
 oLbx:AARRAY[oLbx:nAt][7 ] 	:= aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_QUANTID] * aVidaLinkD[VL_DETALHE,oLbx:nAt,VL_PRVENDA]
 aVidaLinkD[VL_TOTVEND]		:= nTotVenda  // Atualiza o totalizador do array aVidaLink tambem
 oTotVenda:Refresh()
@@ -1526,7 +1548,6 @@ If lTotvsPDV
 	Else	
 		LjGrvLog(STDGPBasket('SL1','L1_NUM'),"Atualize o fonte STWItemRegistry - função STWItRnPrice não encontrada no RPO " +;
 											"Portanto não será possivel efetuar os calculos sobre valores de desconto")
-		
 	EndIf
 Else
 	DbSelectArea("SBI")  
@@ -1591,11 +1612,7 @@ Local aDadosVDLk	:= {}
 Default aProd 		:= {}
 Default aCliente	:= {}
 
-If !lTotvsPDV
-	nPosUni := aScan( aHeader, {|x| Alltrim(Upper(x[2])) == "LR_VRUNIT"   } ) //Posicao do campo LR_VRUNIT
-EndIf
-
-LjGrvLog( "PBM_FUNCIONAL_CARD", "Inseri produtos na venda")
+LjGrvLog( "PBM", "Insere produtos na venda")
 
 If Len(aProd) > 0
 	For nX := 1 To Len(aProd)
@@ -1613,33 +1630,37 @@ If Len(aProd) > 0
 			//Abre a tela de Registro de Item para permitir registrar outros itens e também para atualizar dados da interface
 			STIRegItemInterface()
 		Else
+			nPosUni := aScan( aHeader, {|x| Alltrim(Upper(x[2])) == "LR_VRUNIT"   } ) //Posicao do campo LR_VRUNIT
 			lRet := Lj7LancItem(aProd[nX][VL_EAN],aProd[nX][VL_QUANTID],.T., aProd[nX][VL_PRVENDA]) //Inclui Item
 		EndIf
 
 		If lRet
 			If !lTotvsPDV
 				aAdd(aProd[nX],n)
-				LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
+				LjGrvLog( "PBM", "Produto inserido com sucesso - aProd[nX][VL_EAN] " + aProd[nX][VL_EAN], aProd[nX])
 				nTotalProt += aCols[N][nPosUni] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do Protheus
 			EndIf
 			nTotal += aProd[nX][VL_PRVENDA] * aProd[nX][VL_QUANTID] //Acumula valor dos produtos do PBM Funcional Card
 		Else		 
-			LjGrvLog( "PBM_FUNCIONAL_CARD", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
+			LjGrvLog( "PBM", "Produto não inserido aProd[nX][VL_EAN] " , aProd[nX][VL_EAN])
 		EndIf
 	Next nX	
 	
-	LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no PBM - nTotal",nTotal)
+	LjGrvLog( "PBM", "Total de valores dos produtos no PBM - nTotal",nTotal)
 	
 	If lTotvsPDV
-		//Atualizo para 2 pois o registro do item ja aconteceu e permite lançamento de outros itens
+		//Atualizo para 2 (var nVidaLink) pois o registro do item ja aconteceu 
+		//e permite lançamento de outros itens que não são da PBM
 		If lRet
 			STFRefTot()
 			aDadosVDLk := STGDadosVL()
 			aDadosVDLk[3] := 2
 			STBDadosVL(aDadosVDLk)
+		Else
+			LjGrvLog( "PBM", "Erro no lançamento dos itens da PBM na Grade de vendas")
 		EndIf
 	Else
-		LjGrvLog( "PBM_FUNCIONAL_CARD", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
+		LjGrvLog( "PBM", "Total de valores dos produtos no protheus - nTotalProt",nTotalProt)
 		If nTotalProt < nTotal
 			MsgAlert(Upper(STR0002) + " : " + STR0045) //"ATENÇÃO: O valor dos produtos do Protheus está menor que o valor do PBM Funcional Card, isto pode ocasionar divergência no valor a ser pago na finalização da venda."
 		EndIf
@@ -1705,6 +1726,7 @@ Return lCanTelMeC
 	@param aDadoProd, array, contem os dados do produto a ser consultado na PBM
 		{nItem, CodBarra, Qtde, Valor1, Valor2, Qtde, Valor3, Valor4, Vlr.Desconto}
 	@param oObjTEF20, objeto, contem o objeto atual do TEF
+	@param lCancTotal, lógico, efetua cancelamento: total (.T.), parcial (.F.)
 	@return oDados, objeto, contem os dados da transação
 /*/
 Template Function DroRtOtran(cOperacao,aConvInfo,aTranInfo,aDadoProd,;

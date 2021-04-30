@@ -232,7 +232,8 @@ Else
 EndIf
 
 nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
-nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
+//JULIOOOOO - validar aqui pois o desconto deve ser em valor e correto para não dar problema de arredondamento
+nVlrDescIT := (nVlrUnit * nQuant) - nValorAux 
 nVlrDescIT := IIf(nVlrDescIT < 0, (nVlrDescIT*-1), nVlrDescIT) //Se vier como negativo devo tratar para o TOTVSPDV considerar
 
 LjGrvLog(NIL,"Registro de Item " + IIF(lItemPbm,"PBM", "Comum") + " -> Produto Código de barras [" + cCodBar + "]" + Chr(10) + Chr(13) +;
