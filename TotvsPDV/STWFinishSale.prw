@@ -658,7 +658,12 @@ If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBI
 				
 	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
 	oPBM := STBGetVPBM()
-
+	
+	//Efetua a impressão do comprovante do PBM.
+	If lRetPbm
+		lRetPbm := STBPrintPBM()
+	EndIf
+	
 	If lRetPbm
 		aRelPbm := oPBM:BuscaRel()
 		While ++nX <= Len( aRelPbm ) .AND. nY <= 1

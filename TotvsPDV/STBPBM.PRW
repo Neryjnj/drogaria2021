@@ -256,7 +256,7 @@ Return lRet
     @return lRet, lógico, Finalizou a Venda ?
 /*/
 Function STBFimVdPB(cDoc, cSerie, cKeyDoc)
-Local lRet := .F.	// Retorno da funcao
+Local lRet      := .F.	// Retorno da funcao
 
 lRet := oTPLPBM:FinalVend(cDoc, cSerie, cKeyDoc)
 STFCleanInterfaceMessage()
@@ -648,3 +648,55 @@ STBDadosVL(aDadoVDLink)
 T_DroDelANVISA(.T., NIL)
 
 Return 
+
+/*/{Protheus.doc} STBPrintPBM
+    Efetua a impressão do comprovante do PBM.
+    @type  Function
+    @author albertod
+    @since 03/2021
+    @version 12
+    @return lRet, lógico, Imprimiu o comprovante do PBM ?
+/*/
+Function STBPrintPBM()
+Local lRet          := .F.	// Retorno da funcao
+Local aRelPbm       := {}
+Local cComproPBM    := ""
+Local oTEF20        := STBGetTEF()
+Local oCupom	    := Nil
+
+//Retorna o relatorio a ser impresso, na finalização da venda no processo da PBM
+aRelPbm := oTPLPBM:BuscaRel()
+cComproPBM := ComprovPBM(aRelPbm)
+
+oCupom := oTEF20:Pbm():oTransSitef:CarregCup(cComproPBM)
+
+oTEF20:Cupom():Inserir("G", oCupom, Nil, "PBM", "", "", 0.01, 1, 0 )
+
+lRet := oTEF20:Cupom():Imprimir()
+
+Return lRet
+
+/*/{Protheus.doc} ComprovPBM
+    Monta a string do comprovante do PBM.
+    @type  Function
+    @author albertod
+    @since 03/2021
+    @version 12
+    @param aRelPbm, Array, Array com os dados do comprovante a ser impresso.
+    @return lRet, lógico, Finalizou a Venda ?
+/*/
+Static Function ComprovPBM(aRelPbm)
+Local cRet      := ""
+Local nX        := 0
+Local nCount    := 0
+
+While ++nX <= Len( aRelPbm ) .AND. nCount <= 1
+    cRet += aRelPbm[nX] + Chr(10)
+    If nX == Len( aRelPbm )
+        ++nCount
+        nX := 0
+        cRet += Chr(13) + Chr(10)
+    EndIf
+End
+
+Return cRet
