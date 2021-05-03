@@ -211,10 +211,11 @@ Return lRetorno
 	@return lRetorno, string, execução com sucesso ?
 /*/
 Method BuscaRel() Class LJCClisitefPbm
-Local lRetorno := .F.
+Local aComprov := {}
 
-lRetorno := ::oPBM:BuscaRel()
-Return lRetorno
+aComprov := ::oPBM:BuscaRel()
+
+Return aComprov
 
 /*---------------------------------------------------------------------------
 ±±ºPrograma  |SelecPbm     ºAutor  ³Vendas CRM       º Data ³  01/04/10   º±±

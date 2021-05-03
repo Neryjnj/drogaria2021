@@ -662,19 +662,14 @@ If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBI
 	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm [DOC | SERIE | ChaveNota]",;
 			cDoc + cSerie + cKeyDoc )
 	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
-
 	oPBM := STBGetVPBM()
 	
+	//Efetua a impressão do comprovante do PBM.
 	If lRetPbm
-		aRelPbm := oPBM:BuscaRel()
-		While ++nX <= Len( aRelPbm ) .AND. nY <= 1
-			cTickForm += aRelPbm[nX] + Chr(10)
-			If nX == Len( aRelPbm )
-				++nY
-				nX := 0
-				cTickForm += Chr(13) + Chr(10)
-			EndIf
-		End
+		lRetPbm := STBPrintPBM()
+	EndIf
+	
+	If lRetPbm
 
 		//JULIOOOOOO - fase da impressão - verificar com o Alberto
 		//If oPBM:ImpCupTef(cTickForm)
