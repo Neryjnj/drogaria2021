@@ -513,9 +513,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 				If STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
 								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )					
-					
+					//o Desconto retornado vem em valor devido ao calculo interno da PBM
 					If nDiscount > 0
-						cTypeDesc := "P" //JULIOOOOO - aqui deve ser transformado para valor - "V"
+						cTypeDesc := "V"
 					EndIf
 				Else
 					LjGrvLog(cL1Num,"Sem sucesso no lançamento do produto PBM e o desconto da loja será zerado")
@@ -553,6 +553,12 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						EndIf
 									//aDroVLPVal[3] //Percentual do Desconto				
 						nDroPrProd := aDroVLPVal[4] //Valor Unitário
+					Else
+						//JULIOOOOOOOOOOOOO- continuar daqui pois o valo do item é tratado de forma diferente 
+						//no front qdo retorna via PBM EPharma , com isso ele zera o desconto
+						//procurar pela variavel lFRTDescITt  e nVlrDescIT no FRTA271A
+						//PESQUISAR no FONTE -> aValPerc	:= T_DroVLPVal(aVidaLinkD,a
+						nItemTotal := nItemTotal - nDiscount
 					EndIf
 				EndIf
 			EndIf

@@ -232,8 +232,7 @@ Else
 EndIf
 
 nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)
-//JULIOOOOO - validar aqui pois o desconto deve ser em valor e correto para não dar problema de arredondamento
-nVlrDescIT := (nVlrUnit * nQuant) - nValorAux 
+nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
 nVlrDescIT := IIf(nVlrDescIT < 0, (nVlrDescIT*-1), nVlrDescIT) //Se vier como negativo devo tratar para o TOTVSPDV considerar
 
 LjGrvLog(NIL,"Registro de Item " + IIF(lItemPbm,"PBM", "Comum") + " -> Produto Código de barras [" + cCodBar + "]" + Chr(10) + Chr(13) +;
@@ -316,12 +315,18 @@ Return cDoc
 /*/
 Function STBIsVnPBM(lSet,oVARPBM)
 Local lRet := .F.
+Local oTEF20 := NIL
 
 DEFAULT oVARPBM := NIL
 
 If ValType(lSet) == "L"
     lIsVndPBM:= lSet
     oTPLPBM  := oVARPBM
+    If !lIsVndPBM //Zero o objeto de PBM do objeto do TEF geral
+        oTEF20 := STBGetTEF()
+        oTEF20:Pbm():oPBM := NIL
+        STBSetTef(oTEF20)
+    EndIf
 EndIf
 
 lRet := lIsVndPBM
@@ -337,9 +342,7 @@ Return lRet
     @return oRetPBM, objeto, objeto com os dados da PBM atual
 /*/
 Function STBGetVPBM()
-Local oRetPbm
-oRetPbm := oTPLPBM
-
+Local oRetPbm := oTPLPBM
 Return oRetPbm
 
 //--------------------------------------------------------

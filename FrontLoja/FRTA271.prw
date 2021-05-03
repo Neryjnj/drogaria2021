@@ -3015,11 +3015,6 @@ Function LjVendProdPbm(	cCodBar, nQuant, nVlrUnit, lItemPbm, nVlrDescIT, lPrioPb
 	nValorAux  := NoRound((nVlrUnit * nQuant) - (((nVlrUnit * nQuant) * nPercDesc) / 100), 2)	
 		
 	nVlrDescIT := (nVlrUnit * nQuant) - nValorAux
-
-	If nVlrDescIT < 0
-		nVlrDescIT := nVlrDescIT * -1
-		Conout("[LjVendProdPbm] - Desconto foi ajustado por era menor que zero")
-	EndIf
 		
 Return lRet
 

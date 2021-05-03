@@ -230,7 +230,7 @@ If lContinua
 			endif
 		endif
 		
-		If !STFSCfmPBM() //Validação TPL Drogaria
+		If !STFSCfmPBM(,,,(nRetNfce == 1)) //Validação TPL Drogaria
 			nRetNfce := -1
 		EndIf
 
@@ -315,7 +315,13 @@ If lContinua
 				cSerieSat		:= aSATDoc[2]
 			EndIf
 
-			lContinua := STFSCfmPBM(cDoc,,SubStr(aRet[7],4,Len(aRet[7]))) //Validação TPL Drogaria
+			lContinua := .T.
+		Else
+			lContinua := .F.
+		EndIf
+
+		If lContinua  //Validação TPL Drogaria
+			lContinua := STFSCfmPBM( cDoc,cSerieSat, SubStr(aRet[7],4,Len(aRet[7])) )
 		EndIf
 
 		If lContinua
@@ -430,7 +436,7 @@ If lContinua
 		LjMsgRun( STR0002+ " " + SL1->L1_NUM + " " + STR0004 + " " + cDoc,,;
 				{|| nRetNfce := LjNFCeGera(SL1->L1_FILIAL,SL1->L1_NUM, @cKeyNfce,,lPrintNFCE, @cMsgErro)} )   //"Aguarde... Processando NFC-e Orcamento: "  " - Doc.: "
 		
-		If !STFSCfmPBM(,,cKeyNfce) //Validação TPL Drogaria
+		If nRetNfce == 1  .And. !STFSCfmPBM(,,cKeyNfce) //Validação TPL Drogaria
 			lContinua := .F.
 			nRetNfce  := -1
 		Endif
@@ -588,8 +594,6 @@ de impressão do comprovante TEF
 Function STWFinishValid
 Return
 
-
-
 //-------------------------------------------------------------------
 /*{Protheus.doc} STWSetDocSerie
 Função criada para armazenar o último número do cupom fiscal antes do STFRestart()
@@ -641,6 +645,7 @@ Static Function STFSCfmPBM(cDoc,cSerie,cKeyDoc)
 Local aRelPbm  := {}
 Local cTickForm:= ""
 Local lContinua:= .T.
+Local lErro	   := .F.	
 Local lRetPbm  := .F.
 Local nX	   := 0	
 Local nY	   := 0
@@ -653,12 +658,13 @@ Default cKeyDoc:= STDGPBasket("SL1","L1_KEYNFCE")
 //Se efetou a finalização do documento corretamente e tem PBM, finalizo a venda PBM
 If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 
-	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm [DOC | SERIE | ChaveNota]",;
-				cDoc + cSerie + cKeyDoc )
-				
-	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
-	oPBM := STBGetVPBM()
 
+	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm [DOC | SERIE | ChaveNota]",;
+			cDoc + cSerie + cKeyDoc )
+	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
+
+	oPBM := STBGetVPBM()
+	
 	If lRetPbm
 		aRelPbm := oPBM:BuscaRel()
 		While ++nX <= Len( aRelPbm ) .AND. nY <= 1
@@ -680,11 +686,15 @@ If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBI
 		STBIsVnPBM(.F.,NIL) //Limpa o objeto de venda PBM
 
 		//JULIOOOOO - Remover do comentario e tratar caso não tenha impresso
-		// Else
-		// 	oPBM:ConfVend( .F. )
-		//  lContinua := .F.
-		// EndIf
+		//Else
+		// 	lErro := .T.
+		//EndIf
 	Else
+		lErro := .T.
+		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Retorno negativo da função STBFimVdPB")
+	EndIf
+
+	If lErro
 		lContinua := .F.
 		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM não confirmada devido a erro no processo do TEF portanto" +;
 												" essa venda não será finalizada")
