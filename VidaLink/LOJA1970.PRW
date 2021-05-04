@@ -1,5 +1,4 @@
 #INCLUDE "MSOBJECT.CH"
-#INCLUDE "LOJA1001.CH"
 
 User Function LOJA1970 ; Return  	// "dummy" function - Internal Use
 

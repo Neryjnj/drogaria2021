@@ -1,20 +1,4 @@
 #INCLUDE "MSOBJECT.CH"
-#INCLUDE "LOJA1001.CH"
-  
-//зддддддддддддддддддддддддддд©
-//ЁTipo de transacoes enviadasЁ
-//юддддддддддддддддддддддддддды
-#DEFINE CONSULTA 		1
-#DEFINE VENDA	 		2
-#DEFINE CANCELAMENTO	3
-#DEFINE SEPARADOR 		CHR(0)
-
-//зддддддддддддддддддддддддддддддддд©
-//ЁMeios para buscar pre-autorizacaoЁ
-//юддддддддддддддддддддддддддддддддды
-#DEFINE CARTAOMAG		1
-#DEFINE CARTAO			2
-#DEFINE AUTORIZACAO		3
 
 User Function LOJA1971 ; Return  	// "dummy" function - Internal Use
 

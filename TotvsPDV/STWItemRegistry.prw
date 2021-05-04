@@ -82,6 +82,7 @@ Local lRecShopCard		:= .F.   													// Indica que é um produto do tipo Rec
 Local lItemServFin		:= .F.														// Define ao serviço financeiro item NAO fiscal caso for avulso
 Local aAlqLeiTr			:= {0,0,0,0,}												// array utilizado para pegar as aliquotas das lei dos impostos
 Local oTotal	   		:= STFGetTot() 												// Totalizador
+Local oModelCli			:= NIL
 Local cMsgErro			:= STR0003													// "Nao foi possivel a abertura do Cupom Fiscal"
 Local nVTotAfter		:= 0														// Valor total antes de passar pela rotina de calculo de imposto
 Local cDscPrdPAF		:= ""														// Descrição do produto segundo legislação do PAF CONVÊNIO ICMS 25, DE 8 DE ABRIL DE 2016 
@@ -113,6 +114,7 @@ Local lItemPbm			:= .F.
 Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
 Local lPrioPBM			:= SuperGetMV("MV_PRIOPBM" , .F., .T.) 	//Priorizacao da venda por PBM
 Local lSTBIsVnPBM		:= ExistFunc("STBIsVnPBM")
+Local lFRTDescITt		:= lTPLDrogaria .And. ExistTemplate("FRTDescITt")
 			
 Default nItemLine 		:= 0				   										// Linha do Item na Venda
 Default cItemCode 		:= ""														// Codigo do Item
@@ -156,25 +158,25 @@ EndIf
 
 /*Tratamento VidaLINK*/
 If lTPLDrogaria .And. ExistFunc("STGDadosVL")
+	LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Verifica se tem dados para venda PBM")
 	aDadoVLink := STGDadosVL()
 	If aDadoVLink[3] == 1
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Dados para venda PBM", aDadoVLink)
 		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
 		If aAux[ITEM_ENCONTRADO]
 			cItemCode := aAux[ITEM_CODIGO]
 		EndIf
-
-		cCliCode := aDadoVLink[2][VL_C_CODCL] 
-		cCliLoja := aDadoVLink[2][VL_C_LOJA]
-		cCliType := STDGPBasket("SL1","L1_TIPOCLI")			
 		
-		If nItemLine == 1 //Somente quando for o primeiro item que posiciona
-			SA1->(DbSetOrder(1))
-			If SA1->(DbSeek(xFilial("SA1")+cCliCode+cCliLoja))
-				cCliType := SA1->A1_TIPO
-			EndIf
-			STDSPBasket("SL1","L1_TIPOCLI",cCliType) //Tipo do Cliente na Cesta
-			STDSPBasket("SL1","L1_CLIENTE",cCliCode) //Codigo do Cliente na Cesta
-			STDSPBasket("SL1","L1_LOJA",cCliLoja)	 //Loja do Cliente na Cesta
+		If nItemLine == 1 //Somente quando for o primeiro item que posiciona			
+			cCliCode := Padr(AllTrim(aDadoVLink[2][VL_C_CODCL]),TamSx3("L1_CLIENTE")[1])
+			cCliLoja := Padr(AllTrim(aDadoVLink[2][VL_C_LOJA]),TamSx3("L1_LOJA")[1])
+			oModelCli := STWCustomerSelection(cCliCode+cCliLoja)
+
+			STDSPBasket("SL1","L1_CLIENTE"	,oModelCli:GetValue("SA1MASTER","A1_COD")) //Codigo do Cliente na Cesta
+			STDSPBasket("SL1","L1_LOJA"		,oModelCli:GetValue("SA1MASTER","A1_LOJA")) //Loja do Cliente na Cesta
+			STDSPBasket("SL1","L1_TIPOCLI"	,oModelCli:GetValue("SA1MASTER","A1_TIPO")) //Tipo do Cliente na Cesta
+			LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Posicionamento do cliente (Código|Loja|TipoCli)",;
+							 {cCliCode,cCliLoja,oModelCli:GetValue("SA1MASTER","A1_TIPO")})
 		EndIf
 
 		If SuperGetMv("MV_LJCFID",,.F.) .AND. CrdxInt()
@@ -185,6 +187,8 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 		EndIf
 
 		STBSetQuant( aDadoVLink[1][VL_DETALHE, nItemLine, VL_QUANTID],1 )
+
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Dados de item PBM (Código|Preço)", {cItemCode,nPrice})
 	EndIf
 EndIf
 
@@ -463,13 +467,16 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		EndIf
 
 		If lRet .And. lTPLDrogaria
+			
 			nDroPrProd := nPrice
 			/***** Busca preco do item caso nao tenha sido informada por parametro *********/
 			aAux := STBDroVars(.F.)
+			LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Variaveis Template Drogaria ", aAux)
 			STWItRnPrice(@nDroPrProd, STDGPBasket('SL1','L1_NUM'), aInfoItem, cCliCode,cCliLoja, nMoeda, @lRet )
 			
-			If ExistTemplate("FRTDESCIT")
-				aTPLFRTIT := { aInfoItem[ITEM_CODIGO],;
+			If lFRTDescITt
+				aTPLFRTIT := { ;
+							   aInfoItem[ITEM_CODIGO],;
 							   Iif(cTypeDesc=="P",nDiscount,0),;
 							   Iif(cTypeDesc=="V",nDiscount,0),;
 							   nDroPrProd,;
@@ -478,11 +485,13 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 							   STDGPBasket('SL1','L1_SERIE')  ; //STFGetStation("SERIE")	
 							}
 
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução do PE  FrtDescIT", aTPLFRTIT)
 				aTPLFRTIT := ExecTemplate("FrtDescIT",.F.,.F.,{	;
 										aTPLFRTIT[1],aTPLFRTIT[2],aTPLFRTIT[3],aTPLFRTIT[4],;
 										aAux[2], aAux[1]   , STBGetQuant()	, cCliCode,;
 										cCliLoja, aTPLFRTIT[5], aTPLFRTIT[6], aTPLFRTIT[7] } )
-				
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depois da execução do PE FrtDescIT", aTPLFRTIT)
+
 				//Seta falso para cancelamento da tela de PBM
 				T_DrSScrExMC(.F.)
 
@@ -505,14 +514,20 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			EndIf
 
 			If lRet .And. lSTBIsVnPBM .And. STBIsVnPBM()
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Venda PBM detectada")
+
 				If lPrioPBM .And. nDiscount > 0
-					LjGrvLog(cL1Num,"Devido a configuração do parametro MV_PRIOPBM, o desconto da loja será zerado")
+					LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Devido a configuração do " +;
+									" parâmetro MV_PRIOPBM, o desconto da loja será zerado")
 					nDiscount := 0
 					cTypeDesc := ""
 				EndiF
 
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Validação se Item pertence a PBM")
 				If STVndPrPbm(	aInfoItem[ITEM_CODBAR], STBGetQuant(), nDroPrProd, @lItemPbm,;
-								@nDiscount, lPrioPBM, /*nVlrPercIT*/0 )					
+								@nDiscount, lPrioPBM, /*nVlrPercIT*/0)
+					
+					LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item de Venda PBM detectado - Desconto proveniente da PBM", nDiscount)
 					//o Desconto retornado vem em valor devido ao calculo interno da PBM
 					If nDiscount > 0
 						cTypeDesc := "V"
@@ -526,15 +541,20 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			EndIF
 
 			If lRet
-				If Len(aDadoVLink) > 0 
+				If Len(aDadoVLink) > 0
+					LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Informações de PBM", aDadoVLink)
+
 					If (nDroPrProd > 0)  .And. (aDadoVLink[3] <> 1) .And. (nDiscount >= nDroPrProd)
 						MsgAlert("VIDALINK - O desconto será desconsiderado pois é maior ou igual ao valor do item.",;
 								"Atenção") //"O desconto será desconsiderado pois é maior ou igual ao valor do item.","Atenção"
+						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - o Desconto será desconsiderado pois é " +;
+										"maior ou igual ao valor do item")
 						nDiscount := 0
 						cTypeDesc := ""
 					EndIf
 
 					If aDadoVLink[3] == 1
+						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item de Venda PBM detectado")
 						//--------------------------------------------------------------------
 						//|  Verifica se o preco do VidaLink eh maior que o preco do sistema | 
 						//|  com desconto.Vale o preco menor aValPerc  						 |
@@ -542,10 +562,12 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						aAux := STBDroVars(.F.)
 						//nVidaLink - aqui está com dois, mas no PE precisar estar como 1 
 						//para que a validação aconteça com sucesso
+						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução do PE DroVLPVal")
 						aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3], aInfoItem[ITEM_CODIGO],;
 													nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
 													nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
 													aAux[1]		 , (cTypeItem == "IMP") )
+						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depois da execução do PE DroVLPVal", aDroVLPVal)
 						nItemTotal := aDroVLPVal[1] //Valor do Item
 						nDiscount  := aDroVLPVal[2] //Valor do Desconto
 						If nDiscount > 0
@@ -554,11 +576,14 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 									//aDroVLPVal[3] //Percentual do Desconto				
 						nDroPrProd := aDroVLPVal[4] //Valor Unitário
 					Else
-						//JULIOOOOOOOOOOOOO- continuar daqui pois o valo do item é tratado de forma diferente 
-						//no front qdo retorna via PBM EPharma , com isso ele zera o desconto
-						//procurar pela variavel lFRTDescITt  e nVlrDescIT no FRTA271A
-						//PESQUISAR no FONTE -> aValPerc	:= T_DroVLPVal(aVidaLinkD,a
-						nItemTotal := nItemTotal - nDiscount
+						//No FrontLoja quando tenho PBM EPharma/TRCentre o desconto é subtraido do prec. item e o desconto é 
+						//desconsiderado para que seja dado o valor de subsidio na finalização da venda como forma de pagamento
+						//(que será concedido como se fosse um desconto - o parametro MV_LJFSUB)
+						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item PBM - Val. Item terá o Val. Desc. " +;
+										"subtraído e Desconto será zerado -> Informações (Val.Item|Val. Desc.)", {nDroPrProd,nDiscount})
+						nDroPrProd := nDroPrProd - nDiscount
+						nDiscount := 0
+						cTypeDesc := ""
 					EndIf
 				EndIf
 			EndIf
@@ -566,6 +591,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			//Faz o ajuste por meio da variável do Template pois ela altera os valores
 			If lRet .And. (nDroPrProd > 0)
 				nPrice := nDroPrProd
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Val. Prod. Padrão será substituido pelo Val. Prod. do TPL", nPrice)
 			EndIf		
 		EndIf
 		
@@ -843,9 +869,12 @@ EndIf
 If !lKitMaster
 	If lRet .And. lTPLDrogaria
 		If lSTBIsVnPBM .And. STBIsVnPBM()
-			If !STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)), STBGetQuant(), .T., lItemPbm, nItemLine)
+			LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Validação Produto PBM - função STCnfPrPBM")
+			If STCnfPrPBM(AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)), STBGetQuant(), .T., lItemPbm, nItemLine)
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item confirmado na PBM")
+			Else
 				lRet := .F.
-				LjGrvLog(cL1Num,"Item não confirmado na PBM, não será registrado",lRet)
+				LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item não confirmado na PBM, não será registrado",lRet)
 				STFMessage("ItemRegistered","STOP","PBM - Produto " + AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) +;
 													" Inválido - Não registrado" ) //"PBM - Produto " + + "Inválido - Não registrado"
 			EndIf
@@ -917,13 +946,15 @@ If lRet .And. lTPLDrogaria
 	aAux := STBDroVars(.F.)
 	AADD(aTPLCODB2,aAux[2]) //13- uProdCli
 	AADD(aTPLCODB2,aAux[1]) //14 - uCliTPL
-	AADD(aTPLCODB2,NIL) //15 - oModelCesta
+	AADD(aTPLCODB2,NIL) 	//15 - oModelCesta
 	AADD(aTPLCODB2,nItemLine) //16 - nItemLine - Linha do Basket de itens
 	
 	aTPLCODB3 := aClone(aTPLCODB2)
 
 	If ExistTemplate("FRTCODB2")
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução do PE FRTCODB2")
 		aTPLCODB2 := ExecTemplate( "FRTCODB2",.F.,.F.,{aTPLCODB2, aAux[2], aAux[1] } )
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depos da execução do PE FRTCODB2", aTPLCODB2)
 		aAux := Array(2)
 		If ValType( aTPLCODB2[13] ) == "A" //uProdCLI
 			aAux[2] := aClone(aTPLCODB2[13])
@@ -940,19 +971,27 @@ If lRet .And. lTPLDrogaria
 	EndIf
 
 	If ExistTemplate("FRTCODB3")
-		aAux := STBDroVars(.F.)		
+		aAux := STBDroVars(.F.)
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução do PE FRTCODB3")
 		aTPLCODB3 := ExecTemplate("FRTCODB3",.F.,.F.,{aTPLCODB3,aAux[2],aAux[1]})
-		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]) )
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depos da execução do PE FRTCODB3", aTPLCODB3)
+		STBDroVars(.F., .T., aTPLCODB3[14], aClone(aTPLCODB3[13]))
 	EndIf
 
+	LjGrvLog(cL1Num,"Registra Item - Template Drogaria - função DroVerCont - Validação se produto é controlado? ")
 	If T_DroVerCont( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)) )
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Retorno função DroVerCont - Produto é Controlado")
+
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução da função DroAltANVISA")
 		T_DroAltANVISA( AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)), STDGPBasket("SL2","L2_QUANT",nItemLine),;
 						 STDGPBasket("SL1","L1_DOC"), STDGPBasket("SL1","L1_SERIE"), nItemLine )
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depois da execução da função DroAltANVISA")
+	Else
+		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Retorno função DroVerCont - Produto Não é Controlado")
 	Endif
 EndIf
 
 Return lRet
-
 
 //-------------------------------------------------------------------
 /* {Protheus.doc} STWSetOpenedReceipt
