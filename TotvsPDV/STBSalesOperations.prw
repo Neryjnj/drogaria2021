@@ -218,11 +218,11 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 
 	If ExistFunc("STBPbmMenu") .And. lUsaTef
 		oTef20 := STBGetTEF()
-		If oTef20:IsAtivo() .And. ValType(oTef20:oConfig:oCfgTef:oSitef) == "O"
+		If oTef20:IsAtivo() .And. oTef20:oConfig:ISPBM()
 			AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
 		Else
-			ConOut("Para uso de PBM é necessário ativar o TEF SITEF")
-			LjGrvLog(NIL,"Para uso de PBM é necessário ativar o TEF SITEF")
+			ConOut("Para uso de PBM é necessário ativar o TEF SITEF e ativar o uso de PBM no Cadastro de Estação(LOJA121)")
+			LjGrvLog(NIL,"Para uso de PBM é necessário ativar o TEF SITEF e ativar o uso de PBM no Cadastro de Estação(LOJA121)")
 		EndIf
 	EndIf
 
