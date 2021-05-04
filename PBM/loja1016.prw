@@ -1,3 +1,4 @@
+#INCLUDE "TOTVS.CH"
 #INCLUDE "MSOBJECT.CH"
   
 User Function LOJA1016 ; Return  			// "dummy" function - Internal Use
@@ -51,10 +52,7 @@ Method SitefPBM(oClisitef) Class LJCSitefPBM
 	
 Return Self
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+/*---------------------------------------------------------------------------
 ฑฑบMetodo    ณEnvTrans  บAutor  ณVendas Clientes     บ Data ณ  10/09/07   บฑฑ
 ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณResponsavel por enviar as transacoes ao sitef.              บฑฑ
@@ -63,10 +61,7 @@ Return Self
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบParametrosณExpO1 (1 - oDadosTran ) - Objeto do tipo DadosSitefDireto   บฑฑ
 ฑฑบ			 ณcom os dados da transacao.								  บฑฑ
-ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
-ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
-฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
-*/
+---------------------------------------------------------------------------*/
 Method EnvTrans(oDadosTran) Class LJCSitefPBM
 		
 	oDadosTran:cDadosRx 	:= Space(10000)
@@ -142,17 +137,17 @@ Method FimTrans(lConfirma, cCupomFisc, cDataFisc, cHorario) Class LJCSitefPBM
 	If lConfirma
 		nConfirma := 1
 	EndIf
-
-	//Grava o log
-	If nConfirma == 1
-		cLog := "Transacao PBM Confirmada"
-	Else
-		cLog := "Transacao PBM Desfeita"
-	EndIf
 	
 	If Self:oClisitef <> Nil
 	   	Self:oClisitef:FinTrans(nConfirma)
 	Else
+		//Grava o log
+		If nConfirma == 1
+			cLog := "Transacao PBM Confirmada"
+		Else
+			cLog := "Transacao PBM Desfeita"
+		EndIf
+
 		//Guarda os valores que estao no objeto oTef
 		cCupomTef	:= oTef:cCupom
 		cDataTef	:= oTef:cData

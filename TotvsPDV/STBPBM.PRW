@@ -314,18 +314,12 @@ Return cDoc
 /*/
 Function STBIsVnPBM(lSet,oVARPBM)
 Local lRet := .F.
-Local oTEF20 := NIL
 
 DEFAULT oVARPBM := NIL
 
 If ValType(lSet) == "L"
     lIsVndPBM:= lSet
     oTPLPBM  := oVARPBM
-    If !lIsVndPBM //Zero o objeto de PBM do objeto do TEF geral
-        oTEF20 := STBGetTEF()
-        oTEF20:Pbm():oPBM := NIL
-        STBSetTef(oTEF20)
-    EndIf
 EndIf
 
 lRet := lIsVndPBM
