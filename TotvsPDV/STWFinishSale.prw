@@ -642,14 +642,12 @@ Return( {cStDoc,cStSerie} )
 	@return lContinua, lógico, Continua com a venda ?
 /*/
 Static Function STFSCfmPBM(cDoc,cSerie,cKeyDoc)
-Local aRelPbm  := {}
-Local cTickForm:= ""
-Local lContinua:= .T.
-Local lErro	   := .F.	
-Local lRetPbm  := .F.
-Local nX	   := 0	
-Local nY	   := 0
-Local oPBM 	   := NIL
+Local aRelPbm  	:= {}
+Local cComproPBM:= ""	//Comprovante do PBM
+Local lContinua	:= .T.
+Local lErro	   	:= .F.
+Local lRetPbm  	:= .F.
+Local oPBM 	   	:= NIL
 
 Default cDoc   := STDGPBasket("SL1","L1_DOC")
 Default cSerie := STDGPBasket("SL1","L1_SERIE")
@@ -658,7 +656,6 @@ Default cKeyDoc:= STDGPBasket("SL1","L1_KEYNFCE")
 //Se efetou a finalização do documento corretamente e tem PBM, finalizo a venda PBM
 If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBIsVnPBM()
 
-
 	LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - Enviando confirmação da venda Pbm [DOC | SERIE | ChaveNota]",;
 			cDoc + cSerie + cKeyDoc )
 	lRetPbm := STBFimVdPB(cDoc, cSerie , cKeyDoc)
@@ -666,14 +663,14 @@ If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBIsVnPBM") .And. STBI
 	
 	//Efetua a impressão do comprovante do PBM.
 	If lRetPbm
-		lRetPbm := STBPrintPBM()
+		//Busca o relatorio a ser impresso, na finalização da venda no processo da PBM
+		aRelPbm 	:= oPBM:BuscaRel()
+		cComproPBM 	:= STBPbmCpv(aRelPbm)
+		lRetPbm 	:= STBPrintPBM(cComproPBM)
 	EndIf
 	
 	If lRetPbm
-
-		//JULIOOOOOO - fase da impressão - verificar com o Alberto
-		//If oPBM:ImpCupTef(cTickForm)
-
+		//Confirma Transação PBM
 		oPBM:ConfVend( .T. )
 		LjGrvLog( STDGPBasket("SL1","L1_NUM"), "STFSCfmPBM - PBM confirmada - Venda confirmada")
 		STFMessage("STFSCfmPBM", "ALERT", "PBM confirmada - Venda confirmada") //#"PBM confirmada - Venda confirmada"
