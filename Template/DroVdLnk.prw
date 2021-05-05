@@ -1634,7 +1634,7 @@ If Len(aProd) > 0
 		If lTotvsPDV
 			nItens := STDPBLength("SL2")+1
 			STBSetQuant( aProd[nX][VL_QUANTID] )
-			lRet := STWItemReg(	nItens			,	aProd[nX][VL_EAN],aCliente[1]	,	aCliente[2] ,;
+			lRet := STWItemReg(	nItens			, aProd[nX][VL_EAN] ,aCliente[1]	,	aCliente[2] ,;
 								/*nMoeda*/     	,	/*nDiscount*/  	, /*cTypeDesc*/	,	/*lAddItem*/,;
 								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA],;
 								/*cTypeItem*/	,   /*lInfoCNPJ*/	, /*lRecovery*/	,	/*nSecItem*/,;

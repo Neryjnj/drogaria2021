@@ -2934,13 +2934,7 @@ Local lTotvsPDV := STFIsPos()
 //|Intervalo utilizado pelos templates:|
 //|70 a 99                             |
 If lTotvsPDV
-	AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa", "T_DroVSNGPC(.T.,.T.)" , "", cValToChar(++nNumMenu)})
-	// oTEF20 := STBGetTEF()
-	// If STFGetCfg("lUsaTef") .And. ValType(oTEF20) == "O" .And. oTEF20:oConfig:ISPBM()
-	// 	AAdd( _aFuncoes, { cValToChar(++nOption), "PBM VidaLink"  		,"T_DroVLGet(1)"	, "" , cValToChar(++nNumMenu) } ) //"PBM VIDA LINK"
-	// 	AAdd( _aFuncoes, { cValToChar(++nOption), "PBM PharmaSystem"  	,"T_DroVLGet(541)"	, "" , cValToChar(++nNumMenu) } ) //"PBM PHARMASYSTEM"
-	// 	AAdd( _aFuncoes, { cValToChar(++nOption), "PBM Funcional Card"  ,"T_DroVLGet(560)"	, "" , cValToChar(++nNumMenu) } ) //"PBM Funcional Card"
-	// EndIf
+	AAdd( _aFuncoes , { cValToChar(++nOption) ,  "SNGPC-Anvisa","T_DroVSNGPC(.T.,.T.,,,,,,,,,,.T.)" , "", cValToChar(++nNumMenu)})
 Else
 	If T_DroLenANVISA() > 0
 		AAdd( _aFuncoes, {"70", "SNGPC - ANVISA", "T_DroVSNGPC( .T., .T. )", { |x| .F. } } ) //"SNGPC"

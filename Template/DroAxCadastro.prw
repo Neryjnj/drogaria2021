@@ -369,7 +369,7 @@ Return lRet
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Template Function DroVSNGPC(lF12		, lTela		, cCliente	, cLoja			,;
 							cClassTe	, nItem		, cProd		, lInfoAnvisa	,;
-							lJaAnvisa	, _nPosItem	, lAcessoLib)
+							lJaAnvisa	, _nPosItem	, lAcessoLib, lIsMenuPDV)
 Local nI			:= 0
 Local nX			:= 0
 Local lRet			:= .F.	    // Retorno da funcao
@@ -399,11 +399,12 @@ Default lInfoAnvisa := .F.
 Default lJaAnvisa	:= .F.
 Default _nPosItem	:= 0
 Default lAcessoLib	:= .F.
+Default lIsMenuPDV	:= .F.
 
 //No TotvsPDV o menu será incluido normalmente pois o menu é diferente do Front porem devo tratar 
 //se tem informação da ANVISA para não mostrar a tela vazia de LK9
 If lTotvsPDV
-	If IsInCallStack("T_FRTFuncoes")
+	If lIsMenuPDV
 		lContinua := T_DroLenANVISA() > 0
 	Else
 		lContinua := .T.
@@ -656,7 +657,6 @@ Local bCancel				// Botao Cancel da Enchoice Bar
 Local aLote	 	 := {}		// Array com os campos para o Msmget
 Local aLoteAux   := {"LK9_LOTE"}
 Local cRastro	 := SuperGetMV("MV_RASTRO")											// Verifica se a rastreabilidade esta' habilitada
-Local lAutoExB	 := IsBlind()														// Verifica se a rotina sera executada via execauto ou nao
 Local aRet		 := {}
 Local lContrLote := .F.
 Local nPosProd	 := Ascan(aHeaderDet,{|x| AllTrim(Upper(x[2])) == "LR_PRODUTO"}) 	// Guarda posicao do campo LR_PRODUTO para procura no aColsDet
