@@ -456,9 +456,10 @@ If nPos > 0 .AND. !Empty(nRecno)
 		
 		If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
 			cMatricula := AllTrim(SA1->A1_MATRICU)
-			
-			//Abre a tela para seleção do Plano de Fidelização (Template Drogaria)
-			lRet := STBPlanFid(@cCartaoMA6, @cMatricula)
+			If ExistFunc("STBPlanFid")
+				//Abre a tela para seleção do Plano de Fidelização (Template Drogaria)
+				lRet := STBPlanFid(@cCartaoMA6, @cMatricula)
+			EndIf
 		EndIf
 
 		// Integração SIGACRD x TOTVSPDV
