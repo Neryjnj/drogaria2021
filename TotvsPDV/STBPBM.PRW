@@ -107,18 +107,26 @@ Return NIL
     @return nenhum
 /*/
 Static Function STBCancPbm()
-Local cMsg  := ""
-Local oTEF20:= STBGetTEF()
+Local cMsg      := ""
+Local oTEF20    := STBGetTEF()
+Local cNomePBM  := ""
+Local aRelPbm   := {}
+Local cComproPBM:= ""
 
 STBIsVnPBM(.T.,oTEF20:Pbm())
 
 If oTPLPBM <> Nil
-    If oTPLPBM:SelecPbm(,.T.)
+    If oTPLPBM:SelecPbm(@cNomePBM,.T.)
         STFMessage("STBCancPbm1", "STOP",  "Cancelamento de PBM") //"Cancela PBM"
 		STFShowMessage("STBCancPbm1")
         If oTPLPBM:CancPbm()
-            //JULIOOOOOOOOOOO - Falar com o Alberto sobre a impressão do comprovante
-            //oTEF20:Cupom():Imprimir()
+            //Impressão do Comprovante de Cancelamento do PBM.
+            If cNomePBM $ (_EPHARMA + "|" + _TRNCENTRE)
+                //Busca o relatorio a ser impresso, referente ao cancelamento do PBM
+                aRelPbm     := oTPLPBM:BuscaRel()
+                cComproPBM  := STBPbmCpv(aRelPbm)
+                STBPrintPBM(cComproPBM)
+            EndIf
             cMsg := "Venda PBM cancelada com sucesso" //"Cancela PBM"		    
         Else
             cMsg := "Venda PBM não cancelada"
@@ -651,37 +659,42 @@ Return
     @author albertod
     @since 03/2021
     @version 12
+    @param cViaCaixa, Caracter, Texto do comprovante PBM (Via do Estabelecimento)
+    @param cViaCliente, Caracter, Texto do comprovante PBM (Via do Cliente)
     @return lRet, lógico, Imprimiu o comprovante do PBM ?
 /*/
-Function STBPrintPBM()
+Function STBPrintPBM(cViaCaixa, cViaCliente)
 Local lRet          := .F.	// Retorno da funcao
-Local aRelPbm       := {}
-Local cComproPBM    := ""
 Local oTEF20        := STBGetTEF()
-Local oCupom	    := Nil
+Local oViaCaixa		:= Nil
+Local oViaCliente	:= Nil
 
-//Retorna o relatorio a ser impresso, na finalização da venda no processo da PBM
-aRelPbm := oTPLPBM:BuscaRel()
-cComproPBM := ComprovPBM(aRelPbm)
+If !Empty(cViaCaixa)
+    oViaCaixa := oTEF20:Pbm():oTransSitef:CarregCup(cViaCaixa)
+EndIf
 
-oCupom := oTEF20:Pbm():oTransSitef:CarregCup(cComproPBM)
+If !Empty(cViaCliente)
+    oViaCliente := oTEF20:Pbm():oTransSitef:CarregCup(cViaCliente)
+EndIf
 
-oTEF20:Cupom():Inserir("G", oCupom, Nil, "PBM", "", "", 0.01, 1, 0 )
+//Insere na Coleção o Cupom PBM que deve ser impresso
+oTEF20:Cupom():Inserir("G", oViaCaixa, oViaCliente, "PBM", "", "", 1, 1, 0 )
 
+//Efetua a impressão do Cupom PBM
 lRet := oTEF20:Cupom():Imprimir()
 
 Return lRet
 
-/*/{Protheus.doc} ComprovPBM
-    Monta a string do comprovante do PBM.
+/*/{Protheus.doc} STBPbmCpv
+    Monta a string do comprovante do PBM (Para os PBMs Epharma e TrnCentre).
     @type  Function
     @author albertod
     @since 03/2021
     @version 12
     @param aRelPbm, Array, Array com os dados do comprovante a ser impresso.
-    @return lRet, lógico, Finalizou a Venda ?
+    @return cRet, Caracter, Texto do comprovante do PBM.
 /*/
-Static Function ComprovPBM(aRelPbm)
+Function STBPbmCpv(aRelPbm)
 Local cRet      := ""
 Local nX        := 0
 Local nCount    := 0

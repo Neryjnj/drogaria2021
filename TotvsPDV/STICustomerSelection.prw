@@ -458,21 +458,7 @@ If nPos > 0 .AND. !Empty(nRecno)
 			cMatricula := AllTrim(SA1->A1_MATRICU)
 			
 			//Abre a tela para seleção do Plano de Fidelização (Template Drogaria)
-			If ExistTemplate("FRT010CL")
-				aFRT010CL := ExecTemplate( "FRT010CL", .F., .F., { {}, Nil, SA1->A1_COD, SA1->A1_LOJA, cCartaoMA6, .T., .T.} )
-				If ValType(aFRT010CL) == "A" .AND. Len(aFRT010CL) <> 2
-					lRet := aFRT010CL[1]
-					If lRet
-						If ExistFunc("STBDroVars")
-							//Seta o (Código do Plano) na variável estática usada nos Fontes do Template de Drogaria
-							STBDroVars(.F., .T., aFRT010CL[2], Nil)
-						EndIf
-					Else
-						STFMessage(ProcName(),"STOP","Cliente " + AllTrim(SA1->A1_COD) + " não validado - TPL Drogaria")  // "Cliente Selecionado"
-						STFShowMessage(ProcName())
-					EndIf
-				EndIf
-			EndIf
+			lRet := STBPlanFid(@cCartaoMA6, @cMatricula)
 		EndIf
 
 		// Integração SIGACRD x TOTVSPDV

@@ -1075,25 +1075,24 @@ Template Function DROVLImp()
 Local _nVidaLink	:= ParamIxb[1]  //nVidalink
 Local aRet 			:= {}			//Retorno da Funcao
 Local oTEF20		:= NIL
-Local oViaCliente	:= Nil
-Local oViaCaixa		:= Nil
+Local cViaCaixa		:= ""
+Local cViaCliente	:= ""
+Local lImprimiu 	:= .F.
 
 If _nVidaLink = 2  	// Gravou VidaLink, por isto imprimo cupom vidalink
 	If STFIsPOS()
 		oTEF20 := STBGetTEF()
-		//JULIOOOOOOO - falta inserir a função de impressão - ver com o Alberto		
-		//If oTEF20:Impressao 		
-		
-		//dabas - inicio
-		oViaCliente := oTEF20:Pbm():oTransSitef:CarregCup(oTEF20:Pbm():oTransSitef:oClisitef:oRetorno:cViaCliente)
-		oViaCaixa 	:= oTEF20:Pbm():oTransSitef:CarregCup(oTEF20:Pbm():oTransSitef:oClisitef:oRetorno:cViaCaixa)
 
-		oTEF20:Cupom():Inserir("G", oViaCaixa, oViaCliente, "PBM", "", "", 0.01, 1, 0 )
+		//Efetua a impressão do comprovante do PBM.
+		cViaCaixa 	:= oTEF20:Pbm():oTransSitef:oClisitef:oRetorno:cViaCaixa
+		cViaCliente := oTEF20:Pbm():oTransSitef:oClisitef:oRetorno:cViaCliente
 
-		If oTEF20:Cupom():Imprimir()
+		lImprimiu 	:= STBPrintPBM(cViaCaixa, cViaCliente)
+
+		If lImprimiu
+			//Confirma Transação PBM
 			oTEF20:Pbm():ConfVend(.T.)
 		Endif
-		//dabas - Fim
 
 		//oTEF20:Pbm():ConfVend(.T.)
 
