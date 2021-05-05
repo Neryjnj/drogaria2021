@@ -69,8 +69,7 @@ Function STWItemReg(	nItemLine		,	cItemCode		, cCliCode		,	cCliLoja	,;
 						cTypeItem		,   lInfoCNPJ		, lRecovery		,	nSecItem	,;
 						lServFinal		,   lProdBonif		, lListProd		,	cCodList	,;
 						cCodListIt		,	cCodMens		, cEntrega		,	cCodItemGar ,;
-						cIdItRel		,	cValePre		, cCodProdKit )
-
+						cIdItRel		,	cValePre		, cCodProdKit 	, 	nItemTPL	)
 
 Local lKitMaster		:= .F.														// Utiliza kit master
 Local aInfoItem			:= {}														// Array de retorno da busca de item
@@ -115,6 +114,8 @@ Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
 Local lPrioPBM			:= SuperGetMV("MV_PRIOPBM" , .F., .T.) 	//Priorizacao da venda por PBM
 Local lSTBIsVnPBM		:= ExistFunc("STBIsVnPBM")
 Local lFRTDescITt		:= lTPLDrogaria .And. ExistTemplate("FRTDescITt")
+Local lIsPaf			:= STBIsPaf()
+Local lIsHomolPaf		:= STBHomolPaf()
 			
 Default nItemLine 		:= 0				   										// Linha do Item na Venda
 Default cItemCode 		:= ""														// Codigo do Item
@@ -143,6 +144,7 @@ Default cCodItemGar		:= ""														// Item de Produto com Garantia Vinculad
 Default	cIdItRel		:= ""														// Id do item Relacionado
 Default	cValePre		:= ""														// Vale Presente, se houver
 Default cCodProdKit		:= ""														// Código do kit de produto
+Default nItemTPL		:= 0														// nItem Template de Drogaria
 
 //Todo: Implementar na importação do DAV para cancelamento o parãmetro como .f. //PAF: Sera imprementado na segunda fase
 LjGrvLog("Registra_Item", "ID_INICIO")
@@ -162,7 +164,7 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 	aDadoVLink := STGDadosVL()
 	If aDadoVLink[3] == 1
 		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Dados para venda PBM", aDadoVLink)
-		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemLine, VL_EAN], STBIsPaf(), STBHomolPaf())
+		aAux := STWFindItem( aDadoVLink[1][VL_DETALHE, nItemTPL, VL_EAN], lIsPaf, lIsHomolPaf)
 		If aAux[ITEM_ENCONTRADO]
 			cItemCode := aAux[ITEM_CODIGO]
 		EndIf
@@ -180,13 +182,13 @@ If lTPLDrogaria .And. ExistFunc("STGDadosVL")
 		EndIf
 
 		If SuperGetMv("MV_LJCFID",,.F.) .AND. CrdxInt()
-			nPrice := aDadoVLink[1][VL_DETALHE, nItemLine, VL_PRECO ]
+			nPrice := aDadoVLink[1][VL_DETALHE, nItemTPL, VL_PRECO ]
 
 		ElseIf !(cTypeItem == "IMP")
-			nPrice := aDadoVLink[1][VDLNK_DETALHE, nItemLine, VDLNK_PRECO ]
+			nPrice := aDadoVLink[1][VDLNK_DETALHE, nItemTPL, VDLNK_PRECO ]
 		EndIf
 
-		STBSetQuant( aDadoVLink[1][VL_DETALHE, nItemLine, VL_QUANTID],1 )
+		STBSetQuant( aDadoVLink[1][VL_DETALHE, nItemTPL, VL_QUANTID],1 )
 
 		LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Dados de item PBM (Código|Preço)", {cItemCode,nPrice})
 	EndIf
@@ -201,7 +203,7 @@ lSumItFisc := lSumItFisc .AND. Len(STDGetProperty( "L2_ITFISC" )) > 0
 If Len(aAux) > 0 //Se estiver preenchido tem o TPL Drogaria e é venda com PBM
 	aInfoItem := AClone(aAux)
 Else
-	aInfoItem	:= STWFindItem( cItemCode , STBIsPaf() , STBHomolPaf())
+	aInfoItem	:= STWFindItem( cItemCode , lIsPaf , lIsHomolPaf)
 EndIf
 aAux := {}
 
@@ -564,8 +566,8 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						//para que a validação aconteça com sucesso
 						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Antes da execução do PE DroVLPVal")
 						aDroVLPVal := T_DroVLPVal(	aDadoVLink[1], aDadoVLink[2], aDadoVLink[3], aInfoItem[ITEM_CODIGO],;
-													nDiscount	 , STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), 0/*nVlrPercIT*/,;
-													nDroPrProd	 , aDadoVLink[1], nItemLine		, aAux[2],;
+													IIf(cTypeDesc=="V",nDiscount,0), STBGetQuant(), STBArred( nDroPrProd * STBGetQuant() ), IIf(cTypeDesc=="P",nDiscount,0),;
+													nDroPrProd	 , aDadoVLink[1], nItemTPL	   , aAux[2],;
 													aAux[1]		 , (cTypeItem == "IMP") )
 						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Depois da execução do PE DroVLPVal", aDroVLPVal)
 						nItemTotal := aDroVLPVal[1] //Valor do Item
@@ -728,7 +730,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					cDscPrdPAF := aInfoItem[ITEM_DESCRICAO]
 					/*CONVÊNIO ICMS 25, DE 8 DE ABRIL DE 2016
 					  #código CEST#NCM/SH#descrição do item*/					
-					If STBIsPAF() 
+					If lIsPaf
 						cITcEst		:= AllTrim(STBTaxRet(nItemLine,"IT_CEST"))
 						cPosIpi		:= AllTrim(aInfoItem[ITEM_POSIPI])
 						If !Empty(cITcEst) .And. !Empty(cPosIpi)
