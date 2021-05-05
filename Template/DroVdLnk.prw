@@ -1616,6 +1616,7 @@ Inseri produtos no venda assistida
 //-------------------------------------------------------------------
 Static Function DroAddProd(aProd,aCliente)
 Local nX 			:= 0	//Contador
+Local nItens		:= 0
 Local nTotal		:= 0	//total pbm
 Local nTotalProt	:= 0	//total protheus
 Local nPosUni 		:= 0
@@ -1631,14 +1632,19 @@ LjGrvLog( "PBM", "Insere produtos na venda")
 If Len(aProd) > 0
 	For nX := 1 To Len(aProd)
 		If lTotvsPDV
+			nItens := STDPBLength("SL2")+1
 			STBSetQuant( aProd[nX][VL_QUANTID] )
-			lRet := STWItemReg(nX,aProd[nX][VL_EAN],aCliente[1],aCliente[2],;
+			lRet := STWItemReg(	nItens			,	aProd[nX][VL_EAN],aCliente[1]	,	aCliente[2] ,;
 								/*nMoeda*/     	,	/*nDiscount*/  	, /*cTypeDesc*/	,	/*lAddItem*/,;
-								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA])
+								/*cItemTES*/	,	/*cCliType*/	, /*lItemFiscal*/,	aProd[nX][VL_PRVENDA],;
+								/*cTypeItem*/	,   /*lInfoCNPJ*/	, /*lRecovery*/	,	/*nSecItem*/,;
+								/*lServFinal*/	,   /*lProdBonif*/	, /*lListProd*/	,	/*cCodList*/	,;
+								/*cCodListIt*/	,	/*cCodMens*/	, /*cEntrega*/	,	/*cCodItemGar*/ ,;
+								/*cIdItRel*/	,	/*cValePre*/	,/*cCodProdKit*/,	nX			)
 
 			If lRet
-				STIShowProdData(nX)
-				STIGridCupRefresh(nX,nX) // Sincroniza a Cesta com a interface
+				STIShowProdData(nItens)
+				STIGridCupRefresh(nItens,nItens) // Sincroniza a Cesta com a interface
 			EndIf
 
 			//Abre a tela de Registro de Item para permitir registrar outros itens e também para atualizar dados da interface
