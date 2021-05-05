@@ -692,7 +692,7 @@ Return lRet
     @since 03/2021
     @version 12
     @param aRelPbm, Array, Array com os dados do comprovante a ser impresso.
-    @return lRet, lógico, Finalizou a Venda ?
+    @return cRet, Caracter, Texto do comprovante do PBM.
 /*/
 Function STBPbmCpv(aRelPbm)
 Local cRet      := ""

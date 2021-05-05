@@ -312,3 +312,50 @@ Leio os dados do cartão, CPF/CNPJ, código do cliente e loja do cliente
 Function STBGetCrdIdent()
 
 Return aCliCrd
+
+/*/{Protheus.doc} STBPlanFid
+    Tela para seleção do Plano de Fidelização (Template Drogaria). Precisa estar posicionado na SA1.
+    @type  Function
+    @author Alberto Deviciente
+    @since 05/2021
+    @version 12
+    @param cCartaoMA6, Caracter, Número do Cartao CRD
+	@param cMatricula, Caracter, Matricula do cliente (A1_MATRICU)
+    @return lRet, lógico, Finalizou a Venda ?
+/*/
+Function STBPlanFid(cCartaoMA6, cMatricula)
+Local lRet      := .T.
+Local aFRT010CL := {}
+Local cCliPad	:= ""
+Local cLojaPad	:= ""
+
+If ExistTemplate("FRT010CL")
+	aFRT010CL := ExecTemplate( "FRT010CL", .F., .F., { {}, Nil, SA1->A1_COD, SA1->A1_LOJA, cCartaoMA6, .T., .T.} )
+	If ValType(aFRT010CL) == "A" .AND. Len(aFRT010CL) <> 2
+		lRet := aFRT010CL[1]
+		If lRet
+			If ExistFunc("STBDroVars")
+				//Seta o (Código do Plano) na variável estática usada nos Fontes do Template de Drogaria
+				STBDroVars(.F., .T., aFRT010CL[2], Nil)
+			EndIf
+		Else
+			cCliPad		:= PadR(SuperGetMV("MV_CLIPAD",, ""),TamSx3("A1_COD")[1])
+			cLojaPad	:= PadR(SuperGetMV("MV_LOJAPAD",, ""),TamSx3("A1_LOJA")[1])
+			If (SA1->A1_COD <> cCliPad .OR. SA1->A1_LOJA <> cLojaPad)
+				STFMessage(ProcName(),"YESNO", "Pesquisa cancelada. Deseja manter o Cliente :" + AllTrim(SA1->A1_COD) + " Loja :" + SA1->A1_LOJA ;
+						 + " atual da venda?  Em caso negativo, será alterado para o cliente padrão." )
+				lRet := STFShowMessage(ProcName())
+				If !lRet
+					DbSelectArea( "SA1" )
+					SA1->(DbSetOrder(1)) //A1_FILIAL+A1_COD+A1_LOJA
+					lRet := SA1->(DbSeek(xFilial("SA1")+cCliPad+cLojaPad)) //A1_FILIAL+A1_COD+A1_LOJA
+					//Limpa os campos de Cartao e Matricula, pois será considerado o Cliente Padrão para  avenda
+					cCartaoMA6 := ""
+					cMatricula := ""
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+EndIf
+
+Return lRet
