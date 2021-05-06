@@ -76,7 +76,7 @@ Local cCodProd   := ""
 	Local cQuery    := ""
 #ENDIF
 
-Local aRet1 := LocxGrid("SA2",cWhile1,'A2_FABRICA=="S"',.T.,".F.",cSeek1,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Fabricantes
+Local aRet1 := LocxGrid("SA2",cWhile1,'(A2_FABRICA=="S" .Or. A2_FABRICA=="1")',.T.,".F.",cSeek1,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Fabricantes
 Local aCab1 := AClone(aRet1[3])
 Local aLin1 := AClone(aRet1[5])
 Local aTam1 := AClone(aRet1[4])

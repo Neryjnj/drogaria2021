@@ -94,7 +94,7 @@ Local oAprTCheckBox := NIL
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÙ
 Local cSeekSA2    := '"' + xFilial("SA2") + '"'
 Local cWhileSA2   := "!EOF() .And. A2_FILIAL == " + cSeekSA2
-Local aFabric     := LocxGrid("SA2",cWhileSA2,'A2_FABRICA=="S"',.T.,".F.",cSeekSA2,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Fabricantes
+Local aFabric     := LocxGrid("SA2",cWhileSA2,'(A2_FABRICA=="S" .Or. A2_FABRICA=="1")',.T.,".F.",cSeekSA2,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Fabricantes
 Local aTitFabric  := AClone(aFabric[3])
 Local aContFabric := AClone(aFabric[5])
 Local aTamCFabric := AClone(aFabric[4])

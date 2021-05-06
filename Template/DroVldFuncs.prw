@@ -188,14 +188,14 @@ If lFabric // verifica se os campo Fabricante e Loja estao preenchidos
 		MsgAlert(cText1)
 		lRet := .F.
 	Else
-		If SA2->A2_FABRICA = "N"//caso codigo do fabricante + codigo da loja existam,verifica se a opcao A2_FABRICA = "N" 
+		If SA2->A2_FABRICA = "N" .Or. SA2->A2_FABRICA = "2"//caso codigo do fabricante + codigo da loja existam,verifica se a opcao A2_FABRICA = "N" ou "2" (No Template de Drogaria o Conteudo do campo A2_FABRICA era S=Sim; N=Nao, no padrão assumimos 1=Fabricante; 2=Fornecedor)
 			MsgAlert(cText2)
 			lRet := .F.
 		Endif
 	Endif
 Else
 	MsgAlert("Este campo deve ser preenchido com um fabricante/fornecedor válido." + CHR(13) + CHR(13) +;
-			"Verifique se o campo Fabricante(A2_FABRICA) do cadastro de Fornecedor está com 'S-Sim' ")
+			"Verifique se o campo Fabricante(A2_FABRICA) do cadastro de Fornecedor está como 'Fabricante' ")
 Endif
 
 //Restaurando as Areas
@@ -4472,7 +4472,7 @@ If lExecFunc
 	
 	/* Alteração de consulta padrão	*/
 	aDadosDic := {}
-	aAdd( aDadosDic, { {'L36' , '6', '01', ''}, { {'XB_CONTEM', "SA2->A2_FABRICA<>'N'"} } } )
+	aAdd( aDadosDic, { {'L36' , '6', '01', ''}, { {'XB_CONTEM', "SA2->A2_FABRICA<>'N' .And. SA2->A2_FABRICA<>'2'"} } } )
 	EngSXB117(aDadosDic)
 	
 	LjGrvLog( Nil,"Final da Função de Ajuste de Dicionário do Template")

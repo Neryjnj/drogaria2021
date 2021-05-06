@@ -78,7 +78,7 @@ Local cWhileSA2  := "!EOF() .And. A2_FILIAL == " + cSeekSA2
 Local cSeekAIA  := '"' + xFilial("AIA") + '"'
 Local cWhileAIA := "!EOF() .And. AIA_FILIAL == " + cSeekAIA 
 
-Local aRet1 := LocxGrid("SA2",cWhileSA2,'A2_FABRICA=="S"',.T.,".F.",cSeekSA2,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Forncedores
+Local aRet1 := LocxGrid("SA2",cWhileSA2,'(A2_FABRICA=="S" .Or. A2_FABRICA=="1")',.T.,".F.",cSeekSA2,2,{"A2_COD","A2_LOJA","A2_NOME"},)  //Forncedores
 Local aCab1 := AClone(aRet1[3])
 Local aLin1 := AClone(aRet1[5])
 Local aTam1 := AClone(aRet1[4])
@@ -1575,7 +1575,7 @@ If lFornec // se nao estiverem vazios
 		MsgAlert(cText1)
 		lRet := .F.
 	Else
-		If SA2->A2_FABRICA = "S"//caso codigo do fornecedor + codigo da loja existam,verifica se a opcao A2_FABRICA = "S", ou seja, se eh um Codigo de Fabricante 
+		If (SA2->A2_FABRICA == "S" .Or. SA2->A2_FABRICA == "1") //caso codigo do fornecedor + codigo da loja existam,verifica se a opcao A2_FABRICA = "S" ou "1", ou seja, se eh um Codigo de Fabricante (No Template de Drogaria o Conteudo do campo A2_FABRICA era S=Sim; N=Nao, no padrão assumimos 1=Fabricante; 2=Fornecedor)
 			MsgAlert(cText2)
 			lRet := .F.
 		Endif

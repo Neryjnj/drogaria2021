@@ -3792,8 +3792,8 @@ Local lRet		:= .T.
 
 If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) 
 	If SA2->(ColumnPos("A2_FABRICA")) > 0
-		If AllTrim(Upper(M->A2_FABRICA)) <> "S"
-			cMensagem := "Atenção . Campo A2_FABRICA não está preenchido com 'S' isso " +;
+		If AllTrim(Upper(M->A2_FABRICA)) <> "S" .And. AllTrim(Upper(M->A2_FABRICA)) <> "1" //(No Template de Drogaria o Conteudo do campo A2_FABRICA era S=Sim; N=Nao, no padrão assumimos 1=Fabricante; 2=Fornecedor)
+			cMensagem := "Atenção . Campo A2_FABRICA não está preenchido como 'Fabricante' isso " +;
 					"implica que o esse fornecedor não será mostrado no Cadastro de Produtos (LOJA110/MATA010)" 
 		Else
 			cMensagem := "Campo A2_FABRICA preenchido corretamente"
