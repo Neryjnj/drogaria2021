@@ -10,6 +10,7 @@ Static uCliTPL      := Nil
 Static uProdTPL     := Nil
 Static oTPLPBM      := NIL
 Static lIsVndPBM    := .F.
+Static lTemPBMAtv   := .F.
 
 /*/{Protheus.doc} STBPbmMenu
     Chamada do Menu de PBM's
@@ -59,21 +60,28 @@ Local lContinua := .T.
 Local lConsulta := .F.
 Local lVenda    := .F.
 
-oTEF20 := STBGetTEF()
-STBIsVnPBM(.T.,oTEF20:Pbm())
-lContinua := STBVerConVnd(@lConsulta,@lVenda,@nOpPBM)
+If lTemPBMAtv
+    lContinua := .F.
+    MsgAlert("Venda PBM já foi inicializada, para que seja possível utilizar outra PBM efetua nova venda")
+Else
+    oTEF20 := STBGetTEF()
+    STBIsVnPBM(.T.,oTEF20:Pbm())
+    lContinua := STBVerConVnd(@lConsulta,@lVenda,@nOpPBM)
+    lTemPBMAtv := lContinua
+EndIf
 
 If lContinua
     Do Case
         Case lConsulta 
             STBIsVnPBM(.F.,NIL) //Nessas PBMs não pode seguir usando esse objeto
             T_DroVLGet(nOpPBM)
+            lTemPBMAtv := .T.
 
         Case lVenda
-            /* Busca o numero do documento fiscal */
+            lTemPBMAtv := .T.            
             cOperador := STFGetStation("PDV")
             cSerie	:= STFGetStation("SERIE")
-            cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.)
+            cDoc := STBPbmNDoc(nTamCupPBM, cSerie, .T.) /* Busca o numero do documento fiscal */
             If !Empty(cDoc)
                 If STFGetCfg("lUseSAT",.F.)
                     cTpDoc := "2"
@@ -651,6 +659,8 @@ STBDadosVL(aDadoVDLink)
 //Limpeza para que não pergunte se pode inserir o mesmo registro de novo no array aANVISA
 T_DroDelANVISA(.T., NIL)
 
+//Reinicia a opção para que seja possível efetuar a venda PBM novamente
+lTemPBMAtv := .F.
 Return 
 
 /*/{Protheus.doc} STBPrintPBM

@@ -535,7 +535,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					
 					LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item de Venda PBM detectado - Desconto proveniente da PBM", nDiscount)
 					//o Desconto retornado vem em valor devido ao calculo interno da PBM
-					If nDiscount > 0
+					If nDiscount <> 0
 						cTypeDesc := "V"
 					EndIf
 				Else

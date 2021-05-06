@@ -388,6 +388,7 @@ Local nCodFuncao:= 0
 Local nValSubsidio := 0
 Local nValReembFarm:= 0
 Local aInfo		:= {}
+Local aBAKVDLkD := {}
 
 Default cCPF 	:= ""
 Default cNumCRM := ""
@@ -408,12 +409,15 @@ If lContinua
 		_cCPF := Posicione("SA1",1,xFilial("SA1") + _cCliente + _cLoja,"A1_CGC")
 	Else
 		_cCPF := cCPF
-	Endif	
-		
+	Endif
+	
+	aBAKVDLkD := AClone(aVidaLinkD)
 	aVidaLinkD := {}
 				
 	If nNumPbm <> 540
 		If _cNumAutori == _cNumAutAnt
+			//Se clico mais de uma vez no "Pesquisar" devo restaurar a pesquisa para evitar erro caso confirme a tela
+			aVidalinkD := aClone(aBAKVDLkD)
 			lContinua := .F.
 			lRet := .T.
 		Else
@@ -828,6 +832,8 @@ Else
 	nCodFuncao := oTef:nCodFuncao
 	lRet := .T.
 EndIf
+
+lRet := lRet .And. Len(aVidaLinkD) > 0
 
 If lRet
 	nTotVenda := 0
