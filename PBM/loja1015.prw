@@ -127,34 +127,41 @@ Return lRetorno
 ±±ºRetorno   ³Logico													  º±±
 ---------------------------------------------------------------------------*/
 Method PcRetSitef() Class LJCSitefDireto
+Local cMensagem	:= ""
+Local lRetorno	:= .F.	//Variavel de retorno do metodo
+
+//Estanciando o objeto Servicos
+::oServico := LJCServico():Servico()
+
+//Processa os servicos retornados
+lRetorno := ::oServico:ProcServ(::oDadosTran:cDadosRx)
+
+If lRetorno
+	//Separa os servicos
+	::SepServico()
 	
-	Local lRetorno		:= .F.					//Variavel de retorno do metodo
-	
-	//Estanciando o objeto Servicos
-	::oServico := LJCServico():Servico()
-	
-	//Processa os servicos retornados
-	lRetorno := ::oServico:ProcServ(::oDadosTran:cDadosRx)
-	
-	If lRetorno
-		//Separa os servicos
-		::SepServico()
-		
-		//Verifica se a transacao foi efetuada com sucesso, senao, 
-		//exibi a mensagem retornada no servico D
-		If (::oDadosTran:nCodResp == 0)
-			lRetorno := .T.		
-		Else
-			//Exibir mensagem do servico D
-			MsgAlert(::oMensagem:cMensagem,"TEF")
-			lRetorno := .F.	
-		EndIf
-		//Homologacao
-		//MsgAlert(::oMensagem:cMensagem)
+	cMensagem := ::oMensagem:cMensagem
+
+	//Verifica se a transacao foi efetuada com sucesso, senao, 
+	//exibi a mensagem retornada no servico D
+	If (::oDadosTran:nCodResp == 0)
+		lRetorno := .T.		
 	Else
-		MsgAlert(STR0002,"TEF") //"Problema ao processar serviços"
-		lRetorno := .F.
+		//Exibir mensagem do servico D
+		If !(Upper(AllTrim(cMensagem)) == Upper("Nao existe tela complementar"))
+			MsgAlert(cMensagem,"TEF")
+		EndIf
+		lRetorno := .F.	
 	EndIf
+	//Homologacao
+	//MsgAlert(cMensagem)
+Else
+	cMensagem := STR0002
+	MsgAlert(cMensagem,"TEF") //"Problema ao processar serviços"
+	lRetorno := .F.
+EndIf
+
+LJGrvLog("SitefDireto", " Mensagem TEF | lRetorno ",{cMensagem,lRetorno})
 
 Return lRetorno
 
