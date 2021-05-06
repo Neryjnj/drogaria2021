@@ -611,7 +611,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		/*Atualiza totalizadores da Matxfis para evitar erro de diferença de valores entre sistema e impressora fiscal.
 		Necessário para quando registra um item com desconto e recebe negacao da permissão de superior ou quando 
 		caixa faz alguma operação na impressora. Ex. Troca de papel, queda de luz, etc. durante a inclusão do item. */
- 		If lItemDel .And. STBTaxFoun("IT_ITEM", nItemLine)
+ 		If lItemDel .And. STBTaxFoun("IT", nItemLine)
 			conout("STIWtemRegister - Ajustando valor do item na MatxFis!")
 			LjGrvLog(cL1Num,"Ira ajustar valor do item na Matxfis")
 			STBTaxDel(nItemLine, .F. )
@@ -895,8 +895,8 @@ If !lKitMaster
 
 	If !lRet
 		//Se ocorreu problemas na Impressão do item - chama a função que deleta o item na MatxFis e não somente o marca como deletado	
-		If STBTaxFoun(	"", nItemLine	)	
-			STBTaxDel(	nItemLine	, .T. )
+		If STBTaxFoun("IT", nItemLine)	
+			STBTaxDel(nItemLine, .T.)
 		EndIf
 
 		// Seta controle de item deletado como True
