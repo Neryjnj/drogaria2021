@@ -818,7 +818,7 @@ Local oTEF20	 := NIL
 
 If lTotvsPDV
 	oTEF20 := STBGetTEF()
-	If AttIsMemberOf(oTEF20:PBM():oPBM:oPBM , "aVDLINK")
+	If AttIsMemberOf(oTEF20:PBM():oPBM:oPBM,"aVDLINK") .And. (Len(oTEF20:PBM():oPBM:oPBM:aVDLink) > 0)
 		nCodFuncao := oTEF20:PBM():oPBM:oPBM:aVDLink[1,5]
 		lRet := .T.
 	Else

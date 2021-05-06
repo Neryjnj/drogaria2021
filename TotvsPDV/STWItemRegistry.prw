@@ -88,12 +88,14 @@ Local cDscPrdPAF		:= ""														// Descrição do produto segundo legislação 
 Local cITcEst			:= ""														// cEst retornado da MatxFis
 Local cPosIpi			:= ""														// código NCM do produto
 Local cL1Num			:= ""														// Numero do orcamento da venda em lancamento
+Local cBAKTypeDesc		:= ""
 Local aSTQuant			:= {}														// Array retorno do ponto de entrada STQUANT
 Local nTamArray			:= 0
 Local lItemGarEst		:= .F.														// Define a Garantia Estendida item NAO fiscal caso for avulso
 Local cProdVend			:= ""														// Produto que será vinculado à Garantia Estendida
 Local nPrProd			:= 0														// Preço do produto que será impresso no Cupom Gerencial de Garantia Estendida
 Local nDroPrProd		:= 0														//Preço do produto segundo as verificações do TPL DRO
+Local nBAKDiscount		:= 0
 Local cSerieProd		:= ""														// Série do produto que será impresso no Cupom Gerencial de Garantia Estendida
 Local aRetLj7013		:= {}														// Retorno do PE Lj7013 para ser adicionado a descricao do produto
 Local lEmitNFCe			:= STBGetNFCE()												//valida se é NFC-e ou não
@@ -113,7 +115,7 @@ Local lItemPbm			:= .F.
 Local lTPLDrogaria		:= ExistFunc("LjIsDro") .And. LjIsDro()
 Local lPrioPBM			:= SuperGetMV("MV_PRIOPBM" , .F., .T.) 	//Priorizacao da venda por PBM
 Local lSTBIsVnPBM		:= ExistFunc("STBIsVnPBM")
-Local lFRTDescITt		:= lTPLDrogaria .And. ExistTemplate("FRTDescITt")
+Local lFRTDescITt		:= ExistTemplate("FRTDescITt")
 Local lIsPaf			:= STBIsPaf()
 Local lIsHomolPaf		:= STBHomolPaf()
 			
@@ -149,6 +151,8 @@ Default nItemTPL		:= 0														// nItem Template de Drogaria
 //Todo: Implementar na importação do DAV para cancelamento o parãmetro como .f. //PAF: Sera imprementado na segunda fase
 LjGrvLog("Registra_Item", "ID_INICIO")
 
+cBAKTypeDesc := cTypeDesc
+nBAKDiscount := nDiscount
 cL1Num	:= "L1_Num:"+STDGPBasket('SL1','L1_NUM')
 
 LjGrvLog(cL1Num,"Inicio - Workflow Registra Item. Codigo do Item:" + cItemCode + " Tipo:"+cTypeItem )
@@ -574,6 +578,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						nDiscount  := aDroVLPVal[2] //Valor do Desconto
 						If nDiscount > 0
 							cTypeDesc := "V"
+							lFRTDescITt := .F.
 						EndIf
 									//aDroVLPVal[3] //Percentual do Desconto				
 						nDroPrProd := aDroVLPVal[4] //Valor Unitário
@@ -638,6 +643,11 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			If lItemGarEst .OR. lItemServFin	//Garantia Estendida Avulso e Servico Financeiro Avulso nao registra
 				lItemFiscal := .F.
 			EndIf
+
+			If lFRTDescITt
+				cTypeDesc := cBAKTypeDesc	// Variavel que retorna o valor anterior
+				nDiscount := nBAKDiscount	// Variavel que retorna o valor anterior
+			EndIf
 			
 			If lItemFiscal .AND. STFGetCfg("lUseECF") 
 				LjGrvLog(cL1Num,"Inicia Operacao de Registro Fiscal para ECF")
@@ -652,7 +662,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 						lRet := .F.
 					EndIf
 				EndIf
-				
+
 				//Verifica se tem desconto no Item
 				If nDiscount > 0 .AND. (cTypeDesc $ "V|P")
 					LjGrvLog(cL1Num,"Item possui desconto de:"+cValToChar(nDiscount))
@@ -942,7 +952,7 @@ EndIf
 If lRet .And. lTPLDrogaria
 	aTPLCODB2 := { ;
 				nItemLine, AllTrim(STDGPBasket("SL2","L2_PRODUTO",nItemLine)),;
-				AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),AllTrim(STDGPBasket("SL2","L2_DESC",nItemLine)),;
+				AllTrim(STDGPBasket("SL2","L2_CODBAR",nItemLine)),AllTrim(STDGPBasket("SL2","L2_VALDESC",nItemLine)),;
 				cValToChar(STDGPBasket("SL2","L2_QUANT",nItemLine)), cValToChar(STDGPBasket("SL2","L2_VRUNIT",nItemLine)),;
 				"", cValToChar(STDGPBasket("SL2","L2_VLRITEM",nItemLine)),"", "", .F.,""}
 	aAux := STBDroVars(.F.)

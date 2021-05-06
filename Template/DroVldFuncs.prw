@@ -795,17 +795,19 @@ EndIf
 //³Se lDadosTela = .F., nao e' utilizado o array aCampos³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 If lDadosTela .OR. lF12
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³Cria a dimensão no array ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	
+	//****** Cria a dimensão no array *******//
 	If !lInformouLote
 		aAdd( aANVISA, {} )
 		// tratamento para campos de usuario
-		If Len(aDroPELK9) = 2
+		If Len(aDroPELK9) == 2
 			aAdd( aLK9Usr, {} )
 		EndIf
-		nLinha := T_DroLenANVISA()
 	Endif
+
+	If nLinha == 0 //senão abaixo dará errorlog
+		nLinha := T_DroLenANVISA()
+	EndIf
 
 	For nCont := 1 to TAMANVISA
 		aAdd(aANVISA[nLinha], )
@@ -827,7 +829,7 @@ If lDadosTela .OR. lF12
 	aANVISA[nLinha][MEDICO]		:= M->&(aCampos [nMEDICO][2])    		//Nome do medico
 	aANVISA[nLinha][CRM]		:= M->&(aCampos [nCRM][2])       		//CRM do medico
 	aANVISA[nLinha][CONPROF]   	:= M->&(aCampos [nCONPROF][2])  		//Conselho profissional do medico
-	aANVISA[nLinha][UFCONS]    	:= M->&(aCampos [UFCONS][2])    		//Unidade federativa do conselho profissional do medico
+	aANVISA[nLinha][UFCONS]    	:= M->&(aCampos [nUFCONS][2])    		//Unidade federativa do conselho profissional do medico
 	aANVISA[nLinha][LOTEPROD]  	:= M->&(aCampos [nLOTEPROD][2]) 
 	aANVISA[nLinha][ENDERECO]  	:= M->&(aCampos [nENDERECO][2])			//Endereco do cliente
 	aANVISA[nLinha][NPACIENTE]	:= M->&(aCampos [nPACIENTE][2]) 		//Nome do Paciente 
@@ -837,7 +839,7 @@ If lDadosTela .OR. lF12
 	aANVISA[nLinha][SEXOPA]		:= M->&(aCampos [nSEXOP][2]) 
 	aANVISA[nLinha][CIDPA]		:= M->&(aCampos [nCI][2])
 	aANVISA[nLinha][QUANTP]		:= M->&(aCampos [nQtdPresc][2]) 
-	If Len(aDroPELK9) = 2
+	If Len(aDroPELK9) == 2
 		For nX := 1 to Len( aDroPELK9[2] )
 			Aadd( aLK9Usr[nLinha], {aDroPELK9[2][nX], M->&(aDroPELK9[2][nX])} )			
 		Next		
@@ -1058,6 +1060,12 @@ Endif
 
 If T_DroLenANVISA() > 0 
 	For nCont := 1 to T_DroLenANVISA()
+		If !(ValType(aANVISA[nCont][PRODUTO]) $ "C|N")
+			LjGrvLog(aANVISA[nCont][NUMDOC],"TPL Drogaria Item do Array Anvisa sem produto preenchido será desconsiderado")
+			Conout("TPL Drogaria - DOC [" + cValToChar(aANVISA[nCont][NUMDOC]) + "] - Item do Array Anvisa sem produto preenchido será desconsiderado")
+			Loop
+		EndIf
+
 		RecLock("LK9", .T.)
 		REPLACE LK9_FILIAL	WITH xFilial("LK9")
 		REPLACE LK9_DATA	WITH dDataBase

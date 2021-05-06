@@ -163,13 +163,13 @@ Local nTamSXG      	:= 0
 Local nTamItem     	:= 0         				//Tamanho do campo de item  
 Local lConsulta    	:= .T.
 Local lFRTProdOKt  	:= ExistTemplate("FRTProdOK")// verifica se existe o PONTO DE ENTRADA FRTProdOK
-Local lFRTKITt	   	:= ExistTemplate("FRTKIT")	// verifica se existe o PONTO DE ENTRADA FRTKIT
+Local lFRTKITt	   	:= ExistTemplate("FRTKIT")	 // verifica se existe o PONTO DE ENTRADA FRTKIT
 Local lFRTDescITt  	:= ExistTemplate("FrtDescIT")// verifica se existe o PONTO DE ENTRADA FRTDescIT
-Local lFRTCODB2t   	:= ExistTemplate("FRTCODB2")	// verifica se existe o PONTO DE ENTRADA FRTCODB2
+Local lFRTCODB2t   	:= ExistTemplate("FRTCODB2") // verifica se existe o PONTO DE ENTRADA FRTCODB2
 Local lFRTCODB3t   	:= ExistTemplate("FRTCODB3") // verifica se existe o PONTO DE ENTRADA FRTCODB3
 Local nDedIcmsIt   	:= 0                         // Valor da deducao do ICMS de um item da venda
-Local nTB1COD	   	:= TamSX3("BI_COD")[1]		// Tamanho do campo B1_COD
-Local nTB1CODBAR   	:= TamSX3("BI_CODBAR")[1]	// Tamanho do campo B1_CODBAR
+Local nTB1COD	   	:= TamSX3("BI_COD")[1]		 // Tamanho do campo B1_COD
+Local nTB1CODBAR   	:= TamSX3("BI_CODBAR")[1]	 // Tamanho do campo B1_CODBAR
 Local cFotoProd		
 Local lEntra		:= .T.	   					// Verifica se entra no alerta para aliquota nao cadastrada
 Local nValPis		:= 0						// Valor do PIS por item
