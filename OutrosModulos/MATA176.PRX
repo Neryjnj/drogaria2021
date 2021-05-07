@@ -1,0 +1,523 @@
+#INCLUDE "MATA176.CH"
+#INCLUDE "PROTHEUS.CH"
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ MATA176  ³ Autor ³ Rafael Braga Cancian  ³ Data ³05/05/05  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ Estoque maximo                                             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ Void MATA176(void)                                         ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function MATA176()
+
+//Define Variaveis                                            
+Local nOpc		:= 0
+Local cPerg		:= "MTA176"
+Local aSays		:= {}
+Local aButtons  := {}
+
+Private cCadastro	:= STR0001 //Recalculo do estoque maximo
+
+//Carrega perguntas
+Pergunte(cPerg,.F.)
+
+//Vetor com a descricao da tela de processamento
+aAdd( aSays, STR0002 ) //"Este programa tem o objetivo de recalcular o estoque máximo de todos"
+aAdd( aSays, STR0003 ) //"os itens do estoque. Sera feita analise do historico de vendas do periodo desejado"
+aAdd( aSays, STR0004 ) //"e com estas informacoes sera feito o calculo do estoque maximo."
+aAdd( aSays, STR0005 ) //"Podera opcionalmente ser calculado o ponto de pedido com base no historico."
+
+//Vetor com os botoes da tela
+aAdd( aButtons, { 5, .T., { || lPerg := Pergunte(cPerg,.T.) }})
+aAdd( aButtons, { 1, .T., { || nOpc := 1, FechaBatch() }})
+aAdd( aButtons, { 2, .T., { || FechaBatch() }})
+
+//Tela de processamento
+FormBatch(cCadastro, aSays, aButtons) //"Geracao automatica de matriculas"
+
+//Caso tenha confirmado executa a rotina de processamento
+If nOpc == 1 
+	MsAguarde({|lEnd| A176RProc(@lEnd)},STR0017,STR0018,.T.) //"Aguarde..."/"Processando estoque maximo"   
+EndIf
+
+Return .T.
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³A176RProc ³ Autor ³ Rafael Braga Cancian  ³ Data ³ 03/08/07 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡ao ³ Rotina de processamento das quantidades                    ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ Void A176RProc(ExpL1)                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpL1 = Cancelado pelo usuario                             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATA176()                                                  ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Static Function A176RProc(lEnd)
+//Define variaveis
+Local oTempTable:= NIL
+Local nX        := 0
+Local nOpcA     := 0
+Local nInd      := 0
+Local nSoma     := 0
+Local nMedVend  := 0
+Local nCount    := 0
+Local nPontPd   := 0
+Local nEstMax   := 0
+Local cAliasTRA := ""
+Local cArqTRA   := ""
+Local cFiltro   := ""
+Local cIndSB1   := ""
+Local cIndTRA   := ""
+Local cProdAnt  := ""
+Local cUsrFil   := cFilAnt // Filial original
+Local dDtMin    := CtoD("  /  /  ")
+Local dDtMax    := CtoD("  /  /  ")
+Local aSize     := {}
+Local aInfo     := {}  
+Local aObjects  := {}
+Local aAltera   := {}
+Local aStrut    := {}
+Local aFilial   := {}  
+Local lSB1Exclusivo := .F.						        //Verifica o mode de compartilhamento da tabela SB1
+Local cFil   		:= ""								//Filial
+Local cAlias  		:= ""								//Alias
+Local nEstSeg 		:= 0								//Estoque de Segunranca
+Local nLe     		:= 0								//Lote Economico
+Local lIntervalo    := (!Empty(MV_PAR13) .AND. !Empty(MV_PAR14) )	//Verifica se o intervalo de datas foi preenchido
+Local aPosObj       := {}
+Local lHasTplDro	:= HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())
+
+Private aHeader := {}
+Private aRotina :=	{{ "aRotina Falso", "AxPesq"  ,		0, 1 },;
+					 { "aRotina Falso", "AxVisual",		0, 2 },;
+					 { "aRotina Falso", "AxInclui",		0, 3 },;
+					 { "aRotina Falso", "AxAltera",		0, 4 }}
+Private Inclui   := .T.
+
+//Definicao do tamanho da tela
+aSize	:= MsAdvSize(, .F., 400 )  
+AAdd( aObjects, { 100, 100, .T., .T. } )
+aInfo   := { aSize[1], aSize[2], aSize[3], aSize[4], 1, 1 }       
+aPosObj	:= MsObjSize( aInfo, aObjects )
+
+//Montagem do aHeader
+dbSelectArea("SX3")
+dbSetOrder(2)
+dbSeek("B1_FILIAL")
+aAdd(aHeader,{ TRIM(X3Titulo()) , "TRA_FILCAL", X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })
+dbSeek("B1_COD")
+aAdd(aHeader,{ TRIM(X3Titulo()) , "TRA_CODPRO", X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })
+dbSeek("D2_QUANT")
+aAdd(aHeader,{ STR0020          , "TRA_MEDV"  , X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })
+dbSeek("B1_EMAX")
+aAdd(aHeader,{ TRIM(X3Titulo())	, "TRA_ESTMAX", X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })
+dbSeek("B1_EMIN")
+aAdd(aHeader,{ TRIM(X3Titulo())	, "TRA_PONTPD", X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Campos exclusivos para o uso do Template Drogaria³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lHasTplDro
+	DbSeek("B1_ESTSEG")
+	aAdd(aHeader,{ TRIM(X3Titulo())		,"TRA_ESTSEG" 	, X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })  
+	DbSeek("B1_LE")
+	aAdd(aHeader,{ TRIM(X3Titulo())		,"TRA_LE"	 	, X3_PICTURE, X3_TAMANHO, X3_DECIMAL, "", X3_USADO, X3_TIPO, "", X3_CONTEXT })  
+Endif
+
+//Define colunas alteraveis
+aAdd(aAltera , "TRA_ESTMAX" )
+aAdd(aAltera , "TRA_PONTPD" )
+
+If !lIntervalo
+	//Define data inicial e final do periodo
+	aPeriodo:= A176CalcDt(mv_par05, mv_par06, dDataBase)
+	dDtMin	:= aPeriodo[1]
+	dDtMax	:= aPeriodo[2]
+Else 
+	dDtMin	:= MV_PAR13
+	dDtMax	:= MV_PAR14
+Endif
+
+//Filtra tabela de produtos	de acordo com os parametros indexando pelo codigo
+dbSelectArea("SB1")
+cIndSB1 := CriaTrab(Nil, .F.)
+
+cFiltro := "B1_COD >= '" + mv_par01 + "' .And. "
+cFiltro += "B1_COD <= '" + mv_par02 + "' .And. "
+cFiltro += "B1_GRUPO >= '" + mv_par03 + "' .And. "
+cFiltro += "B1_GRUPO <= '" + mv_par04 + "' "    
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Carrega Formula customizada do usuario p/aplicar ao Filtro da SB1      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If ! Empty(mv_par12)     
+   SM4->(DbSetOrder(1)) 
+   If SM4->(dbSeek(xFilial("SM4")+mv_par12))
+      If !Eof()
+         cFiltro = cFiltro +" .And. "+SM4->M4_FORMULA
+      EndIf
+   EndIf
+Endif 
+
+IndRegua("SB1",cIndSB1,"B1_FILIAL+B1_COD",,cFiltro,STR0019)  //"Selecionando Registros..."
+
+//Monta vetor com as filiais validas para calculo
+dbSelectArea("SM0")
+SM0->(dbSetOrder(1))
+SM0->(dbSeek(cEmpAnt))
+While SM0->(!Eof()) .and. SM0->M0_CODIGO == cEmpAnt
+	If FWGETCODFILIAL >= mv_par09 .And. FWGETCODFILIAL <= mv_par10
+		aAdd(aFilial,FWGETCODFILIAL)
+	EndIf
+	dbSkip()
+End
+
+//Cria arquivo de trabalho
+cAliasTRA := GetNextAlias()    
+
+aAdd(aStrut,{"TRA_FILIAL" ,"C", TamSX3("B1_FILIAL")[1], TamSX3("B1_FILIAL")[2]})
+aAdd(aStrut,{"TRA_ARQGRV" ,"C", 3, 0})
+aAdd(aStrut,{"TRA_FILCAL" ,"C", TamSX3("B1_FILIAL")[1], TamSX3("B1_FILIAL")[2]})
+aAdd(aStrut,{"TRA_CODPRO" ,"C", TamSX3("B1_COD")[1]   , TamSX3("B1_COD")[2]})
+aAdd(aStrut,{"TRA_MEDV"   ,"N", TamSX3("D2_QUANT")[1] , TamSX3("D2_QUANT")[2]})
+aAdd(aStrut,{"TRA_ESTMAX" ,"N", TamSX3("B1_EMAX")[1]  , TamSX3("B1_EMAX")[2]})
+aAdd(aStrut,{"TRA_PONTPD" ,"N", TamSX3("B1_EMIN")[1]  , TamSX3("B1_EMIN")[2]})
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Campos exclusivos para o uso do Template Drogaria³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lHasTplDro
+	aAdd(aStrut,{"TRA_ESTSEG" 	,"N", TamSX3("B1_ESTSEG")[1]	, TamSX3("B1_ESTSEG")[2]})
+	aAdd(aStrut,{"TRA_LE" 		,"N", TamSX3("B1_LE")[1]		, TamSX3("B1_LE")[2]})
+Endif
+
+oTempTable := FWTemporaryTable():New( cAliasTRA )
+oTempTable:SetFields( aStrut )
+oTempTable:AddIndex("indice1", {"TRA_FILIAL"} )
+oTempTable:AddIndex("indice2", {"TRA_ARQGRV","TRA_FILIAL","TRA_CODPRO"} )
+oTempTable:Create()
+
+If !lHasTplDro
+	//Alimenta arquivo de trabalho com os dados dos produtos das filiais
+	For nX:= 1 To Len(aFilial)
+		cFilAnt:= aFilial[nX]
+		SB1->(dbSeek(xFilial("SB1")))
+		While SB1->(!Eof()) .And. SB1->B1_FILIAL == xFilial("SB1")
+			//Calcula media de vendas
+			nMedVend:= A176MedVen(SB1->B1_COD)
+			//Se houve movimentacao ou o parametro permite itens sem movimentacao inclui na tabela
+			If nMedVend > 0 .Or. mv_par11 == 1
+				RecLock(cAliasTRA,.T.)
+					Replace (cAliasTRA)->TRA_FILIAL	With If(RetArqProd(SB1->B1_COD),xFilial("SB1"),xFilial("SBZ"))
+					Replace (cAliasTRA)->TRA_ARQGRV	With If(RetArqProd(SB1->B1_COD),"SB1","SBZ")
+					Replace (cAliasTRA)->TRA_FILCAL	With cFilAnt
+					Replace (cAliasTRA)->TRA_CODPRO	With SB1->B1_COD
+					Replace (cAliasTRA)->TRA_MEDV   With nMedVend
+					Replace (cAliasTRA)->TRA_ESTMAX	With A250AvalQt((nMedVend * mv_par07) / 100, SB1->B1_COD)
+					Replace (cAliasTRA)->TRA_PONTPD	With A250AvalQt((((nMedVend * mv_par07) / 100) * mv_par08) / 100, SB1->B1_COD)
+				MsUnLock()
+			EndIf
+			SB1->(dbSkip())
+		End
+	Next nX
+Else
+	SX2->(DbSeek("SB1"))
+	lSB1Exclusivo := FWModeAccess("SB1",1) == "E"
+	
+	//Alimenta arquivo de trabalho com os dados dos produtos das filiais
+	SB1->(DbSeek(xFilial("SB1")))
+	While SB1->(!Eof())
+		For nX := 1 To Len(aFilial)
+			cFilAnt := aFilial[nX]
+		
+		    If !lSB1Exclusivo
+				DbSelectArea("SBZ")
+				SBZ->(DbSetOrder(1))
+				If SBZ->(DbSeek(aFilial[nX]+SB1->B1_COD)) 
+					cFil	:= xFilial("SBZ")
+					cAlias  := "SBZ"
+					nEstSeg := SBZ->BZ_ESTSEG  
+					nLe     := SBZ->BZ_LE
+				Else	
+					cFil	:= xFilial("SB1")
+					cAlias  := "SB1"
+					nEstSeg := SB1->B1_ESTSEG  
+					nLe     := SB1->B1_LE
+				Endif
+			Else
+				cFil	:= xFilial("SB1")
+				cAlias  := "SB1"
+				nEstSeg := SB1->B1_ESTSEG  
+				nLe     := SB1->B1_LE	
+			Endif
+		
+			//Calcula media de vendas
+			nMedVend:= A176MedVen(SB1->B1_COD)
+			//Se houve movimentacao ou o parametro permite itens sem movimentacao inclui na tabela
+			If nMedVend > 0 .Or. mv_par11 == 1
+				RecLock(cAliasTRA,.T.)
+					REPLACE (cAliasTRA)->TRA_FILIAL	WITH cFil
+					REPLACE (cAliasTRA)->TRA_ARQGRV	WITH cAlias
+					REPLACE (cAliasTRA)->TRA_FILCAL	WITH cFilAnt
+					REPLACE (cAliasTRA)->TRA_CODPRO	WITH SB1->B1_COD
+					REPLACE (cAliasTRA)->TRA_MEDV	WITH nMedVend
+					REPLACE (cAliasTRA)->TRA_ESTMAX	WITH A250AvalQt((nMedVend* mv_par07) / 100, SB1->B1_COD)
+					REPLACE (cAliasTRA)->TRA_PONTPD	WITH A250AvalQt((((nMedVend* mv_par07) / 100) * mv_par08) / 100, SB1->B1_COD)
+					REPLACE (cAliasTRA)->TRA_ESTSEG	WITH nEstSeg
+					REPLACE (cAliasTRA)->TRA_LE		WITH nLe
+				MsUnLock()
+			EndIf
+		Next nX
+		SB1->(DbSkip())
+	End
+Endif
+
+//Montagem da dialog
+nOpc:= 4
+DEFINE MSDIALOG oDlg TITLE cCadastro From aSize[7],000 To aSize[6],aSize[5] OF GetWndDefault() PIXEL 
+oGetDados:= MSGetDb():New(aPosObj[1,1],aPosObj[1,2],aPosObj[1,3],aPosObj[1,4],nOpc,"AllwaysTrue", "AllwaysTrue",,.T.,aAltera,,.T.,"oGetDados:nMax",cAliasTRA,,,,,,,)  
+oGetDados:oBrowse:Align := CONTROL_ALIGN_ALLCLIENT    
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{||nOpcA:= 1, oDlg:End()},{||oDlg:End()}) 
+
+//Se confirmou grava dados na base de dados 
+If nOpcA == 1
+		
+	//Define ordem das tabelas envolvidas	
+	SB1->(dbSetOrder(1))	
+	SBZ->(dbSetOrder(1))
+	(cAliasTRA)->(dbSetOrder(2))
+	(cAliasTRA)->(dbGoTop())	
+    
+	//Inicializa variaveis auxiliares
+	cArqAnt := (cAliasTRA)->TRA_ARQGRV
+	cProdAnt:= (cAliasTRA)->TRA_CODPRO
+    
+	//Inicia gravacao... abre transacao
+	Begin Transaction
+		While (cAliasTRA)->(!Eof())
+			cProdAnt:= (cAliasTRA)->TRA_CODPRO
+			cArqAnt := (cAliasTRA)->TRA_ARQGRV
+            
+			//Caso a tabela seja compartilhada grava media de vendas de todas a filiais no registro
+			If Empty((cAliasTRA)->TRA_FILIAL) 
+				nPontPd := 0
+				nEstMax := 0
+				nCount  := 0
+				
+				//Verre tabela para calcula a media de produtos em comum para registro compartilhado
+				While (cAliasTRA)->(!Eof()) .And. (cAliasTRA)->TRA_ARQGRV == cArqAnt .And. (cAliasTRA)->TRA_CODPRO == cProdAnt .And. Empty((cAliasTRA)->TRA_FILIAL) 
+					nPontPd += (cAliasTRA)->TRA_PONTPD
+					nEstMax += (cAliasTRA)->TRA_ESTMAX
+					cProdAnt:= (cAliasTRA)->TRA_CODPRO
+					cArqAnt := (cAliasTRA)->TRA_ARQGRV
+					nCount++
+					(cAliasTRA)->(dbSkip())
+				End
+				//Grava informacoes calculadas na tabela compartilhada
+				If (cArqAnt)->(dbSeek("  "+cProdAnt))
+					RecLock(cArqAnt,.F.)
+						Replace (cArqAnt)->&(Right(cArqAnt,2) + "_EMAX")	With A250AvalQt(If(nCount > 0,nEstMax / nCount,0), cProdAnt)
+						Replace (cArqAnt)->&(Right(cArqAnt,2) + "_EMIN")	With A250AvalQt(If(nCount > 0,nPontPd / nCount,0), cProdAnt)
+						If lHasTplDro
+							Replace (cArqAnt)->&(Right(cArqAnt,2) + "_ESTSEG")	WITH (cAliasTRA)->TRA_ESTSEG
+							Replace (cArqAnt)->&(Right(cArqAnt,2) + "_LE")		WITH (cAliasTRA)->TRA_LE
+						Endif
+					MsUnLock()
+				EndIf
+			//Grava dados da filial para tabelas exclusivas
+			Else
+				If (cArqAnt)->(dbSeek((cAliasTRA)->TRA_FILIAL+cProdAnt))
+					RecLock(cArqAnt,.F.)
+						(cArqAnt)->&(Right(cArqAnt,2) + "_EMAX")	:= A250AvalQt((cAliasTRA)->TRA_ESTMAX, cProdAnt)
+						(cArqAnt)->&(Right(cArqAnt,2) + "_EMIN")	:= A250AvalQt((cAliasTRA)->TRA_PONTPD, cProdAnt)
+						If lHasTplDro
+							(cArqAnt)->&(Right(cArqAnt,2) + "_ESTSEG")	:= (cAliasTRA)->TRA_ESTSEG
+							(cArqAnt)->&(Right(cArqAnt,2) + "_LE")		:= (cAliasTRA)->TRA_LE
+						Endif
+					MsUnLock()
+				EndIf
+				(cAliasTRA)->(dbSkip())
+			EndIf
+		End
+	//Grava dados... finaliza transacao	
+	End Transaction
+EndIf
+
+//Fecha arquivos utilizados
+SB1->(dbCloseArea())
+SBZ->(dbCloseArea())
+
+oTempTable:Delete()
+
+// Volta a filial inicial
+cFilAnt:= cUsrFil 
+
+Return
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³A176CalcDt³ Autor ³ Rafael Braga Cancian  ³ Data ³ 03/08/07 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡ao ³ Calcula as datas final e inicial do periodo de acordo com  ³±±
+±±³          ³ os parametros passados                                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ A176CalcDt(ExpN1,ExpN2,ExpD3)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpN1 = Numero de periodos para analise                    ³±±
+±±³          ³ ExpN2 = Tipo do periodo                                    ³±±
+±±³          ³         1 - Ultimos ExpN1 Dias                             ³±±
+±±³          ³         2 - Ultimas ExpN1 Semanas                          ³±±
+±±³          ³         3 - Ultimos ExpN1 Meses                            ³±±
+±±³          ³ ExpD2 = Data base do periodo                               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATA176()                                                  ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Function A176CalcDt(nPeriodo, nTipo, dDtBase)
+//Declara variaveis
+Local dDtMin    := CtoD("  /  /  ")
+Local dDtMax    := dDataBase
+Local cDtAux    := ""
+Local nQtdAnos  := 0
+Local nQtdMeses	:= 0
+Local aRet      := {}
+
+//Calcula periodo de acordo com o tipo selecionado
+If nTipo == 1 //Dias
+	dDtMin:= dDtBase - nPeriodo
+ElseIf nTipo == 2 //Semanas
+	dDtMin:= dDtBase - (nPeriodo * 7)               
+Else //Meses
+	nQtdAnos := Year(dDtBase) - Int(nPeriodo / 12)
+	If nPeriodo >= Month(dDtBase)
+		nQtdMeses := ((12 + Month(dDtBase)) + (Int(nPeriodo / 12))*12) - nPeriodo
+		nQtdAnos := nQtdAnos - 1
+	Else
+		If Month(dDtBase) == 1 .And. nPeriodo == 1
+			nQtdMeses := 12
+			nQtdAnos := nQtdAnos - 1
+		Else
+			nQtdMeses := (Month(dDtBase)) - nPeriodo
+		EndIf
+	EndIf
+    
+	//Calcula data inicial do periodo
+	cDtAux:= StrZero(Day(dDtBase),2,0) + "/" + StrZero(nQtdMeses,2,0) + "/" + StrZero(nQtdAnos,4,0)
+	dDtMin:= CtoD(cDtAux)
+
+	//Caso a data seja invalida - Ex 30/02/2007 - Pega o ultimo dia do mes
+	If Empty(dDtMin)
+		cDtAux:= "01" + SubStr(cDtAux, 3, 8)
+		dDtMin:= LastDay(CtoD(cDtAux))
+	EndIf
+EndIf
+
+//Define retorno - {1.Data Inicial,2.Data Final}
+aAdd(aRet, dDtMin) 
+aAdd(aRet, dDtMax) 
+
+Return aRet                                                                                                            
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³A176MedVen³ Autor ³ Rafael Braga Cancian  ³ Data ³ 03/08/07 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡ao ³ Calcula as datas final e inicial do periodo de acordo com  ³±±
+±±³          ³ os parametros passados                                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ A176MedVen(ExpN1,ExpN2,ExpD3)                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpN1 = Numero de periodos para analise                    ³±±
+±±³          ³ ExpN2 = Tipo do periodo                                    ³±±
+±±³          ³         1 - Ultimos ExpN1 Dias                             ³±±
+±±³          ³         2 - Ultimas ExpN1 Semanas                          ³±±
+±±³          ³         3 - Ultimos ExpN1 Meses                            ³±±
+±±³          ³ ExpD2 = Data base do periodo                               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATA176()                                                  ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+Static Function A176MedVen(cCodPrd)
+
+Local nSoma		:= 0
+Local nMedia	:= 0
+Local cIndSD2	:= "" 
+Local cFiltro	:= ""
+Local dDtMin	:= CtoD("  /  /  ")
+Local dDtMax	:= CtoD("  /  /  ")
+Local aPeriodo	:= {}
+Local lIntervalo := (!Empty(MV_PAR13) .AND. !Empty(MV_PAR14) )	//Verifica se o intervalo de datas foi preenchido
+
+If !lIntervalo 
+	//Define data inicial e final do periodo
+	aPeriodo:= A176CalcDt(mv_par05, mv_par06, dDataBase)
+	dDtMin	:= aPeriodo[1]
+	dDtMax	:= aPeriodo[2]
+Else
+	dDtMin	:= MV_PAR13
+	dDtMax	:= MV_PAR14
+Endif
+
+//Filtra tabela de itens de venda
+dbSelectArea("SD2")
+cIndSD2 := CriaTrab(Nil, .F.)
+
+cFiltro := "D2_FILIAL == '" + xFilial("SD2") + "' .And. "
+cFiltro += "D2_COD == '" + cCodPrd + "' .And. "
+cFiltro += "D2_TIPO == 'N' .And. "
+cFiltro += "DtoS(D2_EMISSAO) >= '" + DtoS(dDtMin) + "' .And. "
+cFiltro += "DtoS(D2_EMISSAO) <= '" + DtoS(dDtMax) + "' "
+
+IndRegua("SD2",cIndSD2,"D2_COD",,cFiltro,STR0019)  //"Selecionando Registros..."
+
+//Calcula a media
+While SD2->(!Eof())
+	//Verifica se a TES e TIPO devem agregar a media
+	If (GetAdvFval("SF4","F4_ESTOQUE",xFilial("SF4")+SD2->D2_TES,1) == "S")
+		nSoma+= SD2->D2_QUANT
+	EndIf
+	SD2->(dbSkip())
+End
+	
+If !lIntervalo 	
+	nMedia:= nSoma / mv_par05
+Else    
+	Do Case
+		Case mv_par06 == 1
+			nMedia:= nSoma / (DateDiffDay( MV_PAR13 , MV_PAR14 )	+1)
+		Case mv_par06 == 2
+			nMedia:= nSoma /(DateDiffDay(MV_PAR13,MV_PAR14) /7)
+		Case mv_par06 == 3    
+			nMedia:= nSoma / (DateDiffMonth( MV_PAR13 , MV_PAR14)+1)
+	EndCase
+Endif
+
+//Elimina o indice temporario
+FErase(cIndSD2 + OrdBagExt())
+
+//Fecha arquivos utilizados
+SD2->(dbCloseArea())
+SF4->(dbCloseArea())
+
+Return nMedia
