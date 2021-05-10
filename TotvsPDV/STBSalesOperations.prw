@@ -216,7 +216,7 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 		AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
 	EndIf
 
-	If ExistFunc("STBPbmMenu") .And. lUsaTef
+	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBPbmMenu") .And. lUsaTef
 		oTef20 := STBGetTEF()
 		If oTef20:IsAtivo() .And. oTef20:oConfig:ISPBM()
 			AADD(aRet, {cValToChar(++nOption), "PBM", "STBPbmMenu()","","30"})
