@@ -5605,21 +5605,23 @@ EndIf
 Return .T.
 
 //------------------------------------------------------------------------------
-/*/{Protheus.doc} LjIsDro
+/*/{Protheus.doc} VldIsDro
 	Valida o uso do template de Drogaria conforme o CNPJ.
 	@type  Function
 	@author Julio.Nery
 	@since 29/01/2021
 	@version 12
-	@param cCNPJ, Caracter, Número do CNPJ
 	@return lRet, logico, permite o uso do template de Drogaria?
 /*/
 //------------------------------------------------------------------------------
-Function LjIsDro(cCNPJ)
+Template Function VldIsDro()
 Local lRet 		:= .F.
 Local nPos		:= 0
+Local cCNPJ		:= ParamIxb[1] //Número do CNPJ (M0_CGC)
 
-Default cCNPJ := SM0->M0_CGC
+If Empty(cCNPJ)
+	cCNPJ := SM0->M0_CGC
+EndIf
 
 If aCNPJsDro == Nil
 	aCNPJsDro := {}
