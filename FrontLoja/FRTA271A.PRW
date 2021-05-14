@@ -336,6 +336,13 @@ Local nValFECP		:= 0
 Local nAlqFECP 		:= 0
 Local nValFECPST    := 0
 Local nAlqFECPST    := 0
+Local lICMDeson     := SL2->(ColumnPos( "L2_DESCICM" )) > 0 .And. SL2->(ColumnPos( "L2_MOTDICM" )) > 0
+Local nAux          := 0
+Local cMOTDICM		:= ""   //Motivo da desoneração
+Local nDESCICM		:= 0   //Valor da desoneração 
+Local nAuxVlrI      := 0   //Variavel auxiliar para guardar o valor do Item
+Local nAuxVlrU      := 0   //Variavel auxiliar para guardar o valor Unitario
+
 
 DEFAULT cChkProduto := ""
 DEFAULT lF3         := .F. 								//Se o produto foi inserido via F3, obtenho a variavel True para o
@@ -1862,11 +1869,43 @@ If lAchou
 				EndIf	
 
 				//Regra utilizada no MatxFis para verificar a modalidade da base de calculo
-				If lL2Modbc
+				If lL2Modbc .Or. lICMDeson
 					aModBc := MaFisRet(1,"IT_SPED")
-					If Len(aModBc) > 0
+					If Len(aModBc) > 0 .and. lL2Modbc
 						cModBc := aModBc[1][6]
 					EndIf
+					
+					If lICMDeson						
+						
+							If ! Empty(AllTrim(MafisRet(nX,"LF_MOTICMS" )))
+																
+								cMOTDICM := MafisRet(nX,"LF_MOTICMS")
+								
+								nAux := Len(aModBc)
+								If nAux > 0
+									nY := 0
+									For nI := 1 to nAux
+										nY += aModBc[nI][26] //Referencia SP_DESONE da MatxFis
+									Next nI
+																		
+									nDESCICM := nY
+								EndIf
+								
+								nY := 0
+								nI := 0
+								nAux := 0
+							EndIf
+
+							If  nDESCICM > 0 								
+								nAuxVlrI := nVlrItem
+								nVlrItem := MafisRet(1, "IT_TOTAL") 
+								If nVlrItem <> nAuxVlrI
+									nAuxVlrU := nVlrUnit
+									nVlrUnit := nVlrItem / nQuant 
+								EndIf	
+							EndIf						
+					EndIf
+
 				EndIf
 
 				//carrega o vetor com os valores referentes a ICMS-ST
@@ -1892,6 +1931,7 @@ If lAchou
 						Aadd( aNFCeICMST[2], MaFisRet(1, "IT_ALIQSOL")	)
 						Aadd( aNFCeICMST[2], nVlIcmRet				 	)
 						Aadd( aNFCeICMST[2], MaFisRet(1, "IT_VALFECP")	)
+						
 						
 						//alimenta o array estatico (aICMSST) do LOJNFCE.PRW
 						LjSetICMST( aNFCeICMST )
@@ -2673,7 +2713,7 @@ If lAchou
 				cLocal  := FR271CAField(xOrc, "L2_LOCAL",  nNumItem)
 				cTabela := FR271CAField(xOrc, "L2_TABELA", nNumItem)
 			EndIf
-	
+				
 			//Protecao para evitar erro de desconto 100% ** Necessário adicionar log para identificar quando ocorrer
 			If nVlrPercIT > 99.99			
 				nVlrPercIT := 99.99									
@@ -2687,7 +2727,14 @@ If lAchou
 					nVlrItem := 0.1
 				EndIf				
 			Endif			
-            
+            			
+			If nAuxVlrU <= 0 
+					nAuxVlrU := nVlrUnit - If(cPaisLoc=="BRA",(nVlrDescIT / nQuant),0)
+			EndIf
+			If nAuxVlrI <= 0
+				nAuxVlrI := nVlrItem
+			EndIf
+
 			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 			//³ Registrando o Item ³
 			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -2697,9 +2744,9 @@ If lAchou
 					 	{"L2_ITEM"		,	FR271BPegaIT(FR271HLastIT(@aItens))	},;
 					 	{"L2_DESCRI"	,	cProduto 		},;
 					 	{"L2_QUANT"		,	nQuant			},;
-					 	{"L2_VRUNIT"	,	nVlrUnit - If(cPaisLoc=="BRA",(nVlrDescIT / nQuant),0)},; 	// Para paises diferentes de Brasil o valor 
-					 	{"L2_VLRITEM"	,	nVlrItem		},;                                        	// unitario ja foi acertado para a impressao   
-		 			 	{"L2_DESC"		,	nVlrPercIT		},;                                         // correta no cupom.
+					 	{"L2_VRUNIT"	,	nAuxVlrU		},; 	// Para paises diferentes de Brasil o valor 
+					 	{"L2_VLRITEM"	,   nAuxVlrI		},;		// unitario ja foi acertado para a impressao   
+		 			 	{"L2_DESC"		,	nVlrPercIT		},; 	// correta no cupom.
 					 	{"L2_VALDESC"	,	nVlrDescIT		},;
 					 	{"L2_VALIPI"	,	nValIPIIT		},;
 					 	{"L2_UM"		,	cUnidade		},;
@@ -2718,6 +2765,13 @@ If lAchou
 					 	
 			aAdd( aSL2, {"L2_VDMOST", aMostruario[1]})			
 			aAdd( aSL2, {"L2_VDOBS", aMostruario[2]})
+
+			//desoneração icms
+			If lICMDeson
+				aAdd( aSL2, {"L2_MOTDICM", cMOTDICM } )
+				aAdd( aSL2, { "L2_DESCICM", nDESCICM } )
+			EndIf	
+
 	
 			aMostruario := {"N",""}
 			

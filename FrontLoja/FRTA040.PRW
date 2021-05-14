@@ -2409,7 +2409,7 @@ If lContinua
 	
 						If lTemLib
 														//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿			        					
-							GoTo(nOldRecNo)           	//³ Vai para o registro anterior a localização do liberado  ³
+							DbGoTo(nOldRecNo)           //³ Vai para o registro anterior a localização do liberado  ³
 							DbSkip()					//³ Caso Contrario, Verifica se Existe						³
 														//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ						
 																							 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿							
@@ -2546,7 +2546,7 @@ If nRet == 0 .AND. !lCompleta
 		CARGA->(dbEval( { || lTemLib := ( LIBERADO .AND. SubStr(ESTACAO, nCheckOut, 1) <> "0" ) },, ;
 		                { || (( FILIAL + ARQUIVO ) == ( cFilAnt + cArquivo )) .AND. ( ! Eof() ) .AND. (! lTemLib) },,, .T.))
 		// Volta para o registro que estava antes da pesquisa
-		CARGA->(GoTo(nOldRecNo))
+		CARGA->(DbGoTo(nOldRecNo))
 		
 		If !lTemLib										//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 			nRet := 6									//³ 6 - Carga nao liberada        ³

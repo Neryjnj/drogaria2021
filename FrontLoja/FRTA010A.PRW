@@ -5731,7 +5731,7 @@ If lFrtFormPag .AND. !Empty( aPgtos )
 	AEval( aPgtos,{|ExpA1| nVlrAux += ExpA1[2]} )
 	If nVlrAux >= nVlrTotal
 		// "Não é possível incluir mais Formas de Pagamento." ### "Atenção"
-		FrtHelp('FRT032')
+		HELP(' ',1,'FRT032')
 		Return(.T.)
 	EndIf		
 EndIf
@@ -8192,13 +8192,10 @@ EndIf
 //O tratamento de troco, para paises outros paise, é realizado através da
 //função LjCalcTrc, pois devem ser consideradas múltiplas moedas
 If (cPaisLoc <> "BRA") .AND. SuperGetMV("MV_LJTRLOC",,.F.)
-	If  nModulo == 72 
-		aAux := KEXF140()
-	EndIf
 	//PE que retorna para quais formas de pagamento pode ser gerado troco. 
  	If ExistBlock("FORMSTRC")
 		aAux := ExecBlock("FORMSTRC",.F.,.F.)
-	ElseIf nModulo <> 72
+	Else
 		//Caso nao exista o PE FORMSTRC podera ser gerado troco para todas 
 		//as moedas mais cheque
 	    aAux := {SuperGetMV("MV_SIMB1")}

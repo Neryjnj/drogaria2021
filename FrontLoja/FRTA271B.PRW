@@ -117,10 +117,8 @@ Local cAux
 
 If ValType(lGravaFi) == "U"						// Controla se deve replicar o SLH para todas as filiais
 	nRecnoSM0 := SM0->(Recno())
-	SX2->(dbSeek("SBI"))
-	cAux := SX2->X2_MODO
-	SX2->(dbSeek("SB0"))
-	lGravaFi := cAux != SX2->X2_MODO
+	cAux := FWModeAccess("SBI",3)
+	lGravaFi := cAux != FWModeAccess("SB0",3)
 	SM0->(DBEval({|| AAdd(aFiliais,FWGETCODFILIAL)}, {|| SM0->M0_CODIGO==cEmpAnt}))
 	SM0->(dbGoTo(nRecnoSM0))
 EndIf
@@ -412,14 +410,11 @@ Return( NIL )
 /*/
 Function FR271BChkModo
 Local cModoSB1, cModoSBI, cModoSB0, cModoSLH
-SX2->(dbSeek("SB1"))
-cModoSB1 := SX2->X2_MODO
-SX2->(dbSeek("SBI"))
-cModoSBI := SX2->X2_MODO
-SX2->(dbSeek("SB0"))
-cModoSB0 := SX2->X2_MODO
-SX2->(dbSeek("SLH"))
-cModoSLH := SX2->X2_MODO
+
+cModoSB1 := FWModeAccess("SB1",3)
+cModoSBI := FWModeAccess("SBI",3)
+cModoSB0 := FWModeAccess("SB0",3)
+cModoSLH := FWModeAccess("SLH",3)
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Modos de abertura compativeis:                     ³
 //³ - SB0, SB1, SBI e SLH COMPARTILHADOS,              ³

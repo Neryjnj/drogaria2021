@@ -4397,12 +4397,7 @@ If !lRecebe
 						
 						LjGrvLog( SL1->L1_NUM, "SAT - Gerado XML ")
 						
-						If SuperGetMv("MV_VERSAT",,'0.06') >= '0.08' 
-							MsgAlert("Versão 0.08 ainda não homologada - Vigência 01/01/2017")
-							aRetSAT := {}
-						Else
-							LjMsgRun( StrTran(STR0111,"SAT", cSiglaSat),, {|| aRetSAT := LJSATComando({"12","EnviarDadosVenda",LJSATnSessao(),cPass,cXML})}) //"Aguarde... Processando envio do SAT"
-						EndIf
+						LjMsgRun( StrTran(STR0111,"SAT", cSiglaSat),, {|| aRetSAT := LJSATComando({"12","EnviarDadosVenda",LJSATnSessao(),cPass,cXML})}) //"Aguarde... Processando envio do SAT"
 
 						aSATDoc := {}
 
@@ -6875,7 +6870,7 @@ For nRefAdms := 1 To nLenTef
 			nPosAdmSitef := AScan(aListFilt[nScanList][2],{|x| 	AllTrim(Upper(x[7])) == cTipoCart .AND. ;
 																nParcTef >= x[5] .AND. nParcTef <= x[6] .AND. ;
 																cForma == Upper(AllTrim(x[2])) .And. ;
-																x[8] == cCodRede })
+																AllTrim(x[8]) == cCodRede })
 
 			//-------------------------------------------------------------------------------------------------------------------------------------
 			//2a.Tentativa de Busca: Tenta buscar considerando o Codigo de Retorno da "Bandeira" e O Codigo de "Rede" em branco na SAE (AE_REDEAUT)
@@ -7585,8 +7580,14 @@ If LJAnalisaLeg(74)[1] .OR. (nVlrDesctot > 0 .AND. lUseSAT)
 		nPosBPS2 := aScan(aSATTrib, {|x| Alltrim(Upper(x[2])) == "IT_BASEPS2" } ,((nQtdElm*(nX-1))+1))
 		nPosBCF2 := aScan(aSATTrib, {|x| Alltrim(Upper(x[2])) == "IT_BASECF2" } ,((nQtdElm*(nX-1))+3))
 
-		aSATTrib[nPosBPS2][3] := MaFisRet(nX,'IT_BASEPS2')
-		aSATTrib[nPosBCF2][3] := MaFisRet(nX,'IT_BASECF2')
+		If nPosBPS2 > 0
+			aSATTrib[nPosBPS2][3] := MaFisRet(nX,'IT_BASEPS2')
+		EndIf
+		
+		If nPosBCF2 > 0
+			aSATTrib[nPosBCF2][3] := MaFisRet(nX,'IT_BASECF2')
+		EndIf
+		
 		nX++
 	End
 
