@@ -1123,6 +1123,8 @@ Return aRet
 -------------------------------------------------------------------------------------------*/
 Template Function DROVLBPro(cCodBarra, lIncProd)
 Local aAreaSB1		:= {}
+Local cA1_COD		:= ""
+Local cA1_LOJA		:= ""
 Local cRet          := ""  	// Retorno da funcao
 Local cDescrProd	:= ""  	// Descricao do produto
 Local nPrecoPMC		:= 0   	// Preco Maximo Consumidor
@@ -1139,6 +1141,8 @@ LjGrvLog("DROVLBPro","Busca do Produto - Código de Barras ->", cCodBarra)
 Conout("DROVLBPro - Busca do Produto - Código de Barras -> " + cCodBarra)
 
 If lTotvsPDV
+	LjGrvLog("DROVLBPro","Busca do Produto - (SB1) TOTVSPDV")
+	Conout("DROVLBPro - Busca do Produto - (SB1) TOTVSPDV")
 	DBSelectArea("SB1")
 	nTamCodBar := TamSx3("B1_CODBAR")[1]
 	aAreaSB1 := SB1->(GetArea())
@@ -1147,13 +1151,24 @@ If lTotvsPDV
 		cDescrProd	:= SB1->B1_DESC		
 		cCodProd	:= SB1->B1_COD
 		oCliModel 	:= STDGCliModel() //Model do Cliente
-		nPrecoPMC   := STWFormPr( SB1->B1_COD, oCliModel:GetValue("SA1MASTER","A1_COD"), "", ;
-									oCliModel:GetValue("SA1MASTER","A1_LOJA"),0, 1	)
+		If oCliModel == NIL
+			cA1_COD := AllTrim(SuperGetMV("MV_CLIPAD"))
+			cA1_LOJA:= AllTrim(SuperGetMV("MV_LOJAPAD"))
+		Else
+			cA1_COD := AllTrim(oCliModel:GetValue("SA1MASTER","A1_COD"))
+			cA1_LOJA:= AllTrim(oCliModel:GetValue("SA1MASTER","A1_LOJA"))
+		EndIf
+		
+		cA1_COD := PadR(cA1_COD,TamSx3("A1_COD")[1])
+		cA1_LOJA:= PadR(cA1_LOJA,TamSx3("A1_LOJA")[1])
+		nPrecoPMC   := STWFormPr( SB1->B1_COD, cA1_COD, "", cA1_LOJA,0, 1)
 		nPrecoPromo	:= nPrecoPMC
 		lEncontrou	:= .T.
 	EndIf
 	RestArea(aAreaSB1)
 Else
+	LjGrvLog("DROVLBPro","Busca do Produto - (SBI) FRONTLOJA")
+	Conout("DROVLBPro - Busca do Produto - (SBI) FRONTLOJA")
 	DbSelectArea("SBI")
 	nTamCodBar := TamSx3("BI_CODBAR")[1]
 	SBI->(DbSetorder(5)) //BI_FILIAL + BI_CODBAR
@@ -1167,6 +1182,8 @@ Else
 EndIf
 
 If lEncontrou
+	LjGrvLog("DROVLBPro","Busca do Produto - Produto encontrado no banco de dados")
+	Conout("DROVLBPro - Busca do Produto - Produto encontrado no banco de dados")
 	cPrecoPMC	:= PadR(AllTrim(Str(nPrecoPMC,14,2)), 11)
 	cPrecoPMC	:= StrTran(cPrecoPMC, '.', '', 1)
 	cPrecoPromo	:= PadR(AllTrim(Str(nPrecoPromo,14,2)), 11)
@@ -1261,27 +1278,31 @@ Template Function DROVLCall(cFuncao, uParm1, uParm2, uParm3, uParm4, uParm5, uPa
 	If lConnect
 		If lNewConnect
 			oRPCServer:CallProc("RPCSetType", 3 )
-			oRPCServer:SetEnv(cRPCEmp,cRPCFilial,"FRT")                 // Prepara o ambiente no servidor alvo
+			oRPCServer:SetEnv(cRPCEmp,cRPCFilial,"FRT")  // Prepara o ambiente no servidor alvo
 			Conout("DROVLCall - Prepara nova conexão")
 		EndIf
 
-		ConOut(STR0025) 										// "DROVLCall: Buscando produto..."
+		ConOut(STR0025) 					//"DROVLCall: Buscando produto..."
 
 		Conout("DROVLCall - Antes de CallProc - T_DROVLBPro -> [" + cEAN + "]")
-	   	cRet := oRPCServer:CallProc("T_DROVLBPro", cEAN)	   
-		ConOut("Retorno: #" + cRet + "#")						// Exibe o retorno da funcao, que sera enviado para a DLL
+	   	cRet := oRPCServer:CallProc("T_DROVLBPro", cEAN)
+		If Empty(AllTrim(cRet))
+			ConOut("Retorno: **Produto não encontrado** ")
+		Else
+			ConOut("Retorno: #" + cRet + "#") //Exibe o retorno da funcao, que sera enviado para a DLL
+		EndIf
 		Conout("DROVLCall - Depois de CallProc - T_DROVLBPro <- [" + cRet + "]")
 
-		ConOut(STR0034) 										// "DROVLCALL: Desconectando..."
+		ConOut(STR0034) 						//#"Desconectando..."
    		oRPCServer:Disconnect()			
 
-		ConOut(STR0035)											// "DROVLCall: Finalizando VIDALINK"
+		ConOut(STR0035)							// #"Finalizando PBM"
 		oRPCServer := Nil
 
-		ConOut(STR0035)											// "DROVLCall: Fim da chamada ao VIDALINK"
+		ConOut(STR0035)							// #"Finalizando PBM"
 	EndIf	
 	
-	Conout("DroVlCall - Final da Função")
+	Conout("DroVlCall - Final da Função <- Retorno [" + cRet + "]")
 Return cRet
 
 /*-------------------------------------------------------------------------------------------
