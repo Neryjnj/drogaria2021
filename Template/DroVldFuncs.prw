@@ -3680,7 +3680,7 @@ Return lRet
 ±±³Descricao ³ Verifica se existe orcamento em aberto vencido para        ³±±
 ±±³            limpeza do log anvisa                                      ³±±
 ---------------------------------------------------------------------------*/
-Function LjLogDro()
+Template Function LjLogDro()
 Local cQuery	:= ""				// Variavel a ser utilizada na query
 Local lUsaQuery	:= .F.				// Verifica se o sistema esta trabalhando com Query
 Local aLogDro   := {}               // Array com os orçamentos vencidos

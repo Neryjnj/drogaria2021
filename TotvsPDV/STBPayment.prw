@@ -173,6 +173,7 @@ Local lUseSat		:= LjUseSat()											//Verifica se é SAT
 Local aParamsImp	:= {}													// Parâmetros para impressão do comprovante
 Local aParams		:= {}													// Parâmetros para a o RDMake de impressão
 Local lLjVpCnf		:= SuperGetMV("MV_LJVPCNF",,.F.) 						//verifica se imprime vale presente no cupom fiscal													// Parâmetros para a o RDMake de impressão
+Local aDadosCli		:= Iif(ExistFunc("STBGetCrdIdent"),STBGetCrdIdent(),{}) //Dados do Cartão/CPF do cliente (Integração CRD)
 
 Default oMdlGrd		:= Nil
 Default aPaym		:= {}
@@ -706,7 +707,7 @@ If ValType(lRetSTConfVen) == 'L' .AND. lRetSTConfVen
 						If ExistBlock("STFinishSale")
 							LjGrvLog( "L1_NUM: "+cL1_SEND, "Antes P.E STFinishSale | L1_SITUA: " + STDGPBasket('SL1','L1_SITUA') )
 							ExecBlock("STFinishSale",.F.,.F.,;
-									{cL1_Filial,cL1_SEND,cDoc,cSerie})		//Filial, número do orçamento, doc. e série
+									{cL1_Filial,cL1_SEND,cDoc,cSerie,aDadosCli}) //Filial, número do orçamento, doc, série e Dados Cliente CRD
 							LjGrvLog( "L1_NUM: "+cL1_SEND, "Depois P.E STFinishSale | L1_SITUA: " + STDGPBasket('SL1','L1_SITUA') )
 						EndIf
 					EndIf

@@ -5409,7 +5409,7 @@ Local aArrayOrcs	:= {}				// Array que irá guardar o número dos orçamentos para 
 Local lOrcEAI       := .F.
 
 If (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro()))
-	LjLogDro() // limpara os Logs da Anvisa, caso o orçamento em aberto esteja vencido
+	ExecTemplate("LjLogDro",.F.,.F.) // limpara os Logs da Anvisa, caso o orçamento em aberto esteja vencido
 EndIf
 
 #IFDEF TOP
