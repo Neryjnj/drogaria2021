@@ -1619,6 +1619,15 @@ If lAchou
 		   		nVlrItem 	:= nVlrItem - nVlrDescIT
 			EndIf 
 
+			//Ponto de Entrada executado por último, após todos os tratamentos de desconto, para que o cliente possa definir o desconto desejado no item
+			If ExistBlock("FrtItDsc")
+				aRet := ExecBlock("FrtItDsc",.F.,.F.,{	cCliente,	cLojaCli, 	cCodProd,	nQuant	,;
+														nVlrUnit,	nVlrItem,	nVlrDescIT	})
+				nVlrDescIT 	:= aRet[1]
+				nVlrPercIT 	:= aRet[2]
+				nVlrItem 	:= nVlrItSDesc	- nVlrDescIT
+			EndIf
+
 			/* Limitacao de 10.000,00 - Legislacao Paulista 	*/ 
 			If cPaisLoc == "BRA" .And. lExLegSP10 .AND. !lLegOK
 				If !Lj950SP10OK(nVlrTotal + nVlrItem, 0, cCliente, cLojaCli)				// Primeiro veirifica se ultrapassou os 10K reais

@@ -648,6 +648,20 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				cTypeDesc := cBAKTypeDesc	// Variavel que retorna o valor anterior
 				nDiscount := nBAKDiscount	// Variavel que retorna o valor anterior
 			EndIf
+
+			//Ponto de Entrada executado por último, após todos os tratamentos de desconto, para que o cliente possa definir o desconto desejado no item
+			If ExistBlock("STDescIt")
+				aRet := ExecBlock("STDescIt",.F.,.F.,{	cCliCode, cCliLoja	, aInfoItem[ITEM_CODIGO], STBGetQuant(),;
+														nPrice	, nItemTotal, nDiscount				, cTypeDesc })
+				
+				If aRet[1] > 0 //Valor de Desconto
+					cTypeDesc := "V"
+					nDiscount := aRet[1]
+				ElseIf aRet[2] > 0 //Percentual de Desconto
+					cTypeDesc := "P"
+					nDiscount := aRet[2]
+				EndIf
+			EndIf
 			
 			If lItemFiscal .AND. STFGetCfg("lUseECF") 
 				LjGrvLog(cL1Num,"Inicia Operacao de Registro Fiscal para ECF")
