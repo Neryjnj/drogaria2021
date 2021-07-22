@@ -1595,6 +1595,7 @@ If lAchou
 				EndIf   
 			Endif
    			If nVidaLink == 1 
+				lItemPbm := .T.
                 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
                 //³  Verifica se o preco do VidaLink eh maior que o preco do sistema ³ 
                 //³  com desconto.Vale o preco menor aValPerc  						 ³
@@ -1621,11 +1622,12 @@ If lAchou
 
 			//Ponto de Entrada executado por último, após todos os tratamentos de desconto, para que o cliente possa definir o desconto desejado no item
 			If ExistBlock("FrtItDsc")
-				aRet := ExecBlock("FrtItDsc",.F.,.F.,{	cCliente,	cLojaCli, 	cCodProd,	nQuant	,;
-														nVlrUnit,	nVlrItem,	nVlrDescIT	})
+				aRet := ExecBlock("FrtItDsc",.F.,.F.,{	cCliente,	cLojaCli, 	cCodProd	, nQuant	,;
+														nVlrUnit,	nVlrItem,	nVlrDescIT	, nVlrPercIT,;
+														lItemPbm	})
 				nVlrDescIT 	:= aRet[1]
 				nVlrPercIT 	:= aRet[2]
-				nVlrItem 	:= nVlrItSDesc	- nVlrDescIT
+				nVlrItem 	:= nVlrItSDesc - nVlrDescIT
 			EndIf
 
 			/* Limitacao de 10.000,00 - Legislacao Paulista 	*/ 

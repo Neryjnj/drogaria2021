@@ -560,6 +560,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					EndIf
 
 					If aDadoVLink[3] == 1
+						lItemPbm := .T.
 						LjGrvLog(cL1Num,"Registra Item - Template Drogaria - Item de Venda PBM detectado")
 						//--------------------------------------------------------------------
 						//|  Verifica se o preco do VidaLink eh maior que o preco do sistema | 
@@ -651,8 +652,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 			//Ponto de Entrada executado por último, após todos os tratamentos de desconto, para que o cliente possa definir o desconto desejado no item
 			If ExistBlock("STDescIt")
-				aRet := ExecBlock("STDescIt",.F.,.F.,{	cCliCode, cCliLoja	, aInfoItem[ITEM_CODIGO], STBGetQuant(),;
-														nPrice	, nItemTotal, nDiscount				, cTypeDesc })
+				aRet := ExecBlock("STDescIt",.F.,.F.,{	cCliCode, cCliLoja	, aInfoItem[ITEM_CODIGO], STBGetQuant()	,;
+														nPrice	, nItemTotal, nDiscount				, cTypeDesc 	,;
+														lItemPbm })
 				
 				If aRet[1] > 0 //Valor de Desconto
 					cTypeDesc := "V"
