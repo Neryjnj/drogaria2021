@@ -415,7 +415,7 @@ If !Empty(cCondPagto)
 	aCondicoes 	:= STDCondPad(cCondPagto)
 Else
 	//Caso seja a chamada vindo do clique na opção condicao deve listar todas
-	aCondicoes 	:=STDCondPg()
+	aCondicoes 	:=STDCondPg(STDGPBasket("SL1","L1_CLIENTE")+STDGPBasket("SL1","L1_LOJA"))
 EndIf
 
 oMdlGrd:DeActivate()

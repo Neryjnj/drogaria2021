@@ -2461,7 +2461,7 @@ aTabelasLJ := {	"SB1", "SB0", "SLH", "SBZ", "SM2", "SA1", "SA3", "SA6", "SAE", "
 				"DA1", "ACQ", "ACR", "SL6", "SL8", "SLD", "SL7", "SUG", "SUH", "SU1",;
 				"MDE", "MBS", "MBT", "MEN", "MEK", "MEI", "MEJ", "MB2", "MB3", "MB4",;
 				"MB5", "MB6", "MB7", "MB8", "CLK", "MEU", "MEV", "CC2", "AI0", "MBF",;
-				"MBL", "MG7", "MG8", "MGB", "MGC", "MHI", "SLZ" }
+				"MBL", "MG7", "MG8", "MGB", "MGC", "MHI", "SLZ", "MA6" }
 
 If ExistFunc("LjIsDro") .And. LjIsDro()
 	aTabTplDRO :=	{"MHA", "MHB", "MHC", "MHD", "MHE", "MHF", "MHG",; 

@@ -2586,26 +2586,45 @@ Local dMovimento := dDataBase 				//Data do movimento
 cLoteMHJ := GetSxeNum("MHJ","MHJ_LOTE","MHJ_LOTE" + xFilial("MHJ") )
 ConfirmSx8()
 
-For nX := 1 To len(oWFReceipt:aListTitles[4]) //Pego a lista de titulos baixados
-	
-	If oWFReceipt:aListTitles[4][nX][1]
+If Len(oWFReceipt:aListTitles) > 0 
 
-		cNumMHJ := GetSxeNum("MHJ","MHJ_NUM")
-		ConfirmSx8()
-
-		aAdd( aMHJ,{} )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_FILIAL", xFilial("MHJ")					 } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_NUM"	 , cNumMHJ							 } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_PRXTIT", oWFReceipt:aListTitles[4][nX][2]  } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_NUMTIT", oWFReceipt:aListTitles[4][nX][3]  } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_PARTIT", oWFReceipt:aListTitles[4][nX][4]  } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_LOTE"  , cLoteMHJ						 	 } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_VALOR" , oWFReceipt:aListTitles[4][nX][10] } )
-		aAdd( aMHJ[len(aMHJ)], { "MHJ_SITUA" , "00" 							 } )
+	For nX := 1 To len(oWFReceipt:aListTitles[4]) //Pego a lista de titulos baixados
 		
-	EndIf
+		If oWFReceipt:aListTitles[4][nX][1]
 
-Next Nx
+			cNumMHJ := GetSxeNum("MHJ","MHJ_NUM")
+			ConfirmSx8()
+
+			aAdd( aMHJ,{} )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_FILIAL", xFilial("MHJ")					 } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_NUM"	 , cNumMHJ							 } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_PRXTIT", oWFReceipt:aListTitles[4][nX][2]  } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_NUMTIT", oWFReceipt:aListTitles[4][nX][3]  } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_PARTIT", oWFReceipt:aListTitles[4][nX][4]  } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_LOTE"  , cLoteMHJ						 	 } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_VALOR" , oWFReceipt:aListTitles[4][nX][10] } )
+			aAdd( aMHJ[len(aMHJ)], { "MHJ_SITUA" , "00" 							 } )
+			
+		EndIf
+
+	Next Nx
+
+Else
+	
+	cNumMHJ := GetSxeNum("MHJ","MHJ_NUM")
+	ConfirmSx8()
+
+	aAdd( aMHJ,{} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_FILIAL", xFilial("MHJ")				} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_NUM"	 , cNumMHJ						} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_PRXTIT", oWFReceipt:cPrefix			} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_NUMTIT", oWFReceipt:cNumber			} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_PARTIT", oWFReceipt:cParcel			} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_LOTE"  , cLoteMHJ						} )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_VALOR" , oWFReceipt:nValueContingency } )
+	aAdd( aMHJ[len(aMHJ)], { "MHJ_SITUA" , "00" 						} )
+
+Endif 
 
 For nI := 1 To oMdlGrd:Length() 
 
@@ -2633,7 +2652,7 @@ If ExistFunc("STDGrvMHX")
 	STDGrvMHX(aMHJ,aMHK)
 Else 
 	LjGrvLog("STBIncMHX","Função STDGrvMHX não existe no RPO, a ausencia desta função implicara na conferência  de caixa não listando os recebimentos realizados.")
-EndIf 
+EndIf
 
 Return
 
