@@ -772,7 +772,7 @@ Local nPosLOCAL   := Ascan(aHeader,{|x|alltrim(x[2]) == "LN_LOCAL"		})  // Posic
 Local nPosLOTECTL := Ascan(aHeader,{|x|alltrim(x[2]) == "LN_LOTECTL" 	})  // Posicao do campo LOTE
 Local nPosNLOTE   := Ascan(aHeader,{|x|alltrim(x[2]) == "LN_NLOTE"	 	})	// Posicao do campo SUB-LOTE
 Local nPosLOCALIZ := Ascan(aHeader,{|x|alltrim(x[2]) == "LN_LOCALIZ"	})	// Posicao do campo Endereco
-Local lLJ430Grava := FindFunction("U_LJ430GRAVA")              		// Verifica se existe o ponto de entrada U_LJ430GRAVA
+Local lLJ430Grava := ExistBlock("LJ430GRAVA")             		// Verifica se existe o ponto de entrada U_LJ430GRAVA
 Local lLJ7430VdGr := ExistBlock("LJ7430VDGR")                       // Verifica se existe o ponto de entrada LJ7430VDGR
 Local lRet        := .T.                                            // Retorno da funcao
 
@@ -945,9 +945,9 @@ Next nI
 END TRANSACTION     
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Executa Ponto de entrada LJ430Grava³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ 
 If lLJ430Grava
-   U_LJ430Grava()
+   ExecBlock("LJ430GRAVA",.F.,.F.)
 EndIf
 
 Return lRet

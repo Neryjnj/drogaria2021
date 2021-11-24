@@ -947,7 +947,7 @@ Return(lRet)
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Static Function Lj720AltProc( cAliasTRB  ,aRecSD2   ,oGetdTRC  ,lFormul  ,;
+Function Lj720AltProc( cAliasTRB  ,aRecSD2   ,oGetdTRC  ,lFormul  ,;
                               lCompCR    ,nRecnoTRB ,nTpProc   )
             
 Local lRet	:= .T.               // Retorno da funcao
@@ -2709,6 +2709,7 @@ Local lRestAlter    := Iif(Type("ALTERA")<>"U",ALTERA,.F.)
 Local aPrintNCC		:= {}													// Array com os dados da NCC a ser impressa com o codigo de barras
 Local nRecSD2		:= 0
 Local cChaveDOC		:= ""
+Local cPedidoSd2    := ""                                                   //Numero do Pedido SD2 usado para troca
 
 PRIVATE INCLUI 		:= .T.
 PRIVATE lMsErroAuto := .F. 
@@ -2764,7 +2765,8 @@ aDocOri := {}
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Soma os produtos vendidos³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If (nTpProc == 2) .AND. (Len(aRecSd2) >= 1) .AND. (Len(aRecSd2[1]) >= 2)
+If (Len(aRecSd2) >= 1) .AND. (Len(aRecSd2[1]) >= 2)
+
 	SD2->(DbSetOrder(3)) //D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA+D2_COD+D2_ITEM
 	For nC := 1 to Len(aRecSd2)
 		SD2->(DbGoTo(aRecSd2[nC][2]))
@@ -2785,10 +2787,10 @@ If (nTpProc == 2) .AND. (Len(aRecSd2) >= 1) .AND. (Len(aRecSd2[1]) >= 2)
 				SD2->D2_CLIENTE	== cCliOri	.AND.;
 				SD2->D2_LOJA	== cLojOri
 		
-						If (nPos := aScan( aSldItens, {|x| x[1] == SD2->D2_COD .AND. cDocOri ==  x[3] .AND.  cSerOri == x[4] })) > 0
+				If (nPos := aScan( aSldItens, {|x| x[1] == SD2->D2_COD .AND. cDocOri ==  x[3] .AND.  cSerOri == x[4] })) > 0
 					aSldItens[nPos][2] += (SD2->D2_QUANT - SD2->D2_QTDEDEV)
 				Else
-							AAdd(aSldItens,{ SD2->D2_COD, (SD2->D2_QUANT - SD2->D2_QTDEDEV) , cDocOri, cSerOri})
+					AAdd(aSldItens,{ SD2->D2_COD, (SD2->D2_QUANT - SD2->D2_QTDEDEV) , cDocOri, cSerOri})
 				EndIf	
 		
 				SD2->(DbSkip())
@@ -3050,6 +3052,13 @@ If lVdAssist .AND. lRestArea
 	MafisRestore()
 Endif
 
+//Incluido verificação do Pedido na SD2 posicionado, pois na função Lj720DevSD2 o registro desposicionou
+cPedidoSd2 := GetAdvFVal("SD2","D2_PEDIDO",xFilial("SD2")+cDocOri + cSerOri + cCliOri + cLojOri,3,"Erro") 
+
+If cPedidoSd2 <> SD2->D2_PEDIDO 
+    SD2->(DbSeek(cFilSD2 + cDocOri + cSerOri + cCliOri + cLojOri))
+EndIf
+
 //Verifica se a venda é e-commerce
 cPedOri := SD2->D2_PEDIDO  
 lPedEC :=  Lj720PedEc(cPedOri, @cOrcRes, cCodFil, @lECCia)
@@ -3059,9 +3068,9 @@ lPedEC :=  Lj720PedEc(cPedOri, @cOrcRes, cCodFil, @lECCia)
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 If lRet	
 	If  nFormaDev == 2
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³Atualiza o Saldo da NCC, quando Possuir Garantia Estendida³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+        //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+        //³Atualiza o Saldo da NCC, quando Possuir Garantia Estendida³
+        //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		If nTotalGar > 0  
 		   dbSelectArea("SL1")
 		   SL1->(dbSetOrder(2)) //L1_FILIAL+L1_SERIE+L1_DOC+L1_PDV 
@@ -3073,7 +3082,7 @@ If lRet
 		   		EndIf			
 		EndIf	
 		
-	//Tratamento para Servico Financeiro
+	    //Tratamento para Servico Financeiro
 		If nTotalServ	> 0
 			SL1->(dbSetOrder(2)) //L1_FILIAL+L1_SERIE+L1_DOC+L1_PDV 
 		   
@@ -3099,6 +3108,11 @@ If lRet
 			EndIf					
 		EndIf    
   	EndIf
+
+    //Efetua o cancelamento da fidelização
+    If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+        CancFideli(cFilSD2, aDocOri)
+    EndIf
 	
     lConfirma := .T.
 	If nTpProc == 1  .AND. !lVdAssist	//Troca De Mercadorias
@@ -5605,7 +5619,7 @@ Default lDevMoeda 	:= .F.
 Default aDevol 		:= {}
 Default nImpostos 	:= 0
 Default cCaixa 		:= xNumCaixa() 
-Default cTipoDoc 		:= "LJ"
+Default cTipoDoc 	:= "DH" //DH=Dinheiro
 Default cHistorico 	:= STR0065									//"BAIXA REF. DEVOL. EM DINHEIRO"
 Default nFrtSegDes  := 0 	//Frete Seguro e Despesa
 Default nIcmsRet	:= 0	//Retorno de ICMS - Substituição Tributária    
@@ -9506,7 +9520,7 @@ Return aHeader
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Static Function L720NextPn(	nPanel 		, nNfOrig 		, cCodCli	, cLojaCli	,;
+Function L720NextPn(	nPanel 		, nNfOrig 		, cCodCli	, cLojaCli	,;
 							oWizard		, nTpProc 		, cCodDia	, lAliasCVL	,;
 							cCodFilCli	, nFiltroPor  	, aRecSD2	, lDevFrete)
 
@@ -10189,9 +10203,9 @@ If SD2->D2_QTDEDEV < SD2->D2_QUANT
 		//³Ponto de entrada para incluir campos adicionais ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		If ExistBlock("LJ720LDV")
-			LjGrvLog("TROCA_DEVOLUCAO","Antes da Chamada do Ponto de Entrada:LJ7083",{aLinha})
+			LjGrvLog("TROCA_DEVOLUCAO","Antes da Chamada do Ponto de Entrada:LJ720LDV",{aLinha})
 			aLinha := ExecBlock("LJ720LDV",.F.,.F.,{aLinha})
-			LjGrvLog("TROCA_DEVOLUCAO","Apos a Chamada do Ponto de Entrada:LJ7083 - aLinha",aLinha)
+			LjGrvLog("TROCA_DEVOLUCAO","Apos a Chamada do Ponto de Entrada:LJ720LDV - aLinha",aLinha)
 		Endif
 
 		AAdd( aLinha, { "D1RECNO", SD2->(RECNO()), Nil } )
@@ -11397,3 +11411,39 @@ Static Function RetSldDev()
     nSaldoDev := SD2->D2_VALDEV - A410Arred(nDesconto, "D2_DESCON")
 
 Return nSaldoDev
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} CancFideli
+Efetua o cancelamento da fidelização (TOTVS Fidelity Core), quando a nota de saida for totalmente devolvida.
+
+@param  cFilSD2, Caractere, Filial da SD2
+@param  aDocOri, Array, Com os dados das notas de saída devolvidas
+
+@author  Rafael Tenorio da Costa
+@since 	 11/12/20
+@version 1.0
+/*/
+//-------------------------------------------------------------------
+Static Function CancFideli(cFilSD2, aDocOri)
+
+    Local aArea      := GetArea()
+    Local aAreaSL1   := SL1->( GetArea() )
+    Local nCont      := 0
+    Local aAuxDocOri := aClone(aDocOri)
+
+    //Ordernar do maior para o menor valor 
+    Asort(aAuxDocOri, , , { | x,y | x[6] > y[6] } )
+
+    For nCont:=1 To Len(aAuxDocOri)
+
+		SL1->( dbSetOrder(2) )  //L1_FILIAL + L1_SERIE + L1_DOC + L1_PDV 
+		If SL1->( dbSeek(cFilSD2 + aAuxDocOri[nCont][2] + aAuxDocOri[nCont][1]) ) .And. SL1->L1_FIDCORE
+			Lj7FidCanc(SL1->L1_FILIAL + SL1->L1_NUM, SL1->L1_ESTACAO)
+		EndIf
+
+    Next nCont
+
+    RestArea(aAreaSL1)
+    RestArea(aArea)
+
+Return Nil

@@ -146,7 +146,7 @@ dbSelectArea("MHD")
 DEFINE MSDIALOG oDlg TITLE cCadastro FROM 9,0 TO 34,80 OF oMainWnd
 	EnChoice( cAlias, nReg, nOpc, , , , , aPos, , 3)
 	oGet := MSGetDados():New(111,3,182,315,nOpc,"T_A004LinOk","T_A004TudOk","",.T.)
-ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=0,oDlg:End()},{||nOpca:=0,oDlg:End()})
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=0,oDlg:End()},{||nOpca:=0,oDlg:End()},,,,,,,,.T.)
 DbSelectArea("MHD")
 
 Return .T.
@@ -239,7 +239,7 @@ If lContinua
 	DEFINE MSDIALOG oDlg TITLE cCadastro FROM 9,0 TO 34,80 OF oMainWnd
 		EnChoice( cAlias, nReg, nOpc, , , , , aPos, , 3)
 		oGet := MSGetDados():New(111,3,182,315,nOpc,"T_A004LinOk","T_A004TudOk","",.T.)
-	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,If(T_A004Tudok() .And. Obrigatorio(aGets,aTela),oDlg:End(),nOpca:=0)},{||nOpca:=0,oDlg:End()})
+	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,If(T_A004Tudok() .And. Obrigatorio(aGets,aTela),oDlg:End(),nOpca:=0)},{||nOpca:=0,oDlg:End()},,,,,,,,.T.)
 	DbSelectArea("MHD")
 	dbGoto(nReg)
 	If nOpcA == 1
@@ -336,7 +336,7 @@ dbSelectArea("MHD")
 DEFINE MSDIALOG oDlg TITLE cCadastro FROM 9,0 TO 34,80 OF oMainWnd
 	EnChoice( cAlias, nReg, nOpc, , , , , aPos, , 3)
 	oGet := MSGetDados():New(111,3,182,315,nOpc,"T_A004LinOk","T_A004TudOk","",.T.)
-ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,If(T_A004Tudok() .And. Obrigatorio(aGets,aTela),oDlg:End(),nOpca:=0)},{||nOpca:=0,oDlg:End()})
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,If(T_A004Tudok() .And. Obrigatorio(aGets,aTela),oDlg:End(),nOpca:=0)},{||nOpca:=0,oDlg:End()},,,,,,,,.T.)
 
 DbSelectArea("MHD")
 MHD->(dbGoto(nReg))
@@ -439,7 +439,7 @@ If ( lContinua )
 	DEFINE MSDIALOG oDlg TITLE cCadastro FROM 9,0 TO 34,80 OF oMainWnd
 	EnChoice( cAlias, nReg, nOpc, , , , , aPos, , 3)
 	oGet := MSGetDados():New(111,3,182,315,nOpc,"T_A004LinOk","T_A004TudOk","",.T.)
-	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,oDlg:End()},{||nOpca:=0,oDlg:End()})
+	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| nOpca:=1,oDlg:End()},{||nOpca:=0,oDlg:End()},,,,,,,,.T.)
 	DbSelectArea("MHD")
 	dbGoto(nReg)
 	If ( nOpcA == 1 )

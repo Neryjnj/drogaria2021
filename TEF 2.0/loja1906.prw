@@ -35,6 +35,7 @@ Class LJCConfiguradorTef
 	Data aAdmin
 	Data oComSitef
 	Data oComPaymentHub
+	Data oPgDig
 	
 	Method New()
 	Method GetCCCD()
@@ -58,10 +59,13 @@ Class LJCConfiguradorTef
 	Method AtivaFormas()
 	Method AtivaAdm()
 	Method Fechar() 
-	Method GetAdm() //Indica se o configurador necessita de administradora Financeira 
-	Method GetAdmin() //Retorna as administradoras
+	Method GetAdm()			//Indica se o configurador necessita de administradora Financeira 
+	Method GetAdmin()		//Retorna as administradoras
 	Method GetFormas()
 	Method AtivaPaymentHub()
+	Method ISPgtoDig()
+	Method ISPayHub()
+	Method GetPgtoDigital()
 
 EndClass  
 
@@ -92,7 +96,8 @@ Method New() Class LJCConfiguradorTef
 	Self:lAtivo		:= .F.
 	Self:lInfAdm	:= .T.
 	Self:aFormas	:= {}       
-	Self:aAdmin     := {} //Classe responsável por armazenar as administradoras
+	Self:aAdmin     := {}	//Classe responsável por armazenar as administradoras
+	Self:oPgDig		:= Nil
 
 Return Self           
 
@@ -382,13 +387,11 @@ Method Carregar(cCodigo, lMensagem) Class LJCConfiguradorTef
 				Self:lInfAdm := Self:oCfgTef:oDirecao:lInfAdm
 				lRet 	:= Self:AtivaDirecao()
 				cTipo 	:= "2"
+		EndIf
 
-		//Verifica se existe alguma configuracao do Payment Hub habilitada
-		ElseIf LjUsePayHub() .And. Self:oCfgTef:oPaymentHub:lCCCD
-
-				Self:lInfAdm := Self:oCfgTef:oPaymentHub:lInfAdm
-				lRet 	:= Self:AtivaPaymentHub()
-
+		//Verifica se existe alguma configuracao do Payment Hub habilitada		
+		If LjUsePayHub()
+			lRet := Self:AtivaPaymentHub()
 		EndIf 
 
 		If ExistFunc("STTMTT") .AND. cTipo <> "0"
@@ -432,9 +435,9 @@ Method AtivaSitef() Class LJCConfiguradorTef
 	
 	// Verifico se existe a funcao antes de instaciar a classe
 	If oTotvsApi == Nil 
-		If ExistFunc("LOJA1326")
+		If FindFunction("LOJA1326")
 		
-			oImpBWECF := STFECFCONTROL():STFECFCONTROL(lHomTEF)  //Objeto do tipo STBCCECFCONTROL
+			oImpBWECF          := STFECFCONTROL():STFECFCONTROL(lHomTEF)  //Objeto do tipo STBCCECFCONTROL
     		oImpBWECF:CreateTotvsApi()
     		oTotvsApi := oImpBWECF:GetTotvsApi()
 			If !oTotvsApi:ComAberta()
@@ -930,6 +933,8 @@ Method AtivaPaymentHub() Class LJCConfiguradorTef
 	Local lRetorno 		:= .F.				//Retorno do metodo
 	Local oComPaymentHub:= Nil				//Objeto do tipo LJCComPaymentHub
 
+	LjGrvLog("TPD"," Inicio - Inicializa comunicacao com o Payment Hub.", )
+
 	//Cria o objeto de comunicacao com o Payment Hub
 	oComPaymentHub := LJCComPaymentHub():New(Self:oCfgTef:oPaymentHub)
 
@@ -937,10 +942,12 @@ Method AtivaPaymentHub() Class LJCConfiguradorTef
 	If oComPaymentHub:CommPaymentHub()
 		::oComPaymentHub := oComPaymentHub
 		lRetorno := .T.
+		LjGrvLog("TPD"," Comunicacao com o Payment Hub efetuada.", )
 	Else
 		lRetorno := .F.
 		STFMessage("PaymentHub", "ALERT", STR0005) // "Não foi possível se comunicar com o Payment Hub."
 		STFShowMessage( "PaymentHub")
+		LjGrvLog("TPD"," Não foi possível se comunicar com o Payment Hub.", )
 	EndIf
 	    
 	If lRetorno
@@ -949,8 +956,14 @@ Method AtivaPaymentHub() Class LJCConfiguradorTef
 		If Self:oCfgTef:oPaymentHub:lCCCD 
 			Self:oCCCD := LJCPaymentHubCCCD():New(oComPaymentHub)
 		EndIf
+
+		If Self:oCfgTef:oPaymentHub:lPagDig
+			Self:oPgDig := LJCPaymentHubDigitais():New(oComPaymentHub)
+		EndIf
 	
-	EndIf  
+	EndIf
+
+	LjGrvLog("TPD"," Fim - Inicializa comunicacao com o Payment Hub. lRetorno -> ", lRetorno)
 		
 Return lRetorno
 
@@ -974,6 +987,13 @@ Local aInfoFonte:= {}
 Local nCount 	:= 0
 Local lOK 		:= .T.
 Local dDataRef 	:= Nil
+Local cAliasTab	:= ""
+Local cCampoTab	:= ""
+Local cMsg 		:= ""
+
+LJGrvLog("TOTVS_PAGAMENTO_DIGITAL", " Inicio da Verificação " ,ProcName(1))
+
+LJGrvLog("TOTVS_PAGAMENTO_DIGITAL", " lUsePayHub " ,lUsePayHub )
 
 If lUsePayHub == Nil
 	dDataRef 	:= CToD("28/08/2020") //Data de referencia dos fontes
@@ -998,11 +1018,29 @@ If lUsePayHub == Nil
 	aAdd( aFontes, "STWPayCard.prw")
 	aAdd( aFontes, "STDCancelSale.prw")
 	aAdd( aFontes, "STBPayCard.prw")
+	aAdd( aFontes, "STWChkTef.prw")
+	aAdd( aFontes, "LOJA121.PRW")
+	aAdd( aFontes, "LOJA140.PRX")
+	aAdd( aFontes, "LOJA701B.PRW")
+	aAdd( aFontes, "LOJA701C.PRW")
+	aAdd( aFontes, "LOJXFUNB.PRX")
+	aAdd( aFontes, "LOJXFUNC.PRW")
+	aAdd( aFontes, "LOJXFUNK.PRW")
+	aAdd( aFontes, "LOJXPED.PRW")
+	aAdd( aFontes, "LOJXTEF.PRW")
+	aAdd( aFontes, "LOJXPAGDIG.PRW")
 	
 	//Verifica a data dos fontes no RPO
 	For nCount := 1 To Len(aFontes)
 		aInfoFonte := GetAPOInfo(aFontes[nCount])
-		If Empty(aInfoFonte) .Or. aInfoFonte[4] < dDataRef
+		If Empty(aInfoFonte)
+			cMsg := "Fonte " + aFontes[nCount] + " não encontrado no RPO."
+		ElseIf aInfoFonte[4] < dDataRef
+			cMsg := "Fonte " + aFontes[nCount] + " com data " + dtoc(aInfoFonte[4]) + ", inferior a " + dtoc(dDataRef)
+		EndIf
+
+		If !Empty(cMsg)
+			LJGrvLog("TOTVS_PAGAMENTO_DIGITAL", cMsg)
 			lOK := .F.
 			Exit
 		EndIf
@@ -1010,25 +1048,97 @@ If lUsePayHub == Nil
 
 	If lOK
 		//Campos a serem verificados se existem no ambiente
-		aAdd( aCampos, "MDG_PHCOMP")
-		aAdd( aCampos, "MDG_PHTERM")
-		aAdd( aCampos, "MDG_PHTENA")
-		aAdd( aCampos, "MDG_PHUSER")
-		aAdd( aCampos, "MDG_PHPSWD")
-		aAdd( aCampos, "MDG_PHCLID")
-		aAdd( aCampos, "MDG_PHCLSR")
-		aAdd( aCampos, "MDG_PHCCCD")
+
+		aAdd( aCampos, "MDG_PHCOMP"	)
+		aAdd( aCampos, "MDG_PHTENA"	)
+		aAdd( aCampos, "MDG_PHUSER"	)
+		aAdd( aCampos, "MDG_PHPSWD"	)
+		aAdd( aCampos, "MDG_PHCLID"	)
+		aAdd( aCampos, "MDG_PHCLSR"	)
+		aAdd( aCampos, "MDG_PHPAGD"	)
+		aAdd( aCampos, "L1_VLRPGDG"	)
+		aAdd( aCampos, "L4_TRNID"	)
+		aAdd( aCampos, "L4_TRNPCID"	)
+		aAdd( aCampos, "L4_TRNEXID"	)
 
 		//Verifica se os campos existem no ambiente
 		For nCount := 1 To Len(aCampos)
-			If MDG->(Columnpos(aCampos[nCount])) == 0
+
+			cCampoTab := aCampos[nCount]
+			cAliasTab := PadL( Left( cCampoTab, AT("_",cCampoTab)-1 ), 3, "S")
+
+			If (cAliasTab)->(Columnpos(cCampoTab)) == 0
+				LJGrvLog("TOTVS_PAGAMENTO_DIGITAL", "Campo " + cCampoTab + " não encontrado na tabela " + cAliasTab)
 				lOK := .F.
 				Exit
 			EndIf
 		Next nCount
 	EndIf
 
-	lUsePayHub := lOK
+	lUsePayHub := lOK .And. cPaisLoc == "BRA" .And. ; 	//Disponível apenas para o Brasil
+				 ( nModulo == 12 .Or. ; 				//Verifica se é SIGALOJA
+	 				STFIsPOS() .Or. ;  					//Verifica se é Totvs PDV
+					LjFTVD() 	)						//Verifica se é Venda Direta (SIGAFAT)
+
 EndIf
 
+LJGrvLog("TOTVS_PAGAMENTO_DIGITAL", " Fim da Verificação. " , lUsePayHub)
+
 Return lUsePayHub
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} GetPgtoDigital
+Metodo para retornar o objeto com as configurações do pagamento digital
+
+@type       Method
+@author     Bruno Almeida
+@since      26/10/2020
+@version    12.1.27
+@param 
+@return 	oPgDig, Objeto, Retorna objeto com as configurações do pgto digital
+
+/*/
+//-------------------------------------------------------------------------------------
+Method GetPgtoDigital() Class LJCConfiguradorTef 
+Return Self:oPgDig
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} ISPgtoDig
+Verifica se o pagamento digital esta ativo
+
+@type       Method
+@author     Bruno Almeida
+@since      28/10/2020
+@version    12.1.27
+@param 
+@return 	lRet, lógico
+
+/*/
+//-------------------------------------------------------------------------------------
+Method ISPgtoDig() Class LJCConfiguradorTef
+
+Local lRet := .F. //Variavel de retorno
+
+If LjUsePayHub()
+	lRet := Self:oCfgTef:lAtivo .AND.  Self:oCfgTef:oPaymentHub:lPagDig
+EndIf
+
+LjGrvLog("ISPgtoDig", " lRet - TPD habilitado no cadastro de estação?",lRet )
+
+Return lRet
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} ISPayHub
+Verifica se o payment hub esta ativo
+
+@type       Method
+@author     Bruno Almeida
+@since      28/10/2020
+@version    12.1.27
+@param 
+@return 	lRet, lógico
+
+/*/
+//-------------------------------------------------------------------------------------
+Method ISPayHub() Class LJCConfiguradorTef
+Return Self:oCfgTef:oPaymentHub:lCCCD

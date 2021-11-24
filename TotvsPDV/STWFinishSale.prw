@@ -16,6 +16,8 @@ Workflow de finalizacao de venda.
 @return  	Nil
 /*/
 Function STWFinishSale(lPendSale)
+
+Local cRet      	:= ""				// Retorno
 Local nRet      	:= 0				// Retorno
 Local lContinua 	:= .T.				// Controle de processo
 Local nTotalNCCs	:= STDGetNCCs("2")	// Valor total das NCCs
@@ -28,7 +30,7 @@ Local aRet			:= {}
 Local aDados		:= {"23", space(SLG->(TamSx3("LG_CRO")[1])) } 
 Local lArredondar 	:= SuperGetMV( "MV_LJINSAR",, .F.)			// Configuração para ativar doação para o Instituto Arredondar
 Local nArredondar	:= 0										// Valor da doação para o Instituto Arredondar 	
-Local lEmitNfce		:= LjEmitNFCe() // Sinaliza se utiliza NFC-e
+Local lEmitNfce		:= Iif(FindFunction("LjEmitNFCe"), LjEmitNFCe(), .F.) // Sinaliza se utiliza NFC-e
 Local cKeyNfce		:= ""
 Local nRetNfce		:= -1	//Sinaliza se transmitiu a NFCe
 Local lPrintNFCE	:= .T.																						// Se imprime Danfe Nfc-e
@@ -60,6 +62,8 @@ Local cMVLOJANF		:= AllTrim( SuperGetMV("MV_LOJANF", .F. ,"UNI") )
 Local lMVFISNOTA	:= SuperGetMV("MV_FISNOTA", .F., .F.) .and. !Empty(cMVLOJANF) .and. cMVLOJANF <> "UNI"
 Local lLjDNota		:= .F.
 Local nRetLJ7087	:= 0
+Local oRaas			:= Nil
+Local oFidelityC	:= Nil
 Local aDadosCli		:= Iif(ExistFunc("STBGetCrdIdent"),STBGetCrdIdent(),{}) //Dados do Cartão/CPF do cliente (Integração CRD)
 Local cNumCartao 	:= Iif(Len(aDadosCli) > 0, aDadosCli[1], "") //Numero do cartao
 
@@ -77,7 +81,8 @@ lSAT := IIf( ValType(lSAT) == "U", .F., lSAT)
 //nRet := IFStatus(nHdlECF, "9", @cRet)		// Verifico o Status do ECF
 If nRet <> 0
 	// "Erro com a Impressora Fiscal. Operação não efetuada.", "Atenção"
-	HELP(' ',1,'FRT011')	
+	HELP(' ',1,'FRT011')
+	
 	lContinua := .F.
 EndIf
 
@@ -108,7 +113,7 @@ If lContinua
 	// Doação para o Instituto Arredondar
 	If lArredondar
 	
-		If SL1->(ColumnPos( "L1_VLRARR" )) > 0
+		If SL1->(FieldPos( "L1_VLRARR" )) > 0
 			nArredondar := STBGetInsArr()
 			If nArredondar > 0
 				If ExistFunc("STBIANotFiscal")
@@ -150,11 +155,13 @@ If lContinua
 	EndIf
 
 	//Versao Mobile Demonstrativa nao emite Cupom
-	If  lMobile
+	If  lMobile 
+		
 		//Se salva venda como orcamento 		
-		If lSaveOrc 
+		If  lSaveOrc 
 			STDFinishSale()		
-		EndIf
+		EndIf	
+
 	EndIf
 
 	//Executa PE para saber se gera NFC-e/NF-e/SAT ou utiliza parametro 
@@ -228,13 +235,15 @@ If lContinua
 
 				STFCleanInterfaceMessage()
 			endif
+
 		endif
 		
 		If !STFSCfmPBM(,,,(nRetNfce == 1)) //Validação TPL Drogaria
 			nRetNfce := -1
 		EndIf
 
-		If nRetNfce == 1 .AND. nArredondar > 0 .AND. ExistFunc("STBIANotFiscal") //Instituto Arredondar
+		If nRetNfce == 1 .AND. nArredondar > 0 .AND. ExistFunc("STBIANotFiscal")		//Instituto Arredondar 
+
 			cSerie		:= STDGPBasket("SL1","L1_SERIE")
 			cDoc		:= STDGPBasket("SL1","L1_DOC")
 			cACli 		:= STDGPBasket("SL1","L1_CLIENTE")
@@ -263,6 +272,31 @@ If lContinua
 		If nRetNfce == 1
 			//a chave da NFC-e nao deve ser gravada em caso de rejeição, já que a nota será inutilizada
 			STDSPBasket("SL1", "L1_KEYNFCE", cKeyNfce)
+
+			If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+					
+				// -- Finaliza BonusHub
+				oRaas := STBGetRaas()
+
+				If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+					oFidelityC := oRaas:GetFidelityCore()
+
+					If oFidelityC:ChoseToUse()
+						// -- Desativa Botões na tela
+						STIBtnDeActivate()
+						oFidelityC:Finalization(STFGetStat("CODIGO"), POSICIONE( "SA3", 1, xfilial("SA3") + STDGPBasket('SL1','L1_VEND'), "A3_NOME" ),;
+												cKeyNfce,STDPBLength("SL2"),STDGPBasket('SL1','L1_VLRLIQ'))
+						// -- Ativa Botões na tela
+						STIBtnActivate()
+						
+						oFidelityC:Clean()
+						STDSPBasket( "SL1" , "L1_FIDCORE",.T.)
+					EndIf
+
+				Endif 
+			
+			EndIf 
+
 			STDFinishSale()
 			lRet := .T.
 		Else
@@ -309,8 +343,9 @@ If lContinua
 		aRet := LJSATComando({"12","EnviarDadosVenda",LJSATnSessao(),cPass,cXML})
 
         If Len(aRet) > 2 .And. Val(aRet[2]) == 6000 //retorno de sucesso
-			If ExistFunc("LJSATRetDoc")
+			If FindFunction("LJSATRetDoc")
 				aSATDoc := LJSATRetDoc(Decode64(aRet[5]),aRet)  //retorna o doc e serie gerado no SAT
+
 				cDoc := cDocSat	:= aSATDoc[1] 
 				cSerieSat		:= aSATDoc[2]
 			EndIf
@@ -372,6 +407,30 @@ If lContinua
 
 			//Impressão de Vale-Troca quando utilizada IMPRESSORA NÃO-FISCAL
 			STBVTCupom(SL1->L1_DOC,.T.)
+
+			If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+					
+				// -- Finaliza BonusHub
+				oRaas := STBGetRaas()
+
+				If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+					oFidelityC := oRaas:GetFidelityCore()
+
+					If oFidelityC:ChoseToUse()
+						// -- Desativa Botões na tela
+						STIBtnDeActivate()
+						oFidelityC:Finalization(STFGetStat("CODIGO"), POSICIONE( "SA3", 1, xfilial("SA3") + STDGPBasket('SL1','L1_VEND'), "A3_NOME" ),;
+												cSerie + cDoc,STDPBLength("SL2"),STDGPBasket('SL1','L1_VLRLIQ'))
+						// -- Ativa Botões na tela
+						STIBtnActivate()
+						
+						oFidelityC:Clean()
+						STDSPBasket( "SL1" , "L1_FIDCORE",.T.)
+					EndIf
+
+				Endif 
+			
+			EndIf 
 			
 			STDFinishSale()
         	
@@ -434,7 +493,7 @@ If lContinua
 		STFCleanInterfaceMessage()
 
 		LjMsgRun( STR0002+ " " + SL1->L1_NUM + " " + STR0004 + " " + cDoc,,;
-				{|| nRetNfce := LjNFCeGera(SL1->L1_FILIAL,SL1->L1_NUM, @cKeyNfce,,lPrintNFCE, @cMsgErro)} )   //"Aguarde... Processando NFC-e Orcamento: "  " - Doc.: "
+		{|| nRetNfce := LjNFCeGera(SL1->L1_FILIAL,SL1->L1_NUM, @cKeyNfce,,lPrintNFCE, @cMsgErro)} )   //"Aguarde... Processando NFC-e Orcamento: "  " - Doc.: "
 		
 		If nRetNfce == 1  .And. !STFSCfmPBM(,,cKeyNfce) //Validação TPL Drogaria
 			lContinua := .F.
@@ -474,10 +533,29 @@ If lContinua
 		If nRetNfce == 1
 			//a chave da NFC-e nao deve ser gravada em caso de rejeição, já que a nota será inutilizada
 			STDSPBasket("SL1", "L1_KEYNFCE", cKeyNfce)
+			
+			If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+					
+				// -- Finaliza BonusHub
+				oRaas := STBGetRaas()
 
-			// -- Atualiza Motivo de desconto se habilitado.
-			If ExistFunc("STDUpdReason") 
-				STDUpdReason(STDGPBasket( "SL1", "L1_DOC" ),STDGPBasket( "SL1", "L1_SERIE" )) // -- Atualiza DOC apos emissão.
+				If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+					oFidelityC := oRaas:GetFidelityCore()
+
+					If oFidelityC:ChoseToUse()
+						// -- Desativa Botões na tela
+						STIBtnDeActivate()
+						oFidelityC:Finalization(STFGetStat("CODIGO"), POSICIONE( "SA3", 1, xfilial("SA3") + STDGPBasket('SL1','L1_VEND'), "A3_NOME" ),;
+												cKeyNfce,STDPBLength("SL2"),STDGPBasket('SL1','L1_VLRLIQ'))
+						// -- Ativa Botões na tela
+						STIBtnActivate()
+						
+						oFidelityC:Clean()
+						STDSPBasket( "SL1" , "L1_FIDCORE",.T.)
+					EndIf
+
+				Endif 
+			
 			EndIf 
 
 			STDFinishSale()
@@ -522,7 +600,32 @@ If lContinua
 		EndIf
 	
 	//Se nao for NF-e, NFC-e ou SAT
-	Else
+	Else	
+		
+		If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+					
+			// -- Finaliza BonusHub
+			oRaas := STBGetRaas()
+
+			If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+				oFidelityC := oRaas:GetFidelityCore()
+
+				If oFidelityC:ChoseToUse()
+					// -- Desativa Botões na tela
+					STIBtnDeActivate()
+					oFidelityC:Finalization(STFGetStat("CODIGO"), POSICIONE( "SA3", 1, xfilial("SA3") + STDGPBasket('SL1','L1_VEND'), "A3_NOME" ),;
+											STDGPBasket("SL1","L1_SERIE") + STDGPBasket("SL1","L1_DOC"),STDPBLength("SL2"),STDGPBasket('SL1','L1_VLRLIQ'))
+					// -- Ativa Botões na tela
+					STIBtnActivate()
+					
+					oFidelityC:Clean()
+					STDSPBasket( "SL1" , "L1_FIDCORE",.T.)
+				EndIf
+
+			Endif 
+		
+		EndIf 
+
 		lContinua := STFSCfmPBM() //JULIOOOOO - Validação TPL Drogaria
 
 		If lContinua
@@ -535,12 +638,19 @@ If lContinua
 		STWBxNCC()
 	EndIf	
 
+	If !lPendSale .AND. lRet
+		STBBaixaVP() 
+	Endif 
+
+
+
+
 EndIf
 
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Venda ficara pendente?", lPendSale )
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Fim - Workflow de finalizacao de venda.", lRet )
 
-If !lPendSale
+If !lPendSale	
 
 	//Executa Template Function de Drogaria na finalização da venda
 	If lRet .And. ExistFunc("LjIsDro") .And. LjIsDro()
@@ -573,6 +683,7 @@ If !lPendSale
 	STFRestart()
 EndIf
 
+
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Proxima venda será: " + STDGPBasket('SL1','L1_NUM') )
 
 Return lRet
@@ -593,6 +704,8 @@ de impressão do comprovante TEF
 //-------------------------------------------------------------------
 Function STWFinishValid
 Return
+
+
 
 //-------------------------------------------------------------------
 /*{Protheus.doc} STWSetDocSerie

@@ -57,6 +57,7 @@ Retorna as funcoes de menu disponiveis na versao Desktop do PDV
 /*/
 //-------------------------------------------------------------------
 Function STBMenuDesktop()
+
 Local aRet				:= {}						// Array de retorno das rotinas disponiveis
 Local lUseECF			:= STFGetCfg("lUseECF")		// Usa ECF
 Local lPafEcf			:= STFGetCfg("lPafEcf")		// PAF-ECF
@@ -102,13 +103,14 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
    
 	cFuncCanc	:= "(" +  IIF( !lEmitNfce, "STICancelSale()", "STIGerCancel()")	+ ",STIFocoReg()" + ")"
 	//Funcao de cancelamento de venda
+
 	
 	If !lUseSat
 		AAdd( aRet , { AllTrim(STR(++nOption)) 	,	STR0006	, cFuncCanc, "", "08"} ) //"Cancelar Venda"
 
-		If lEmitNfce .and. !lMVFISNOTA
+		If lEmitNfce .And. !lMVFISNOTA
 			AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0077  , cFuncReimp , "", "30"} )     // "Reimprimir NFC-e"
-		else	
+		else
 			If lEmitNfce
 				AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0077 + "/NF-e"  ,   cFuncReimp , "", "30"} )     // "Reimprimir NFC-e"
 			ElseIf lMVFISNOTA
@@ -213,7 +215,7 @@ If (STFProFile(12,,,,,.T.)[1]) //"Acesso para acessar a tecla de funcoes"
 	  
 	//Lista de Presentes
 	If SuperGetMv("MV_LJLSPRE",, .F.)
-		AAdd( aRet , { AllTrim(STR(++nOption)) ,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
+		AAdd( aRet , { AllTrim(STR(++nOption)) 				,  STR0051 , "STIGiftList()" , "", "29"} ) // "Lista de Presentes"
 	EndIf
 
 	If ExistFunc("LjIsDro") .And. LjIsDro() .And. ExistFunc("STBPbmMenu") .And. lUsaTef
@@ -322,7 +324,7 @@ EndIf
 AAdd( 	aRet , { AllTrim(STR(++nOption)) ,  STR0056	, "STFLatestMsg(.F.,.F.,.F.)" , ""} )     // "Log de Mensagens"
 
 //Dados Cadastrais
-AAdd( 	aRet , { AllTrim(STR(++nOption)) ,  STR0063	, "STFCadEmp()" , ""} )     // "Dados Cadastrais"  
+//retirada da chamada da função STFCadEmp()
 
 //Configurações Gerais
 AAdd( 	aRet , { AllTrim(STR(++nOption)) ,  STR0064	, "STFMobWizard()" , "" , "configuracoes.svg"} )     // "Configurações"  

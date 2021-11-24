@@ -147,7 +147,7 @@ ELSEIF (nTipCar == 3)
 		      oLbxCli:bLine		:= LocxBLin('oLbxCli',aCpoCli,.T.)
 		      oLbxCli:bLDblClick	:={ || ChgMarkLb(oLbxCli,aLinCli,{|| .T. },.F.) }
 
-		      ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRetCli := .T.,oDlgCli:End()},{|| lRetCli := .F.,oDlgCli:End()},,)		   
+		      ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRetCli := .T.,oDlgCli:End()},{|| lRetCli := .F.,oDlgCli:End()},,,,,,,,.T.)		   
 		
               If lRetCli
                  //Posiciona no cliente selecionado pelo Caixa
@@ -221,7 +221,7 @@ ElseIf (nTipCar == 5)	//Matricula
 		   oLbxCli:bLine		:= LocxBLin('oLbxCli',aCpoCli,.T.)
 		   oLbxCli:bLDblClick	:={ || ChgMarkLb(oLbxCli,aLinCli,{|| .T. },.F.) }
 
-		ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRet := .T.,oDlgCli:End()},{|| lRet := .F.,oDlgCli:End()},,)		   
+		ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRet := .T.,oDlgCli:End()},{|| lRet := .F.,oDlgCli:End()},,,,,,,,.T.)		   
 		
         If lRet
            If SuperGetMv("MV_PLSATIV",.F.,.F.) .AND. SLQ->(ColumnPos("LQ_MATRIC")) >0

@@ -173,6 +173,9 @@ Local lUseSat		:= LjUseSat()											//Verifica se é SAT
 Local aParamsImp	:= {}													// Parâmetros para impressão do comprovante
 Local aParams		:= {}													// Parâmetros para a o RDMake de impressão
 Local lLjVpCnf		:= SuperGetMV("MV_LJVPCNF",,.F.) 						//verifica se imprime vale presente no cupom fiscal													// Parâmetros para a o RDMake de impressão
+Local oRaas			:= Nil
+Local oFidelityC	:= Nil
+Local nQtdItens		:= 0
 Local aDadosCli		:= Iif(ExistFunc("STBGetCrdIdent"),STBGetCrdIdent(),{}) //Dados do Cartão/CPF do cliente (Integração CRD)
 
 Default oMdlGrd		:= Nil
@@ -338,7 +341,7 @@ If ValType(lRetSTConfVen) == 'L' .AND. lRetSTConfVen
 			/*
 				Se a forma de pagamento for VP entao atualiza o status do VP na retaguarda
 			*/
-			STBBaixaVP(oMdlGrd)
+			STBStMdlVP(oMdlGrd)
 		EndIf
 		
 		
@@ -656,7 +659,8 @@ If ValType(lRetSTConfVen) == 'L' .AND. lRetSTConfVen
 					cL1_Filial	:= STDGPBasket('SL1','L1_FILIAL')       //Numero L1 para envio online para retaguarda
 					cL1_SEND 	:= STDGPBasket('SL1','L1_NUM')       //Numero L1 para envio online para retaguarda
 					cEstacao	:= STDGPBasket( "SL1" , "L1_ESTACAO")//numero da estacao para envio online para retaguarda 
-					
+					nQtdItens   := STDPBLength("SL2")
+
 					/*
 						Finaliza a venda
 					*/
@@ -670,7 +674,27 @@ If ValType(lRetSTConfVen) == 'L' .AND. lRetSTConfVen
 							cSerie		:= aDocSerie[2]
 						EndIf
 					EndIf
-	
+
+					
+					If lFinish .And. ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+					
+						// -- Finaliza BonusHub
+						oRaas := STBGetRaas()
+
+						If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+
+							oFidelityC := oRaas:GetFidelityCore()
+
+							// -- Envia todas as vendas
+							oFidelityC:SendSale(,POSICIONE( "SA1", 1, xfilial("SA1") + SL1->L1_CLIENTE + SL1->L1_LOJA, "A1_NOME" )	,;
+													POSICIONE( "SA3", 1, xfilial("SA3") + SL1->L1_VEND, "A3_NOME" )					,;
+													SL1->L1_SERIE + SL1->L1_DOC,SL1->L1_VLRLIQ,STFGetStat("CODIGO")					,;
+													nQtdItens,SL1->L1_FILIAL + SL1->L1_NUM)
+
+						EndIf
+
+					EndIf 
+
 					If lFinish
 						//cria o arquivo no host superior (retaguarda ou central) para que o orcamento nao seja importado novamente
 						STBCtrImpOrc( cNumOrig , cPdv )
@@ -777,7 +801,11 @@ Default oMdlGrd  	:= Nil
 Default oTEF20 		:= Nil
 Default aPaym 		:= {}
 
-oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",oTEF20:Cartao():GetTotalizador(), "C"),Nil)
+If ExistFunc("LjUsePayHub") .And. LjUsePayHub()
+	oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",IIF(oTEF20:oConfig:ISPgtoDig(),oTEF20:PgtoDigital():GetTotalizador(),oTEF20:Cartao():GetTotalizador()), "C"),Nil)
+Else
+	oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",oTEF20:Cartao():GetTotalizador(), "C"),Nil)
+EndIf
 
 For nI := 1 To oMdlGrd:Length() 
 
@@ -866,7 +894,11 @@ LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), STR0010 ) //"Imprimindo/Prepar
 ParamType 0 Var   	oMdlGrd		As Object		Default Nil
 ParamType 2 Var     aPaym		As Array		Default 	{} 
 
-oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",oTEF20:Cartao():GetTotalizador(), "C"),Nil) 
+If ExistFunc("LjUsePayHub") .And. LjUsePayHub()
+	oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",IIF(oTEF20:oConfig:ISPgtoDig(),oTEF20:PgtoDigital():GetTotalizador(),oTEF20:Cartao():GetTotalizador()), "C"),Nil)
+Else
+	oForma := IIF(STIGetCard(),oTEF20:Cupom():RetornarFormas("V",oTEF20:Cartao():GetTotalizador(), "C"),Nil)
+EndIf
 
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Quantidade de Formas de Pagamento", oMdlGrd:Length() )  //Gera LOG
 
@@ -882,7 +914,7 @@ For nI := 1 To oMdlGrd:Length()
 	*/
 	cForma	 := AllTrim(oMdlGrd:GetValue( "L4_FORMA" ))
 
-	If cForma $ "CC/CD"
+	If cForma $ "CC/CD/PD/PX"
 
 		nVlTotal	:= oMdlGrd:GetValue( "L4_VALOR" )
 		lIsTef		:= oMdlGrd:GetValue( "L4_TEF" )
@@ -961,7 +993,7 @@ For nI := 1 To oMdlGrd:Length()
 		Se NAO for uma transação TEF ( caso seja uma venda com CC ou CD 
 		e o Caixa NÃO tem permissão de Usar TEF, é caracterizado uma transação NÃO TEF )
 	*/
-	If !(AllTrim(oMdlGrd:GetValue( "L4_FORMA" )) $ "CC/CD")
+	If !(AllTrim(oMdlGrd:GetValue( "L4_FORMA" )) $ "CC/CD/PD/PX")
 
 		/*
 			Verifica se será necessario ajuste no troco, ajusta troco com total para diferenças menores que 0.05 centavos
@@ -1040,7 +1072,7 @@ For nI := 1 To oMdlGrd:Length()
 	/*
 		Chamando o evento para impressao das formas de pagamento
 	*/
-	If STWGetIsOpenReceipt() .AND. !Empty(cForma) .AND. STBRoundCurrency(oMdlGrd:GetValue( "L4_VALOR" ) * STBFactor()[1]) > 0.01
+	If STWGetIsOpenReceipt() .AND. !Empty(cForma) .AND. STBRoundCurrency(oMdlGrd:GetValue( "L4_VALOR" ) * STBFactor()[1]) >= 0.01
 
 		aRet := STFFireEvent(ProcName(0), "STPayment", {cForma, IIF(oMdlGrd:GetValue("L4_TEF"),"1","0"), AllTrim(Str(nValForma,14,2)), Nil, Nil, Nil})
 		
@@ -1176,7 +1208,13 @@ If SuperGetMV("MV_LJHMTEF", ,.F.)
 EndIf	
 
 If STIGetCard()
-	cReturn := oTEF20:Cupom():CupomReduzido(.T., cMsgCupom + STR0003, "V" + oTEF20:Cartao():GetTotalizador() + "C") //"Obrigado e volte sempre" 
+
+	If ExistFunc("LjUsePayHub") .And. LjUsePayHub()
+		cReturn := oTEF20:Cupom():CupomReduzido(.T., cMsgCupom + STR0003, "V" + IIF(oTEF20:oConfig:ISPgtoDig(),oTEF20:PgtoDigital():GetTotalizador(),oTEF20:Cartao():GetTotalizador()) + "C") //"Obrigado e volte sempre"
+	Else
+		cReturn := oTEF20:Cupom():CupomReduzido(.T., cMsgCupom + STR0003, "V" + oTEF20:Cartao():GetTotalizador() + "C") //"Obrigado e volte sempre" 
+	EndIf
+
 	If Empty(cReturn)
 		cReturn :=  cMsgCupom
 	EndIf
@@ -1694,6 +1732,10 @@ Endif
 
 If Empty( STDGPBasket( "SL1" , "L1_NUMORIG" ) )
 	If lFirstPay .AND. nTotalNCCs == 0 .AND. nVLBF == 0
+		//Reseta a variável static sCondicao
+		If FindFunction("STBRstCdPg") 
+			STBRstCdPg()
+		Endif 
 		/* Criacao do model da cond de pagamento */
 		ModelCdPg()
 
@@ -2315,6 +2357,7 @@ Local cCondicao		:= "" 		//Condiçao de pagamento
 Local lExistSE4		:= .F.
 Local lSTIDescMltN  := ExistFunc("STIDescMltNeg") .And. STIDescMltNeg()
 Local lDesTot		:= ExistFunc("STBCDPGDes") .And. STBCDPGDes()
+Local lMVLJJURCC	:= SuperGetMV( "MV_LJJURCC",,.F. ) // calcula juros da Adm financeira
 
 //Busca a condiçao de pagamento
 cCondicao := STBGetCdPg()
@@ -2323,7 +2366,7 @@ cCondicao := STBGetCdPg()
 DbSelectArea("SE4")
 SE4->(DbSetOrder(1))
 lExistSE4 := SE4->(DbSeek(xFilial("SE4")+ cCondicao))
-If ( lExistSE4 .AND. (SE4->(E4_DESCFIN + E4_ACRSFIN) > 0) ) .OR. lSTIDescMltN
+If ( lExistSE4 .AND. (SE4->(E4_DESCFIN + E4_ACRSFIN) > 0) ) .OR. lSTIDescMltN .OR. (oTotal:GetValue("L1_ACRSFIN") > 0 .AND. lMVLJJURCC)
 	
 	//Zera descontos
 	STIClearDisc()
@@ -2751,7 +2794,7 @@ Filtra os meios de pagamento que ficarão disponíveis para seleção na interface.
 @since   	17/03/2021
 
 @param		aGetSX5Pay, Array, Relação dos meios de pagamentos disponíveis para uso.
-@param		lOmitePgto, Lógico, Determina se deve omitir formas de pagamento conforme regra da template function "FRTALTPG" (Drogaria)
+@param		lOmitePgto, Lógico, Determina se deve omitir formas de pagamento
 
 @return		aRet, Array, Meios de pagamento que ficarão disponíveis para seleção na interface.
 /*/
@@ -2761,9 +2804,14 @@ Local aRet 	 	:= {}
 Local lPayOk    := .F.
 Local cFormaPag := ""
 Local nX        := 0
-Local aFormPgOk := {"CP"} //Meios de pagamento que não podem ser retiradas da tela de seleção (CP=Condição de Pagamento)
+Local aFormPgOk := {}
 
 If lOmitePgto
+	//Se for Template de Drogaria, não exibe a opção de "Condição de Pagamento" quando é Recebimento de Titulo
+	If !(ExistFunc("LjIsDro") .And. LjIsDro() .And. STIGetRecTit()) //Verifica se eh Recebimento de Titulos
+		aFormPgOk := {"CP"} //Meios de pagamento que não podem ser retiradas da tela de seleção (CP=Condição de Pagamento)
+	EndIf
+
     //Percorre as formas de pagamento para filtar apenas as formas permitidas na template function "FRTALTPG" (Template de Drogaria)
     For nX:=1 To Len(aGetSX5Pay[2])
         cFormaPag := aGetSX5Pay[2][nX][1]

@@ -13,11 +13,13 @@ Funcao responsável em reiniciar para próxima venda
 @sample
 */
 //--------------------------------------------------------
-Function STFRestart()
+Function STFRestart(lCncCupom)
+
 Local lFinServ	:= AliasIndic("MG8") .AND. SuperGetMV("MV_LJCSF",,.F.)	// Define se habilita o controle de servicos financeiros
 Local lLimSang	:= SuperGetMV( "MV_LJLISAN",, .F.) // Utiliza controle para limite de sangria 
 Local lSelNcc	:= ExistBlock("STSelNcc")		//Existe ponto de entrada para selecao da NCC?
 
+Default lCncCupom := .F. 
 /*/
 	Motivo de Venda Perdida
 /*/
@@ -46,8 +48,11 @@ STI7InfCPF(.F.)
 /*
 	Reinicializo o modelo de dados e o preencho com as informacoes iniciais basicas.
 */
-STDPBRestart()
-STDInitPBasket()
+
+If !lCncCupom
+	STDPBRestart()
+	STDInitPBasket()
+Endif 
 
 
 // Limpa as variaveis static das NCCs

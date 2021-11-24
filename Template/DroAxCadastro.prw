@@ -632,7 +632,7 @@ If lContinua
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		oDlgLoja:lEscClose := .F. 
 	
-	ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, Nil, Nil )
+	ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, Nil, Nil,,,,,,.T.)
 
 	If lTotvsPDV //Deve ativar os atalhos para que não dê problema nas teclas
 		STIBtnActivate()
@@ -717,7 +717,7 @@ bOk		:= {|| lRet := .T., If(If(lContrLote,T_DroVldTela(lRet, aLote) ;
                                   .AND. Lj7Lote( Nil,Alltrim(M->LK9_LOTE),Nil,Nil),.T.), oDlgLoja:End(),)}
 
 bCancel	:= {|| lRet := .F., oDlgLoja:End()}
-ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, NIL, NIL )
+ACTIVATE MSDIALOG oDlgLoja CENTERED ON INIT EnchoiceBar( oDlgLoja, bOk, bCancel, NIL, NIL,,,,,,.T.)
 	
 IIf( !lContrLote,M->LK9_LOTE := "", )
 
@@ -927,7 +927,7 @@ oDlgPerda:lMaximized := .T. //Maximiza a janela
 	
 oEnchoice :oBox:Align := CONTROL_ALIGN_ALLCLIENT//CONTROL_ALIGN_CENTER
 
-ACTIVATE MSDIALOG oDlgPerda CENTERED ON INIT  EnchoiceBar( oDlgPerda, bOk, bCancel, NIL, NIL )
+ACTIVATE MSDIALOG oDlgPerda CENTERED ON INIT  EnchoiceBar( oDlgPerda, bOk, bCancel, NIL, NIL,,,,,,.T.)
 
 Return NIL
 

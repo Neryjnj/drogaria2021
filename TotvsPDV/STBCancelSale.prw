@@ -224,7 +224,9 @@ Local cLastDoc			:= ""				// Numeração do ultimo doc do banco
 Local cDocPrinter		:= ""				// Numeraçãp do Doc atual da impressora
 Local cPDV				:= STFGetStation("PDV")    // Numero do PDV
 Local cSuperior			:= ""
-Local cDocPed			:= "" //Doc da serie nao fiscal
+Local cDocPed			:= ""				//Doc da serie nao fiscal
+Local lTemCCCD			:= .F.
+Local lTemPD			:= .F.
 
 Default cGetDoc			:= ""
 Default lProfile		:= .T.
@@ -307,9 +309,8 @@ If STBOpenCash()
 					
 						If AllTrim(cLastDoc) == AllTrim(cDocPrinter)					    	
 					    	lCanCancel	:= .T.
-					    	cLastDoc	:= cDocPrinter					    	 
-
-						ElseIf FindFunction("STDCancTef") .And. STDCancTef(cNumLastSale)
+					    	cLastDoc	:= cDocPrinter
+						ElseIf FindFunction("STDCancTef") .And. STDCancTef(cNumLastSale, @lTemCCCD,@lTemPD)
 					    	lCanCancel	:= .T.
 
 						Else
@@ -346,6 +347,8 @@ If lCanCancel
 	AADD( aRet , cNumLastSale  		)
 	AADD( aRet , cDocPed  			)
 	AADD( aRet , cGetSerie 			)
+	AADD( aRet , lTemCCCD 			)
+	AADD( aRet , lTemPD 			)
 	
 Else 
 
@@ -356,6 +359,8 @@ Else
 	AADD( aRet , ""			   		)
 	AADD( aRet , ""			   		)
 	AADD( aRet , ""		 			)
+	AADD( aRet , lTemCCCD		 	)
+	AADD( aRet , lTemPD		 		)
 	
 EndIf
 
@@ -499,13 +504,15 @@ Manda o cancelamento para a impressora
 /*/
 //------------------------------------------------------------------- 
 Function STBCSCancCupPrint( cSupervisor , cNumDoc, cNumSale, lNFCETSS,;
- 							lForceCancel, cTipoCanc, lInutiliza, cSerie )
+ 							lForceCancel, cTipoCanc, lInutiliza, cSerie, lTemCCCD,lTemPD)
 Local lRet			:= .T.				// Retorna se cancelou na impressora
 Local aPrinter		:= {}				// Armazena Retorno da impressora
 Local cCOOCCD		:= ""				// Armazena o Comprovante vinculado (CCD) a ser estornado
 Local cNumCup		:= ""				// Armazena o numero do Comprovante vinculado (CCD) menos 1
 Local cCpfCnpj		:= ""				// Cnpj/CPF do cliente da venda para o estorno do CCD
 Local cMensagem		:= ""				// Mensagem a ser impressa no estorno do CCD
+Local nCCDs			:= 1				
+local nX								
 
 Default cNumSale	:= ""
 Default cSupervisor	:= ""
@@ -515,25 +522,34 @@ Default lForceCancel:= .F.
 Default cTipoCanc	:= ""
 Default lInutiliza	:= .F.
 Default cSerie		:= STFGetStation("SERIE")
+Default lTemCCCD	:= .F.
+Default lTemPD		:= .F.
 
 LjGrvLog( "L1_NUM: "+cNumSale+"L1_DOC: "+cNumDoc, "Cancelamento de venda" )  //Gera LOG
 
 If STFUseFiscalPrinter()
 
+	If lTemCCCD .And. lTemPD
+		nCCDs := 2
+	EndIf 
+
 	//Solicitar o cancelamento do CCD antes do cancelamento do cupom se tiver.
 	cCOOCCD := STBCSNumPrinter()
-	cNumCup := PADR(StrZero(Val(AllTrim(cCOOCCD))-1,Len(cCOOCCD)),TamSX3("L1_DOC")[1])
+	cNumCup := PADR(StrZero(Val(AllTrim(cCOOCCD))-nCCDs,Len(cCOOCCD)),TamSX3("L1_DOC")[1])
+
 	If !Empty(cNumDoc) .And. AllTrim(cNumDoc) == AllTrim(cNumCup)
 
 		cCpfCnpj  := AllTrim(STDCSLastSale("L1_CGCCLI"))
 		cMensagem := "Cancelamento de Comprovante de Credito e Debito"
 
-		aPrinter  := STFFireEvent( ProcName(0) , "STCancelBound" , {cCpfCnpj, "" , "", cMensagem, cCOOCCD } )
+		For nX := 1 To nCCDs
+			aPrinter  := STFFireEvent( ProcName(0) , "STCancelBound" , {cCpfCnpj, "" , "", cMensagem, StrZero(Val(cNumCup) + nX,Len(cCOOCCD)) } )
 
-		If Len(aPrinter) == 0 .OR. aPrinter[1] <> 0
-			lRet := .F.
-			STFMessage("STCancelSale","STOP", STR0022) //Erro com a Impressora Fiscal. Não foi efetuado o cancelamento do Comprovante de Credito e Debito (CCD).
-		EndIf
+			If Len(aPrinter) == 0 .OR. aPrinter[1] <> 0
+				lRet := .F.
+				STFMessage("STCancelSale","STOP", STR0022) //Erro com a Impressora Fiscal. Não foi efetuado o cancelamento do Comprovante de Credito e Debito (CCD).
+			EndIf
+		Next
 	EndIf
 
 	If lRet
@@ -816,17 +832,22 @@ Ação botão de cancelar venda
 /*/
 //------------------------------------------------------------------- 
 Function STBActionCancel(cGetCanc, cGetSerie)
-Local lEmitNFCe	:= STBGetNFCE()	//valida se é NFC-e ou não
-Local cDoc		:= ""			//numero do documento
-Local lUseSat	:= STFGetCfg("lUseSAT", .F.) //Utiliza SAT
-Local lRet		:= .T.
-Local cNFisCanc	:= "" //doc de cancelamento
-Local cRetsx5	:= ""			//Tamanho da serie no SX5
-Local cMsg		:= ""	//Mensagem referente ao cancelamento do SAT
-Local aInfCanSAT:= {}
-Local aCancel	:= STIGetCancel() 	//Retornar o array com as informacoes da venda a ser cancelada
-Local lDocNf	:= .F. 				//Indica se a venda que esta sendo cancelada eh nao fiscal
-Local aProfile	:= {} //Recebe o retorno do STFProfile
+
+Local lEmitNFCe  := STBGetNFCE() 				//Valida se é NFC-e ou não
+Local cDoc       := "" 							//Numero do documento
+Local lUseSat    := STFGetCfg("lUseSAT", .F.) 	//Utiliza SAT
+Local lRet       := .T.
+Local cNFisCanc  := "" 							//Doc de cancelamento
+Local cRetsx5    := "" 							//Tamanho da serie no SX5
+Local cMsg       := "" 							//Mensagem referente ao cancelamento do SAT
+Local aInfCanSAT := {}
+Local aCancel    := STIGetCancel() 				//Retornar o array com as informacoes da venda a ser cancelada
+Local lDocNf     := .F. 						//Indica se a venda que esta sendo cancelada eh nao fiscal
+Local aProfile   := {} 							//Recebe o retorno do STFProfile
+Local lNfe		 := .F.							//Indica se é uma NFe
+Local aAreaSL1	 := SL1->(GetArea())
+Local oRaas      := Nil
+Local oFidelityC := Nil
 Local aSTCSCanDro:= {}
 
 Default cGetCanc := ""
@@ -845,7 +866,7 @@ If Valtype(lUseSat) = "U"
 EndIf
 
 //Ponto de Entrada ao checar se esse cupom pode cancelar ou não
-If ExistBlock("STCANACT")
+If ExistBlock("STCANACT")	
 	LjGrvLog(STDGPBasket("SL1","L1_NUM"),"Antes da execução do PE STCANACT")	
 	lRet := ExecBlock( "STCANACT",.F.,.F.,{PadL(AllTrim(cGetCanc),TamSX3("L1_DOC")[1], "0")})
 	LjGrvLog(STDGPBasket("SL1","L1_NUM"),"Depois da execução do PE STCANACT",lRet)
@@ -857,7 +878,21 @@ If ExistBlock("STCANACT")
 	EndIf
 EndIf
 
-If lRet .And. lEmitNFCe .And. !STBCSIsProgressSale() .And. !lUseSat
+
+
+If !STBCSIsProgressSale() 
+	DbSelectArea("SL1")
+	SL1->(DbSetOrder(2))
+	If SL1->(DbSeek(xFilial("SL1")+cGetSerie+cGetCanc))
+		lNfe := SL1->L1_IMPNF
+	EndIf
+Endif 
+
+If !STBCSIsProgressSale() .AND. !STBValCanc()
+	lRet:=.F. 
+Endif 
+
+If lRet .And. lEmitNFCe .And. !STBCSIsProgressSale() .And. (!lUseSat .Or. lNfe)
 
 	If !lDocNf
 		//Ajusta tamanho caso o usuario ano informe os zeros.
@@ -883,7 +918,7 @@ If lRet .And. lEmitNFCe .And. !STBCSIsProgressSale() .And. !lUseSat
 					lRet := .F.
 					LJGrvLog(Nil, "Venda nao foi cancelada porque nao foi informado o superior - L1_DOCPED: ", cGetCanc)
 				EndIf
-			Else
+			Else	
 				lRet := .F.
 				LJGrvLog(Nil, "Venda nao foi cancelada porque nao existe a funcao STWCancNF - L1_DOCPED: ", cGetCanc)				
 			EndIf
@@ -909,7 +944,8 @@ Else
 		If SL1->( DbSeek(xFilial("SL1") + STFGetStation("SERIE") + cGetCanc + STFGetStation("PDV")) )
 			aSTCSCanDro := {cGetCanc,cGetSerie,SL1->L1_EMISSAO, SL1->L1_NUM}
 			aInfCanSAT := STBCSCanCancel(cGetCanc)
-			STISetCancel( aInfCanSAT )			
+			STISetCancel( aInfCanSAT )
+			
 			lRet :=  aInfCanSAT[1]
 			
 			If lRet
@@ -939,12 +975,28 @@ Else
 	If lRet
 		If lUseSat
 			STICancel(cGetCanc,cNFisCanc)
-		Else
+		Else	
 			aSTCSCanDro := {STDGPBasket("SL1","L1_DOC"),STDGPBasket("SL1","L1_SERIE"),STDGPBasket("SL1","L1_EMISSAO"), STDGPBasket("SL1","L1_NUM")}
 			STICancel()
 		EndIf	
-	EndIf
+	EndIf	
+	
 EndIf
+
+// -- Cancelamento FidelityCore
+If lRet .And. ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+	oRaas := STBGetRaas()
+	If Valtype(oRaas) == "O" .AND. SL1->L1_FIDCORE
+		If oRaas:ServiceIsActive("TFC")
+			oFidelityC := oRaas:GetFidelityCore()
+			If !oFidelityC:CancelBonus(,SL1->L1_FILIAL + SL1->L1_NUM,STFGetStat("CODIGO"))[1] 
+				MsgAlert( I18n(STR0035, {CRLF + CRLF}), STR0034)    //"Não foi possível cancelar o bônus aplicado nesta venda.#1Entre em contato com seu parceiro de bônus."  //"TOTVS Bonificação"
+			EndIf
+		Else 
+			MsgAlert(STR0036, STR0034)  //"A venda possui uso de programa de bonificação, porém o programa de bonificação esta desativado no cadastro de estação."    //"TOTVS Bonificação"
+		Endif 
+	EndIf 
+Endif 
 
 If lRet
 	STCSCanDro(aSTCSCanDro)
@@ -953,6 +1005,7 @@ EndIf
 // Limpa variavel de verificação de regra de desconto por item
 STBLimpRegra(.F.)
 	
+RestArea(aAreaSL1)
 Return Nil
 
 
@@ -1150,6 +1203,69 @@ RestArea(aAreaSL1)
 RestArea(aArea)
 
 Return lRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} STBValCanc()
+Verifica SE1 da Retaguarda se o titulo diferente de R$ foi baixada,
+caso sim, não permite o cancelamento do cupom. 
+
+@type       function
+@author     caio.okamoto
+@version    P12
+@since      21/07/2021
+@return     lógico, se o titulo não estiver em aberto retorna .T. para prosseguir o processo
+/*/
+//-------------------------------------------------------------------
+Static Function STBValCanc()
+Local lRet 				:= .T.
+Local uDados	       	:= Nil 
+Local aParam          	:= {}
+Local uResult         	:= Nil
+Local aFields 			:= {}
+Local aTables 			:= {} 
+Local cWhere 			:= ""
+Local cMvLjBxAut		:= SuperGetMv("MV_LJBXTIT ",,"")
+Local nX				:= 0
+
+If !Empty(cMvLjBxAut) .AND. Substr(SL1->L1_CONFVEN,6,1) <> "N" .AND. !(SL1->L1_CREDITO > 0) 
+	aFields := {"E1_TIPO",;		//1
+				"E1_ORIGEM"}	//2
+
+	aTables := {"SE1"}
+
+	cWhere := " E1_FILIAL = '"+ SL1->L1_FILIAL +"' AND"
+	cWhere += " E1_PREFIXO = '"+ SL1->L1_SERIE + "' AND"
+	cWhere += " E1_NUM = '" + SL1->L1_DOC + "' AND"
+	cWhere += " E1_VALOR <> E1_SALDO AND"
+	cWhere += " E1_TIPO <> 'R$' AND E1_TIPO <> 'CR' AND E1_TIPO <> 'NCC' AND E1_TIPO <> 'VP'AND"
+	cWhere += " D_E_L_E_T_ = ' '"
+
+	aParam 	:= {	aFields,;
+					aTables,;
+					cWhere,;
+					'',;
+					10;
+				}
+				
+	If STBRemoteExecute("STDQueryDB", aParam,,, @uResult)
+		uDados := uResult
+	EndIf 
+
+	If ValType(uDados) == 'A'
+		For nX := 1 To Len(uDados)
+			If Alltrim(Upper(uDados[nX][1])) $ cMvLjBxAut .AND. AllTrim(Upper(uDados[nX][2])) $ "LOJA010/LOJA220/LOJA701/RPC/LOJA720/FATA701"
+				lRet := .F.
+				STFMessage("STBValCanc", "POPUP", STR0037 +". "+ STR0038 + uDados[nX][1]+".") 
+				STFShowMessage("STBValCanc")
+				Exit 
+			EndIf 
+		Next 
+	EndIf
+
+Endif  
+
+Return lRet
+
 
 /*/{Protheus.doc} STCSCanDro
 	Execução do PE Template,Cancelamento de Log da Anvisa (LK9) e Cancelamento da PBM

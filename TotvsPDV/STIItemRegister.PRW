@@ -32,17 +32,23 @@ Painel Registro de Item.
 @sample
 /*/
 //-------------------------------------------------------------------
-Function STIRegItemInterface(lLjPdVen)
+Function STIRegItemInterface(lLjPdVen, lDefaultQD)
 Local lProssegue	:= .T.
 Local nTpPedeCnpj	:= 0
 Local lLjInfDocCli	:= ExistFunc("LjInfDocCli")
-Local lEmitNFCe     := ExistFunc("LjEmitNFCe") .AND. LjEmitNFCe() // Indica a utilizacao da NFC-e
+Local lEmitNFCe     := ExistFunc("LjEmitNFCe") .AND. LjEmitNFCe() 	// Indica a utilizacao da NFC-e
 
 Default lLjPdVen	:= .F.
+Default lDefaultQD  := .T. 											// Seta Quantidade e Desconto para Default?
 
-lVend := IIF(lVend == Nil,SuperGetMV("MV_LJPDVEN", ,.F.),lVend) //Variavel para ativar o vendedor
+lVend := IIF(lVend == Nil,SuperGetMV("MV_LJPDVEN", ,.F.),lVend) 	//Variavel para ativar o vendedor
 
 oLblProdDados := Nil
+
+If lDefaultQD
+	STBSetDefQuant()	// Seta quantidade padrao
+	STBDefItDiscount()	// Seta desconto padrao
+EndIf
 
 If !lLjInfDocCli
 	lProssegue := .T.
@@ -114,6 +120,27 @@ Local cAtalhosItem		:= ""
 Local aCartCRD			:= IIF(ExistFunc('STDFindCart'),STDFindCart(),{}) //Carrega informacoes do cartão utilizado no SIGACRD 
 Local oLblCartCrd		:= nil							//Objeto Label Cartão (SIGACRD)      
 Local aRes				:= GetScreenRes()				// Retorna a Resolução atual da tela.
+Local oRaas				:= Nil
+Local oFidelityC		:= Nil
+
+// -- Limpeza dos descontos do FidelityCore
+If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+	oRaas := STBGetRaas()
+	
+	If Valtype(oRaas) == "O" .AND. oRaas:ServiceIsActive("TFC")
+		
+		oFidelityC := oRaas:GetFidelityCore()
+		
+		If oFidelityC:ChoseToUse() 
+			oFidelityC:Clean()
+		EndIf
+ 
+		If STDGPBasket( "SL1", "L1_DESCFID" ) > 0
+			STIClearDisc(.T.,STDGPBasket( "SL1", "L1_DESCFID"))
+		Endif 
+
+	EndIf 
+EndIf 
 
 If !Empty(aMVLJITOP[1])
 	cAtalhosItem += "Quantidade ( "+AllTrim(aMVLJITOP[1])+" ) / "
@@ -735,7 +762,7 @@ Local lVersao		:= Val(GetVersao(.F.)) >= 12 							// Codigo de barras para NCC 
 Local nVLBonif      := IIF(ExistFunc("STIGetBonif"), STIGetBonif(), 0)
 Local lSTDSlBrin  	:= AliasInDic("MGC") .And. ExistFunc("STDSalvaBrindes")
 Local lReadOnly		:= ExistFunc("STIGetPayRO") .AND. STIGetPayRO()			// Indica se os campos de pagamento estão como Somente Leitura (permissão Alterar Parcelas do caixa)	 
-Local lEmitNFCe     := LjEmitNFCe()			// Indica a utilizacao da NFC-e
+Local lEmitNFCe     := ExistFunc("LjEmitNFCe") .AND. LjEmitNFCe()			// Indica a utilizacao da NFC-e
 Local aValLim       := IIf( ExistFunc("Lj950UFVal"), Lj950UFVal(), {} )
 Local nPos          := 0
 Local cCliCode		:= STDGPBasket("SL1","L1_CLIENTE")
@@ -744,6 +771,12 @@ Local cCliPad 		:= SuperGetMV("MV_CLIPAD",,"")  						// Parametro que indica o 
 Local cLojPad 		:= SuperGetMV("MV_LOJAPAD",,"") 						// Parametro que indica o LOJA PADRAO
 Local lRegDesc		:= SuperGetMV('MV_LJRGDES',,.F.) .AND. ExistFunc("STBFORMBF") .AND. ExistFunc("STIDSCBONF") .AND. GetAPOInfo("STFTOTALUPDATE.PRW")[4] >= Ctod("19/12/2019") //Regra de desconto
 Local lContinua		:= .T.
+Local oRaas			:= Nil
+Local oLjCusFCore 	:= Nil
+Local oFidelityC    := Nil
+Local oModelCli     := Nil
+Local oPhone        := Nil
+Local nBonus        := 0 
 
 LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "Chamada da Tela de Pagamento" )  //Gera LOG
 
@@ -763,7 +796,7 @@ ElseIf cEstado == "SP" .AND. nTotalVend > 10000
 	STFMessage(ProcName(),"STOP",STR0004) //"Não é permitido vendas acima de 10.000, cancele algum item para continuar!"
 	STFShowMessage(ProcName())
 	lRet := .F.
-EndIf
+EndIf 
 
 //Valida permissão de usuário para vender produto controlado - TPL Drogaria
 If lRet .And. !STBPerDro()
@@ -811,6 +844,39 @@ If lRet
 					lContinua := .F.
 				EndIf
 			EndIf
+			
+			// Inicia FidelityCore apos todos os descontos e antes da NCC
+			// Proteger tambem
+			
+			If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+				oRaas := STBGetRaas()
+
+				If Valtype(oRaas) == "O" .AND. oRaas:ServiceIsActive("TFC")
+
+					oFidelityC := oRaas:GetFidelityCore()
+						
+					If ValType(oModelCli :=  STDGCliModel()) == "O"
+						oPhone := LjPhone():New(oModelCli:GetValue("SA1MASTER","A1_DDD"),oModelCli:GetValue("SA1MASTER","A1_TEL"))
+						oLjCusFCore := LjCustomerFidelityCore():New(oModelCli:GetValue("SA1MASTER","A1_NOME"),oModelCli:GetValue("SA1MASTER","A1_CGC"),;
+																	oModelCli:GetValue("SA1MASTER","A1_EMAIL"),oPhone,oModelCli:GetValue("SA1MASTER","A1_DTNASC"),oModelCli:GetValue("SA1MASTER","A1_DTNASC"))
+					EndIf 
+
+					// -- Desativa Botões na tela
+					STIBtnDeActivate()
+					oFidelityC:Initiation(xfilial("SL1") + STDGPBasket("SL1","L1_NUM"),oTotal:GetValue("L1_VLRLIQ"),oLjCusFCore)
+					// -- Ativa Botões na tela
+					STIBtnActivate()
+
+					If oFidelityC:ChoseToUse() .And. (nBonus :=  oFidelityC:GetBonus()) > 0
+						STBTotDiscApply(nBonus,"V","FIDELITYCORE",.T.)
+						STDSPBasket("SL1","L1_DESCFID", nBonus)
+					EndIf 
+
+				EndIf
+				
+			EndIf 
+
+
 			If lContinua
 				If Len(aNCCs) > 0
 					STIExchangePanel( { || STINCCSelection() } )

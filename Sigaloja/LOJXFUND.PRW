@@ -6738,8 +6738,8 @@ If Len(aNCCItens) > 0
 		   	
         	DEFINE SBUTTON FROM 145,195 TYPE 1 ACTION ( nAction:=1,oNCCWindow:End()) ENABLE PIXEL OF oNCCWindow
 		
-			ACTIVATE DIALOG oNCCWindow CENTERED VALID IIf(!lFtvdVer12 .AND. lLJ7038,U_LJ7038(),Iif(lFtvdVer12 .AND. lFtvd7038,U_FTVD7038(),.T.))	
-			                                               
+			ACTIVATE DIALOG oNCCWindow CENTERED VALID IIf(!lFtvdVer12 .AND. lLJ7038,ExecBlock("LJ7038",.F.,.F.),Iif(lFtvdVer12 .AND. lFtvd7038,ExecBlock("FTVD7038",.F.,.F.) ,.T.))	
+			                                           
 			If nAction == 1	
 				For nX:=1 to Len(aNCCUse)				
 					If ( nPos := aScan( aNccItens, { |x| x[9]+x[3] == aNCCUse[nX][9]+ aNCCUse[nX][3] })) > 0							
@@ -6800,7 +6800,7 @@ If Len(aNCCItens) > 0
 	   			DEFINE SBUTTON FROM 115,105 TYPE 1 ACTION oNCCWindow:End() ENABLE PIXEL OF oNCCWindow
 	   		EndIf
 			
-			ACTIVATE DIALOG oNCCWindow CENTERED VALID IIf(!lFtvdVer12 .AND. lLJ7038,U_LJ7038(),Iif(lFtvdVer12 .AND. lFtvd7038,U_FTVD7038(),.T.))
+			ACTIVATE DIALOG oNCCWindow CENTERED VALID IIf(!lFtvdVer12 .AND. lLJ7038,ExecBlock("LJ7038",.F.,.F.),Iif(lFtvdVer12 .AND. lFtvd7038,ExecBlock("FTVD7038",.F.,.F.),.T.))
 			
 		Endif 
 	EndIf
@@ -8891,7 +8891,10 @@ Local lGrava	:= .T.
 Local lTotvsPDV	:= STFIsPOS()
 Local aAreaMDZ	:= {}
 Local lLjNfPafEcf:= LjNfPafEcf(SM0->M0_CGC)
-Local aRet		:= {.F.} 
+Local aRet		:= {.F.}
+Local cAlias	:= GetNextAlias()
+Local cQuery	:= ""
+Local cMDZSimbol:= "M5"
 
 Default cSimbol := ""                   
 Default cTipo	:= ""
@@ -9007,17 +9010,43 @@ EndIf
 If cSimbol == "M5" 
 	cMDZNum := ""
 	nRet := 0
-	MDZ->(DbSetOrder(1)) //MDZ_FILIAL + MDZ_DATA
-	MDZ->(DbSeek(xFilial("MDZ")))
-	cMDZFil := xFilial("MDZ")
-	While !MDZ->(Eof()) .And. MDZ->MDZ_FILIAL == cMDZFil
-		If MDZ->MDZ_SIMBOL $ cSimbol
+
+	#IFDEF TOP
+
+		If Select(cAlias) > 0
+			(cAlias)->(DbCloseArea())	
+		EndIf
+
+		cQuery := " SELECT MDZ_FILIAL, MDZ_NUM, MDZ_COO, MDZ_SIMBOL, MDZ_XMLEPA, R_E_C_N_O_ AS RECNOMDZ "
+		cQuery += " FROM " + RetSQLName("MDZ") + " MDZ "
+		cQuery += " WHERE MDZ.D_E_L_E_T_ = '' "
+		cQuery += " AND MDZ.MDZ_FILIAL = '" + xFilial("MDZ") + "' "
+		cQuery += " AND MDZ.MDZ_SIMBOL = '" + cMDZSimbol + "' "
+
+		LJa801ExQu(cAlias,@cQuery)		
+
+		If !(cAlias)->(EOF())
+			MDZ->(dbgoto((cAlias)->RECNOMDZ))
 			nRet := 3 //Altera
 			cMDZNum := MDZ->MDZ_NUM
-			Exit
-		EndIf
-		MDZ->(DbSkip())
-	End
+		Endif
+
+	#ELSE
+
+		MDZ->(DbSetOrder(1)) //MDZ_FILIAL + MDZ_DATA
+		MDZ->(DbSeek(xFilial("MDZ")))
+		cMDZFil := xFilial("MDZ")
+
+		While !MDZ->(Eof()) .And. MDZ->MDZ_FILIAL == cMDZFil
+			If MDZ->MDZ_SIMBOL $ cSimbol
+				nRet := 3 //Altera
+				cMDZNum := MDZ->MDZ_NUM
+				Exit
+			EndIf
+			MDZ->(DbSkip())
+		End
+
+	#ENDIF
 	
 	If nRet == 0
 		nRet := 2
@@ -10832,3 +10861,28 @@ Função responsavel pela chamada da fRead
 Function ljfRead(nHandleRemoto,cBuffer,nLeituraPorVez)
 	
 Return {fRead(nHandleRemoto,cBuffer,nLeituraPorVez) , cBuffer}
+
+
+//----------------------------------------------------------------
+/*/{Protheus.doc} ExecDLLRet
+Executa uma Funcao na DLL, Tratando o Retorno, Pois na 6.09
+é Permitido. 
+@author  Cesar Eduardo Valadao
+@version P12.1.27
+@since   2/12/2001
+/*/
+//----------------------------------------------------------------
+Static Function ExecDLLRet( nHnd, nFuncao, cBuffer )
+
+Local nRet := -1 		// Retorno da funcao da dll
+
+DEFAULT cBuffer := ""	// Concatena os parametros da funcao
+
+If nHnd >= 0 
+	nRet    := ExeDLLRun2(nHnd, nFuncao, @cBuffer)
+	If At(Chr(0),cBuffer) > 0
+		cBuffer := Substr(cBuffer, 1, At(Chr(0),cBuffer)-1)
+	Endif
+Endif
+
+Return nRet

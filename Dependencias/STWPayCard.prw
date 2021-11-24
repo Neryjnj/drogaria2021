@@ -38,7 +38,7 @@ Local aPayment		:= {}			  					//Armazena informações sobre pagamento, Ex.: Valo
 Local aLtt			:= {.T.,""}
 
 Default oMdlMst 	:= Nil
-Default oTEF20		:= Nil
+Default oTEF20	:= Nil
 Default cTypeCard	:= ""
 Default nParc		:= 1
 Default lContTef	:= .F.
@@ -51,7 +51,7 @@ EndIf
 
 If nValor > 0
 
-	If !lContTef .AND. ((STWChkTef("CC") .AND. cTypeCard == "CC") .OR. (STWChkTef("CD") .AND. cTypeCard == "CD"))
+	If !lContTef .AND. ((STWChkTef("CC") .AND. cTypeCard == "CC") .OR. (STWChkTef("CD") .AND. cTypeCard == "CD")) .OR. ( STWChkTef("PD") .AND. IsPDOrPix(cTypeCard) )
 	
 		If !Empty(cCupom := STBRetCup())
 			
@@ -84,7 +84,16 @@ If nValor > 0
 					Case cTypeCard == "CD"
 						oDados 	:= LJCDadosTransacaoDebito():New(nValor, Val(cCupom), Date(), Time(), "CD", "", "", .F., 1, lUltTran)
 						oRetTran 	:= oTEF20:Cartao():Debito(oDados)
-		
+
+					// Pagamentos digitais 
+					Case cTypeCard == "PD"
+						/* 	Inicia a classe LJDadosTransacaoPgtoDigitais para alimentar as propriedades de valor e
+							codigo da forma de pagamento que serao utilizadas posteriormente ao chamar a classe PagamentosDigitais  */
+						oDados 				:= LJDadosTransacaoPgtoDigitais():New(nValor, "PD")
+						oRetTran 	:= oTEF20:PgtoDigital():Digitais(oDados)		
+					Case cTypeCard == "PX"
+						oDados   := LJDadosTransacaoPgtoDigitais():New(nValor, "PX")
+						oRetTran := oTEF20:PgtoDigital():Digitais(oDados)
 				EndCase
 		
 				If oRetTran:oRetorno:nParcs < 1
@@ -100,6 +109,8 @@ If nValor > 0
 					EndIf
 					STISetCard(.T.)
 					STISetTef(oTEF20)
+					STBCalcJur()
+					
 					STIAddPay(cTypeCard, oMdlMst, nParc, .T., /*cCodVp*/, nValor)
 		
 				Else
@@ -114,7 +125,7 @@ If nValor > 0
 				STFShowMessage( "TEF")
 			EndIf 
 
-			If !lRet .AND. lTefManu 
+			If !lRet .AND. lTefManu .AND. !IsPDOrPix(cTypeCard)
 				If MsgNoYes(STR0007,STR0008) //"Não foi possivel efetuar a transação com TEF, deseja continuar manualmente?" # "Atenção" 
 					STISetContTef(.T.)
 					LjGrvLog( "L1_NUM: "+STDGPBasket('SL1','L1_NUM'), "TEF MANUAL - SIM." )
@@ -139,7 +150,7 @@ If nValor > 0
 		EndIf
 	
 	Else
-	
+		STBCalcJur()
 		STIAddPay(cTypeCard, oMdlMst, IIF(ValType(oMdlMst) == 'O', oMdlMst:GetValue("L4_PARC"),nParc)) 
 				
 		If !STBIsImpOrc() 

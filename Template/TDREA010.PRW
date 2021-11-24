@@ -57,7 +57,7 @@ oLbx:SetArray(aLin)
 oLbx:bLine		:= LocxBLin('oLbx',aCpo,.T.)
 oLbx:bLDblClick	:={ || ChgMarkLb(oLbx,aLin,{|| .T. },.F.) }
 
-ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,)
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,,,,,,,.T.)
 
 If lRet
 	aEval( aLin, { |x,y| If( aLin[y,1] == 1, cRet := Alltrim(aLin[y,2]), ) } )

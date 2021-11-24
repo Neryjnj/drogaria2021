@@ -795,20 +795,23 @@ If Self:GetTotal() > 0
 
 			// numero de vias do Comprovante de Recebimento que serao impressas
 			For nI := 1 to nRecVias				
-				cTxtCNF += cTextoComprovante
+				cTxtCNF := cTextoComprovante
 				//Se for ultima via, nao precisa da quebra de linhas
 				If nI <> nRecVias
 					cTxtCNF += Replicate( Chr(10),2 )
 				EndIf
+
+				nRet := STWPrintTextNotFiscal(cTxtCNF)
+
+	            If lGuil 
+                  	cTxtCNF := TAG_GUIL_INI+TAG_GUIL_FIM
+					nRet := STWPrintTextNotFiscal(cTxtCNF)  
+				EndIf
 			Next
 
-			nRet := STWPrintTextNotFiscal(cTxtCNF)		
 			AAdd(aRet , nRet )
 			lRetorno := .T.
 		
-			If lGuil 
-				STWPrintTextNotFiscal(TAG_GUIL_INI+TAG_GUIL_FIM)
-			EndIf
 		Else
 
 			If !lTemTEF

@@ -6,7 +6,17 @@
 
 Static oCfgTef   	:= Nil
 Static lUsePayHub 	:= ExistFunc("LjUsePayHub") .And. LjUsePayHub()
-Static cTermTefPH 	:= "" //Código do terminal TEF Selecionado na Consulta Padrão
+Static cTermTefPH 	:= ""	//Código do terminal TEF Selecionado na Consulta Padrão
+Static oPHCodeComp
+Static oPHTenant
+Static oPHUserName
+Static oPHPassword
+Static oPHCliId
+Static oPHCliSecret
+Static oPHIdPinPed
+Static oPHCCCDHab
+Static oPHPagDHab
+Static aInfoTPD 	:= {}	//Informações do Totvs Pagamento Digital
 
 Function LOJA1906A ; Return
 
@@ -58,6 +68,9 @@ Class LJCCfgTef
 	Method GetDirectory()
 	Method GetAppPath()  
 	Method ValSitefPbm()
+	Method LjEnableDisable()
+	Method LjPnlPayHub()
+	Method SetClientConfig()
 
 EndClass                
 
@@ -75,9 +88,11 @@ EndClass
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Method New() Class LJCCfgTef  
+Method New(lTefAtivo) Class LJCCfgTef
 
-	Self:lAtivo		:= .F.
+	Default lTefAtivo := .F.
+
+	Self:lAtivo		:= lTefAtivo
 	Self:cCodigo	:= Space(200)
 	Self:oSitef 	:= LJCCfgTefSitef():New()
 	Self:oDiscado 	:= LJCCfgTefDiscado():New() 
@@ -170,12 +185,14 @@ Return lRet
 ±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
-Method Salvar() Class LJCCfgTef
+Method Salvar(cOperacao) Class LJCCfgTef
 	
 	Local lRet 			:= .F.					//Retorno do metodo 
     Local aAreaAtual 	:= GetArea()			//Guarda a area atual 
     Local aAreaSLG		:= SLG->(GetArea())     //WorkArea do Cadastro de estação
     Local nVias			:= 0					//Numero de Vias
+
+	Default cOperacao 	:= ""
            
 	If !Empty(Self:cCodigo)
 	    
@@ -186,20 +203,34 @@ Method Salvar() Class LJCCfgTef
 		lInc := DbSeek( xFilial("MDG") + Self:cCodigo)
 		
 		RecLock("MDG", !lInc) 
-		
-		REPLACE MDG->MDG_FILIAL	WITH xFilial("MDG")
-	    REPLACE MDG->MDG_CODEST	WITH Self:cCodigo
-	    REPLACE MDG->MDG_TEFATV	WITH IIf(Self:lAtivo,"1","2")
-	    
-	    lRet := Self:oSitef:Salvar("MDG")
-   	    lRet := Self:oDiscado:Salvar("MDG") 
-	    lRet := Self:oPayGo:Salvar("MDG") 
-	    lRet := Self:oDirecao:Salvar("MDG")	
-		If lUsePayHub
-			lRet := Self:oPaymentHub:Salvar("MDG")
+
+		If cOperacao == "E" //Exclusão
+
+			MDG->(DBDelete())
+
+		Else //Inclusao ou Alteração
+
+			REPLACE MDG->MDG_FILIAL	WITH xFilial("MDG")
+			REPLACE MDG->MDG_CODEST	WITH Self:cCodigo
+			REPLACE MDG->MDG_TEFATV	WITH IIf(Self:lAtivo,"1","2")
+			
+			lRet := Self:oSitef:Salvar("MDG")
+			lRet := Self:oDiscado:Salvar("MDG") 
+			lRet := Self:oPayGo:Salvar("MDG") 
+			lRet := Self:oDirecao:Salvar("MDG")	
+			If lUsePayHub
+				lRet := Self:oPaymentHub:Salvar("MDG")
+			EndIf
+
 		EndIf
 		
 		MsUnLock() 
+
+		//Caso seja alterado dados da própria estação que está acessando o sistema, instancia novamente 
+		// o TEF 2.0 para atualizar os dados de configuração que estão carregados na memória.
+		If lUsePayHub .And. Self:cCodigo == cEstacao .And. STBGetTEF() <> Nil
+			LjIniTEF20()
+		EndIf
 		
 		If ( Self:oDiscado:lGPCCCD .OR. Self:oDiscado:lGPCheque .OR. ; 
 				Self:oDiscado:lTECBANCCCD .OR. Self:oDiscado:lTECBANCheque .OR. ;
@@ -291,8 +322,6 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	Local oPanelDirecao
 	Local oPanelPGHip 	
 	Local oPanelPGTec
-	Local oPanelPHub1
-	Local oPanelPHub2
 	
 	Local oSitefEmp
 	Local oSitefTerm
@@ -314,7 +343,6 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	Local oSitefPBMHab
 	Local oSitefCPHab
 	Local lIsTplDro		:= ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
-
 	
 	Local oDiscGpApp
 	Local oDiscGpTx
@@ -363,10 +391,6 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	Local oDirecaoBtRx
 	Local cMenssagem
 
-	Local bTefDisable 	:= {||oSitefIP:Refresh(),oSitefIP:Disable(),oSitefTerm:Refresh(),oSitefTerm:Disable(),oSitefEmp:Refresh(),oSitefEmp:Disable(),oSitefCCCDHab:Refresh(),oSitefCCCDHab:Disable(),oSitefChequeHab:Refresh(),oSitefChequeHab:Disable(),oSitefRCHab:Refresh(),oSitefRCHab:Disable(),oSitefCBHab:Refresh(),oSitefCBHab:Disable(),oSitefCPHab:Refresh(),oSitefCPHab:Disable(),oDiscGpApp:Disable(),oDiscGpTx:Disable(),oDiscGPCCCDHab:Disable(),oDiscGPChequeHab:Disable(),oHIPCDApp:Disable(),oHIPCDTx:Disable(),oHIPCDRx:Disable(),oHIPCDCCCDHab:Disable(),oTecBanApp:Disable(),oTecBanTx:Disable(),oTecBanRx:Disable(),oTecBanCCCDHab:Disable(),oTecBanChequeHab:Disable(),oPayGoApp:Disable(),oPayGoTx:Disable(),oPayGoRx:Disable(),oPayGoCCCDHab:Disable(),oPayGoChequeHab:Disable(),oDiscGpBtApp:Disable(),oDiscGpBtTx:Disable(),oDiscGpBtRx:Disable(),oHIPCDBtApp:Disable(),oHIPCDBtTx:Disable(),oHIPCDBtRx:Disable(),oTecBanBtApp:Disable(),oTecBanBtTx:Disable(),oTecBanBtRx:Disable(),oPayGoBtApp:Disable(),oPayGoBtTx:Disable(),oPayGoBtRx:Disable(),IIF(lUsePayHub,{oPHCodeComp:Disable(),oPHTenant:Disable(),oPHUserName:Disable(),oPHPassword:Disable(),oPHCliId:Disable(),oPHCliSecret:Disable(),oPHIdPinPed:Disable(),oPHCCCDHab:Disable(), Iif(lIsTplDro,(oSitefPBMHab:Refresh(),oSitefPBMHab:Disable()), Nil) },Nil)}
-	Local bTefEnable 	:= {||oSitefIP:Enable(),oSitefTerm:Enable(),oSitefEmp:Enable(),oSitefCCCDHab:Refresh(),oSitefCCCDHab:Enable(),oSitefChequeHab:Refresh(),oSitefChequeHab:Enable(),oSitefRCHab:Refresh(),oSitefRCHab:Enable(),oSitefCBHab:Refresh(),oSitefCBHab:Enable(),oSitefCPHab:Refresh(),oSitefCPHab:Enable(),oDiscGpApp:Enable(),oDiscGpTx:Enable(), oDiscGPCCCDHab:Enable(),oDiscGPChequeHab:Enable(),oHIPCDApp:Enable(),oHIPCDTx:Enable(),oHIPCDRx:Enable(),oHIPCDCCCDHab:Enable(),oTecBanApp:Enable(),oTecBanTx:Enable(),oTecBanRx:Enable(),oTecBanCCCDHab:Enable(),oTecBanChequeHab:Enable(),oPayGoApp:Enable(),oPayGoTx:Enable(),oPayGoRx:Enable(),oPayGoCCCDHab:Enable(),oPayGoChequeHab:Enable(),oDiscGpBtApp:Enable(),oDiscGpBtTx:Enable(),oDiscGpBtRx:Enable(),oHIPCDBtApp:Enable(),oHIPCDBtTx:Enable(),oHIPCDBtRx:Enable(),oTecBanBtApp:Enable(),oTecBanBtTx:Enable(),oTecBanBtRx:Enable(),oPayGoBtApp:Enable(),oPayGoBtTx:Enable(),oPayGoBtRx:Enable(), IIF(lUsePayHub,{oPHCodeComp:Enable(),oPHTenant:Enable(),oPHUserName:Enable(),oPHPassword:Enable(),oPHCliId:Enable(),oPHCliSecret:Enable(),oPHIdPinPed:Enable(),oPHCCCDHab:Enable(), Iif(lIsTplDro,(oSitefPBMHab:Refresh(),oSitefPBMHab:Enable()), Nil) },Nil)}
-
-
 	Local lPBMEpha	:= .F.
 	Local lPBMtrn	:= .F.
 	
@@ -374,22 +398,16 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	Local lViewOnly	:= (nOpc == 2)
 	Local oFontPq	:= Nil	  
 	Local nUltLin	:= 0
-	
-	
+
 	Local oDiscnVias
 	Local oHIPnVias
 	Local oTECnVias
 	Local oPayGonVias
 	Local oDirecaonVias
-	
-	Local oPHCodeComp
-	Local oPHIdPinPed
-	Local oPHTenant
-	Local oPHUserName
-	Local oPHPassword
-	Local oPHCliId
-	Local oPHCliSecret
-	Local oPHCCCDHab
+
+	Local bControls 	:= {|| {oDiscGpApp,oDiscGpBtApp,oDiscGpBtRx,oDiscGpBtTx,oDiscGPCCCDHab,oDiscGPChequeHab,oDiscGpTx,oHIPCDApp,oHIPCDBtApp,oHIPCDBtRx,oHIPCDBtTx,oHIPCDCCCDHab,oHIPCDRx,oHIPCDTx,oPayGoApp,oPayGoBtApp,oPayGoBtRx,oPayGoBtTx,oPayGoCCCDHab,oPayGoChequeHab,oPayGoRx,oPayGoTx,oSitefCBHab,oSitefCCCDHab,oSitefChequeHab,oSitefCPHab,oSitefEmp,oSitefIP,oSitefRCHab,oSitefTerm,oTecBanApp,oTecBanBtApp,oTecBanBtRx,oTecBanBtTx,oTecBanCCCDHab,oTecBanChequeHab,oTecBanRx,oTecBanTx,oPHCodeComp,oPHTenant,oPHUserName,oPHPassword,oPHCliId,oPHCliSecret,oPHIdPinPed,oPHCCCDHab,oPHPagDHab,oSitefPBMHab} }
+	Local bTefDisable 	:= {|| Self:LjEnableDisable("D",bControls) }
+	Local bTefEnable 	:= {|| Self:LjEnableDisable("E",bControls) }
 
 	oCfgTef := SELF //Objeto da propria classe LJCCfgTef
 
@@ -437,7 +455,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	aAdd(aTitles, "Discado(Gerenciador Padrão)")
 	aAdd(aTitles, "Discado(PayGo)")
 	If lUsePayHub
-		aAdd(aTitles, "Payment Hub")
+		aAdd(aTitles, "Totvs Pagamento Digital") //"Totvs Pagamento Digital"
 	EndIf
 	
 	aPages	:= {"HEADER","HEADER","HEADER"}
@@ -480,7 +498,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	oPanelPrincipal:= tPanel():New(01,01,Nil,oPnlSitefScroll,Nil,.T.,,,,100,250)
 	
 	oPnlSitefScroll:SetFrame( oPanelPrincipal ) //Define objeto painel como filho do Panel com Scroll
-	  
+  
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1.1. Configuracoes³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ	
@@ -511,14 +529,12 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	@ aPosObj2[06,01],aPosObj2[06,02]  		SAY STR0009 PIXEL SIZE 55,9   OF oPanelSitef1 //"Empresa:"
 	@ aPosObj2[06,01],aPosObj2[06,02]+40 	GET oSitefEmp VAR oCfgTef:oSitef:cEmpresa SIZE 160,08 PIXEL Picture 'NNNNNNNN' OF oPanelSitef1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER		 		
 	@ aPosObj2[06,01],aPosObj2[06,02]+205  	SAY "(XXXXXXXX)" PIXEL COLOR CLR_HRED FONT oFontPq SIZE 55,9   OF oPanelSitef1 //"Empresa:"
-
-
    
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1.2. Cartão Crédito/Débito³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
-	oPanelSitef2 := tPanel():New(aPosObj[3,1],aPosObj[3,2], STR0010,	oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3], .T.) 	//"Cartão Crédito/Débito"
+	oPanelSitef2 := tPanel():New(aPosObj[3,1],aPosObj[3,2], STR0010, oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3], .T.) 	//"Cartão Crédito/Débito"
 	
 	aObjects := {}                      
 	AAdd( aObjects, { 002, 002, .F., .F. } )
@@ -532,7 +548,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	//ÚÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1.3. Cheque³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÙ
-	oPanelSitef3 := tPanel():New(aPosObj[5,1],aPosObj[5,2],STR0011,					oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) 	//"Cheque"
+	oPanelSitef3 := tPanel():New(aPosObj[5,1],aPosObj[5,2],STR0011,	oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) 	//"Cheque"
 
 	aObjects := {}                      
 	AAdd( aObjects, { 002, 002, .F., .F. } )
@@ -546,7 +562,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1.4. Recarga de Celular³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	oPanelSitef4 := tPanel():New(aPosObj[7,1],aPosObj[7,2], STR0012,		oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) //"Recarga de Celular"
+	oPanelSitef4 := tPanel():New(aPosObj[7,1],aPosObj[7,2], STR0012, oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) //"Recarga de Celular"
     
 	aObjects := {}                      
 	AAdd( aObjects, { 002, 002, .F., .F. } )
@@ -560,7 +576,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³1.5. Correspondente Bancário³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	oPanelSitef5 := tPanel():New(aPosObj[9,1],aPosObj[9,2], STR0013,	oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) //"Correspondente Bancário"
+	oPanelSitef5 := tPanel():New(aPosObj[9,1],aPosObj[9,2], STR0013, oPanelPrincipal,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3]-25, .T.) //"Correspondente Bancário"
 
 	aObjects := {}                      
 	AAdd( aObjects, { 002, 002, .F., .F. } )
@@ -602,7 +618,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 
 		@ aPosObj2[02,01],aPosObj2[02,02]	CHECKBOX oSitefPBMHab VAR oCfgTef:oSitef:lPBM PROMPT STR0004 PIXEL SIZE 55,9 OF oPanelSitef6 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) .AND. !(Self:PayGoHb(oCfgTef) .OR. Self:DiscadoHb(oCfgTef)) //"Habilitado"
 	EndIf
-
+	
 
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³2. Criacao do Folder Discado³
@@ -703,9 +719,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
  	AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
 	AAdd( aObjects, { 460, 015, .F., .F., .F. } )  
  	AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-	AAdd( aObjects, { 460, 015, .F., .F., .F. } )  
-
-	
+	AAdd( aObjects, { 460, 015, .F., .F., .F. } )  	
 	
 	aInfo 	:= { aPosObjFolder[1,1]-13, aPosObjFolder[1,2], aPosObjFolder[1,3], aPosObjFolder[1,4], 3, 3 } 
 	aPosObj	:= MsObjSize( aInfo, aObjects )	 	
@@ -759,7 +773,6 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³2.3. TecBan            ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ	
-
 	
 	aObjects := {}                      
 	AAdd( aObjects, { 460, 090, .F., .F., .F. } )   
@@ -777,8 +790,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	aInfo 	:= { aPosObjFolder[1,1]-13, aPosObjFolder[1,2], aPosObjFolder[1,3], aPosObjFolder[1,4], 3, 3 } 
 	aPosObj	:= MsObjSize( aInfo, aObjects )	 	 				
 	  
-	oPanelDiscado3 := tPanel():New(nUltLin,aPosObj[1,2]+6, STR0023,			oFolderDiscado,,.F.,,CLR_BLACK,,aPosObj[1,4],aPosObj[1,3], .T.) //"Tecban"
-	  
+	oPanelDiscado3 := tPanel():New(nUltLin,aPosObj[1,2]+6, STR0023,			oFolderDiscado,,.F.,,CLR_BLACK,,aPosObj[1,4],aPosObj[1,3], .T.) //"Tecban"	  
 	
 	aObjects := {} 
 	AAdd( aObjects, { 020, 002, .F., .F., .F. } )  //1
@@ -831,7 +843,6 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 
 	@ aPosObj2[07,01] -13,aPosObj2[13,02]+90+60 SAY "Número de Vias" PIXEL SIZE 55,9 OF oPanelDiscado3 	//"Numero de Vias"
 	@ aPosObj2[09,01] -15,aPosObj2[13,02]+90+60 GET oTECnVias VAR oCfgTef:oDiscado:nTECVias 	SiZE 20,08 PIXEL OF oPanelDiscado3 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) .AND. !(Self:SiTefHb(oCfgTef) .OR. Self:PayGoHb(oCfgTef).OR. Self:DirecaoHb(oCfgTef)) .AND. (oCfgTef:oDiscado:lTecBanCheque .OR. oCfgTef:oDiscado:lTecBanCCCD)     //"Habilitado"
-
 	
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³4.1. PayGo             ³
@@ -864,8 +875,7 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	aPosObj2[03,02]  += 4
 	aPosObj2[05,02]  += 4
 	aPosObj2[07,02]  += 4
-	aPosObj2[09,02]  += 4
-		
+	aPosObj2[09,02]  += 4		
 		
 	@ aPosObj2[01,01],aPosObj2[01,02]  		SAY STR0019 PIXEL SIZE 55,9 OF oPanelPayGo //"Caminho da aplicação:"
 	@ aPosObj2[01,01],aPosObj2[01,02]+60 	GET oPayGoApp VAR oCfgTef:oPayGo:cAppPath SIZE 160,08 PIXEL OF oPanelPayGo WHEN (Desbloqueia) CENTER		 
@@ -889,89 +899,8 @@ Method Show(nOpc, oDlg) Class LJCCfgTef
 	// 5. Criacao do Folder "Hub de Pagamento"
 	//----------------------------------------
 	If lUsePayHub
-		aObjects := {}                      
-		AAdd( aObjects, { 460, 050, .F., .F., .F. } )   
-		AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-		AAdd( aObjects, { 460, 015, .F., .F., .F. } )   
-		AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-		AAdd( aObjects, { 460, 015, .F., .F., .F. } )   
-		AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-		AAdd( aObjects, { 460, 015, .F., .F., .F. } )   
-		AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-		AAdd( aObjects, { 460, 015, .F., .F., .F. } )   
-		AAdd( aObjects, { 005, 005, .F., .F., .F. } )  
-		AAdd( aObjects, { 460, 015, .F., .F., .F. } )  
-	
-		aInfo 	:= { aSize[ 1 ], aSize[ 2 ], aSize[ 3 ], aSize[ 4 ], 3, 3 } 
-
-		aPosObj	:= MsObjSize( aInfo, aObjects )	 	 				
-		
-		//--------------------
-		// 5.1. Configuracoes
-		//--------------------
-		oPanelPHub1 := tPanel():New(aPosObj[1,1], aPosObj[1,2], STR0006, oFolderPHub,,.F.,,CLR_BLACK,,aPosObj[1,4] + 50 ,aPosObj[1,3] + 50, .T.) //"Configurações"
-
-		aObjects := {}                      
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-		AAdd( aObjects, { 002, 001, .F., .F. } )
-		AAdd( aObjects, { 005, 005, .F., .F. } )
-
-		aInfo 		:= { aPosObj[1,1], aPosObj[1,2], aPosObj[1,3], aPosObj[1,4], 3, 3 } 
-		aPosObj2	:= MsObjSize( aInfo, aObjects )	 	
-
-		@ aPosObj2[02,01],aPosObj2[02,02]  		SAY FWX3Titulo("MDG_PHCOMP") PIXEL SIZE 55,9 OF oPanelPHub1 //Código da Companhia
-		@ aPosObj2[02,01],aPosObj2[02,02]+040 	GET oPHCodeComp VAR oCfgTef:oPaymentHub:cCodeComp SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHCodeComp:cSx1Hlp := "MDG_PHCOMP"
-
-		@ aPosObj2[04,01],aPosObj2[04,02]  		SAY FWX3Titulo("MDG_PHTENA") PIXEL SIZE 55,9 OF oPanelPHub1 //Tenant
-		@ aPosObj2[04,01],aPosObj2[04,02]+040 	GET oPHTenant VAR oCfgTef:oPaymentHub:cTenant SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHTenant:cSx1Hlp := "MDG_PHTENA"
-
-		@ aPosObj2[06,01],aPosObj2[06,02]  		SAY FWX3Titulo("MDG_PHUSER") PIXEL SIZE 55,9   OF oPanelPHub1 //Usuário com o perfil ROAcessorUser
-		@ aPosObj2[06,01],aPosObj2[06,02]+040 	GET oPHUserName VAR oCfgTef:oPaymentHub:cUserName SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHUserName:cSx1Hlp := "MDG_PHUSER"
-
-		@ aPosObj2[08,01],aPosObj2[08,02]  		SAY FWX3Titulo("MDG_PHPSWD") PIXEL SIZE 55,9   OF oPanelPHub1 //Senha do usuário com o perfil ROAcessorUser
-		@ aPosObj2[08,01],aPosObj2[08,02]+040 	GET oPHPassword VAR oCfgTef:oPaymentHub:cPassword SIZE 160,08 PIXEL PASSWORD OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHPassword:cSx1Hlp := "MDG_PHPSWD"
-
-		@ aPosObj2[10,01],aPosObj2[10,02]  		SAY FWX3Titulo("MDG_PHCLID") PIXEL SIZE 55,9   OF oPanelPHub1 //Client ID
-		@ aPosObj2[10,01],aPosObj2[10,02]+040 	GET oPHCliId VAR oCfgTef:oPaymentHub:cClientId SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHCliId:cSx1Hlp := "MDG_PHCLID"
-
-		@ aPosObj2[12,01],aPosObj2[12,02]  		SAY FWX3Titulo("MDG_PHCLSR") PIXEL SIZE 55,9   OF oPanelPHub1 //Client Secret
-		@ aPosObj2[12,01],aPosObj2[12,02]+040 	GET oPHCliSecret VAR oCfgTef:oPaymentHub:cClientSecret SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHCliSecret:cSx1Hlp := "MDG_PHCLSR"
-
-		@ aPosObj2[14,01],aPosObj2[14,02]  		SAY FWX3Titulo("MDG_PHTERM") PIXEL SIZE 55,9 OF oPanelPHub1 //Terminal
-		@ aPosObj2[14,01],aPosObj2[14,02]+040 	MSGET oPHIdPinPed VAR oCfgTef:oPaymentHub:cIdPinPed SIZE 160,08 PIXEL OF oPanelPHub1 F3 "TTEFPH" WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
-		oPHIdPinPed:cSx1Hlp := "MDG_PHTERM"
-		
-
-		//----------------------------
-		// 5.2. Cartão Crédito/Débito
-		//----------------------------
-		oPanelPHub2 := tPanel():New(aPosObj[7,1],aPosObj[7,2], STR0010,	oFolderPHub,,.F.,,CLR_BLACK,,aPosObj[1,4]+50,aPosObj[1,3], .T.) 	//"Cartão Crédito/Débito"
-		
-		aObjects := {}                      
-		AAdd( aObjects, { 002, 002, .F., .F. } )
-		AAdd( aObjects, { 001, 001, .F., .F. } )
-
-		aInfo 	:= { aPosObj[1,1], aPosObj[1,2], aPosObj[1,3], aPosObj[1,4], 3, 3 } 
-		aPosObj2	:= MsObjSize( aInfo, aObjects )	 		
-
-		@ aPosObj2[02,01],aPosObj2[02,02]  	CHECKBOX oPHCCCDHab VAR oCfgTef:oPaymentHub:lCCCD PROMPT STR0004 PIXEL SIZE 55,9 OF oPanelPHub2 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) .AND. !(Self:SiTefHb(oCfgTef) .OR. Self:DiscadoHb(oCfgTef) .OR. Self:DirecaoHb(oCfgTef) ) //"Habilitado"	
+		//Monta o Painel de configuração do Payment Hub.
+		Self:LjPnlPayHub(oFolderPHub,lViewOnly)
 	EndIf
 
 	If lCriaDLg 	
@@ -1497,7 +1426,7 @@ Method PayHubHb(oCfgTef) Class LJCCfgTef
 	Default oCfgTef	:= Nil	 	// Objeto de controle de componente
 
 	If lUsePayHub
-		If oCfgTef:oPaymentHub:lCCCD
+		If oCfgTef:oPaymentHub:lPagDig .Or. oCfgTef:oPaymentHub:lCCCD
 			lRet := .T.
 		EndIF
 	EndIf
@@ -1622,27 +1551,27 @@ EndIf
 
 //Valida se as informações obrigatorias estão alimentadas
 If Empty(oConfigTEF:cCodeComp)
-	cMsg += "Código da Companhia" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHCOMP") + Chr(10) //"Companhia"
 EndIf
 
 If Empty(oConfigTEF:cTenant)
-	cMsg += "Tenant" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHTENA") + Chr(10) //"Tenant"
 EndIf
 
 If Empty(oConfigTEF:cUserName)
-	cMsg += "Usuário" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHUSER") + Chr(10) //"Usuário"
 EndIf
 
 If Empty(oConfigTEF:cPassword)
-	cMsg += "Senha" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHPSWD") + Chr(10) //"Senha"
 EndIf
 
 If Empty(oConfigTEF:cClientId)
-	cMsg += "Client ID" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHCLID") + Chr(10) //"Client ID"
 EndIf
 
 If Empty(oConfigTEF:cClientSecret)
-	cMsg += "Client Secret" + Chr(10)
+	cMsg += FWX3Titulo("MDG_PHCLSR") + Chr(10) //"Cli. Secret"
 EndIf
 
 If !Empty(cMsg)
@@ -1748,3 +1677,176 @@ Retorna o Terminal TEF selecionado pela consulta especifica (TTEFPH).
 //-------------------------------------------------------------------------------------
 Function LjPHGetTer()
 Return cTermTefPH
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} LjEnableDisable
+Habilita ou Desabilita os controles da tela.
+
+@type       Method
+@author     Alberto Deviciente
+@since      26/10/2020
+@version    12.1.27
+
+@param cHabDesab, Caracter, Determina se Habilita ou Desabilita os controles da tela.
+@param bControls, Bloco de código, Bloco com a relação de objetos de controle da interface.
+
+@return Nil, Nulo, Retorno nulo.
+/*/
+//-------------------------------------------------------------------------------------
+Method LjEnableDisable(cHabDesab, bControls) Class LJCCfgTef 
+Local aControls := Eval( bControls )
+
+If cHabDesab == "E" 	//Enable
+	aEval( aControls, { |x| Iif(ValType(x) == "O", (x:Enable(), x:Refresh()), Nil) } )
+ElseIf cHabDesab == "D" //Disable
+	aEval( aControls, { |x| Iif(ValType(x) == "O", (x:Disable(), x:Refresh()), Nil) } )
+EndIf
+
+Return
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} LjPnlPayHub
+Painel interface de configuração do Payment Hub.
+
+@type       Method
+@author     Alberto Deviciente
+@since      26/10/2020
+@version    12.1.27
+
+@param oFolderPHub, Objeto, Objeto de interface onde o painel será criado.
+@param lViewOnly, Lógico, Indica se é visualização.
+
+@return Nil, Nulo, Retorno nulo.
+/*/
+//-------------------------------------------------------------------------------------
+Method LjPnlPayHub(oFolderPHub,lViewOnly) Class LJCCfgTef  	
+Local nLinha		:= 10
+Local nColuna 		:= 35
+Local oPanelPHub1	:= Nil
+Local oPanelPHub2	:= Nil
+
+oCfgTef := SELF //Objeto da propria classe LJCCfgTef (Essa atribuição é necessária caso seja chamada pelo SIGALOJA)
+
+//---------------
+// Configuracoes
+//---------------
+oPanelPHub1 := tPanel():New(nLinha, 003, STR0006, oFolderPHub,,.F.,,CLR_BLACK,,500 ,130, .T.) //"Configurações"
+
+@ nLinha,nColuna  		SAY FWX3Titulo("MDG_PHCOMP") PIXEL SIZE 55,9 OF oPanelPHub1 //Código da Companhia
+@ nLinha,nColuna+040 	GET oPHCodeComp VAR oCfgTef:oPaymentHub:cCodeComp SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHCodeComp:cSx1Hlp := "MDG_PHCOMP"
+
+nLinha += 12
+@ nLinha,nColuna  		SAY FWX3Titulo("MDG_PHTENA") PIXEL SIZE 55,9 OF oPanelPHub1 //Tenant
+@ nLinha,nColuna+040 	GET oPHTenant VAR oCfgTef:oPaymentHub:cTenant SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHTenant:cSx1Hlp := "MDG_PHTENA"
+
+nLinha += 12
+@ nLinha,nColuna  		SAY FWX3Titulo("MDG_PHUSER") PIXEL SIZE 55,9   OF oPanelPHub1 //Usuário com o perfil ROAcessorUser
+@ nLinha,nColuna+040 	GET oPHUserName VAR oCfgTef:oPaymentHub:cUserName SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHUserName:cSx1Hlp := "MDG_PHUSER"
+
+nLinha += 12
+@ nLinha,nColuna  		SAY FWX3Titulo("MDG_PHPSWD") PIXEL SIZE 55,9   OF oPanelPHub1 //Senha do usuário com o perfil ROAcessorUser
+@ nLinha,nColuna+040 	GET oPHPassword VAR oCfgTef:oPaymentHub:cPassword SIZE 160,08 PIXEL PASSWORD OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHPassword:cSx1Hlp := "MDG_PHPSWD"
+
+nLinha += 12
+@ nLinha,nColuna  		SAY FWX3Titulo("MDG_PHCLID") PIXEL SIZE 55,9   OF oPanelPHub1 //Client ID
+@ nLinha,nColuna+040 	GET oPHCliId VAR oCfgTef:oPaymentHub:cClientId SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHCliId:cSx1Hlp := "MDG_PHCLID"
+oPHCliId:bGotFocus := {|| oCfgTef:SetClientConfig("MDG_PHCLID") }
+
+nLinha += 12
+@ nLinha,nColuna 		SAY FWX3Titulo("MDG_PHCLSR") PIXEL SIZE 55,9   OF oPanelPHub1 //Client Secret
+@ nLinha,nColuna+040 	GET oPHCliSecret VAR oCfgTef:oPaymentHub:cClientSecret SIZE 160,08 PIXEL OF oPanelPHub1 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) CENTER
+oPHCliSecret:cSx1Hlp := "MDG_PHCLSR"
+oPHCliSecret:bGotFocus := {|| oCfgTef:SetClientConfig("MDG_PHCLSR") }
+
+//-----------------------------------
+// Painel de operações habilitadas
+//-----------------------------------
+nLinha += 30
+oPanelPHub2 := tPanel():New(nLinha,003, "Operações",	oFolderPHub,,.F.,,CLR_BLACK,,500,085, .T.) 	//"Operações"
+
+// Checkbox - "Pagamentos Digitais"
+nLinha := 10
+@ nLinha,nColuna CHECKBOX oPHPagDHab VAR oCfgTef:oPaymentHub:lPagDig PROMPT "Pagamentos Digitais" PIXEL SIZE 200,09 OF oPanelPHub2 WHEN (oCfgTef:lAtivo .AND. !lViewOnly) //"Pagamentos Digitais"
+
+Return
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} SetClientConfig
+Seta o valor inicial dos campos ("Client ID" e "Client Secret") caso seja um cadastro novo.
+
+@type       Method
+@author     Alberto Deviciente
+@since      16/11/2020
+@version    12.1.27
+
+@param cField, Caractere, Campo que disparou a ação.
+
+@return Nil, Nulo, Retorno nulo.
+/*/
+//-------------------------------------------------------------------------------------
+Method SetClientConfig(cField) Class LJCCfgTef
+
+oCfgTef := SELF //Objeto da propria classe LJCCfgTef (Essa atribuição é necessária caso seja chamada pelo SIGALOJA)
+
+If cField == "MDG_PHCLID" //Client ID
+	If Empty(oCfgTef:oPaymentHub:cClientId)
+		oCfgTef:oPaymentHub:cClientId := LjPDGetEnv( "2", 1)
+		If ValType(oPHCliId) == "O"
+			oPHCliId:RefresH()
+		EndIf
+	EndIf
+ElseIf cField == "MDG_PHCLSR" //Client Secret
+	If Empty(oCfgTef:oPaymentHub:cClientSecret)
+		oCfgTef:oPaymentHub:cClientSecret := LjPDGetEnv( "2", 2)
+		If ValType(oPHCliSecret) == "O"
+			oPHCliSecret:RefresH()
+		EndIf
+	EndIf
+EndIf
+
+Return
+
+//----------------------------------------------------------------------
+/*/{Protheus.doc} LjPDGetEnv
+Retorna dados da configuração de ambiente do Totvs Pagamento Digital.
+
+@author  Alberto Deviciente
+@since   16/11/2020
+@version P12
+
+@param cTipoAmb, Caractere, Tipo do Ambiente (1=Homologação;2=Produção)
+@param nTipoInfo, Numérico, Tipo do Informação a ser retornada (1=Client ID; 2=Client Secret)
+
+@return  cRet, Caractere, Retorna a informação solicitada conforme parâmetros passados na função.
+/*/
+//----------------------------------------------------------------------
+Static Function LjPDGetEnv(cTipoAmb,nTipoInfo)
+Local cRet 		:= ""
+Local nTamPad	:= iIf(nTipoInfo == 1, TamSX3("MDG_PHCLID")[1], TamSX3("MDG_PHCLSR")[1])
+
+If Empty(aInfoTPD)
+	//Dados Homologação:
+	aAdd( aInfoTPD, 	{ 	"totvs_pagamento_digital_protheus_ro"	,; 	//Client ID
+							"39f56c0d-1a0d-48e9-94de-eb32f4e8877c"	,; 	//Client Secret
+						} )
+
+	//Dados Produção:
+	aAdd( aInfoTPD, 	{ 	"totvs_pagamento_digital_protheus_ro"	,; 	//Client ID
+							"2fbdf0a3-8777-4045-8503-031bcae6af1e"	,; 	//Client Secret
+						} )
+EndIf
+
+If cTipoAmb == "1"		//1=Homologação
+	cRet := aInfoTPD[1][nTipoInfo]
+ElseIf cTipoAmb == "2"	//2=Produção
+	cRet := aInfoTPD[2][nTipoInfo]
+EndIf
+
+cRet := PadR(cRet,nTamPad)
+
+Return cRet

@@ -29,9 +29,9 @@ Cancelar Venda
 @sample
 /*/
 //-------------------------------------------------------------------
-Function STWCancelSale( 	lForceCancel 	, lIsProgressSale , cSuperior 	, cDoc			, ;
-							cNumSale 		, lCancVenc		, cNFisCanc  	, cNumForce     , ;
-							cSerie )
+Function STWCancelSale( 	lForceCancel 	, lIsProgressSale 	, cSuperior 	, cDoc			, ;
+							cNumSale 		, lCancVenc			, cNFisCanc  	, cNumForce     , ;
+							cSerie 			, lTemCCCD			, lTemPD		)
 
 Local lRet		:= .F.					// Retorno funcao
 Local aParam	:= {}					// Parametros passados para a retaguarda
@@ -51,6 +51,8 @@ Default lCancVenc   		:= .F.
 Default cNFisCanc			:= ""
 Default cNumForce			:= ""
 Default cSerie				:= STFGetStation("SERIE")
+Default lTemCCCD			:= .F.
+Default lTemPD			    := .F.
 
 LjGrvLog( "NumOrc: "+cNumSale+"/DOC: "+cDoc + "-" + cSerie, "Cancela venda" )  //Gera LOG
 
@@ -69,7 +71,7 @@ Do Case
 	Case !lIsProgressSale		// Venda Finalizada
 
 		LjGrvLog( "Cancela venda","NumOrc: "+cNumSale+"/DOC: "+cDoc+"-"+cSerie+" - Venda Finalizada(lForceCancel = .F.)")	
-		lRet := STWCSFinalized( cSuperior , cDoc , cNumSale, @cNome, @cCGCCli, cNFisCanc, "StiPosMain", , cSerie )
+		lRet := STWCSFinalized( cSuperior , cDoc , cNumSale, @cNome, @cCGCCli, cNFisCanc, "StiPosMain", , cSerie, lTemCCCD,lTemPD)
 		If AllTrim(cNumSale) <> AllTrim(cL1Num)
 			cL1Num := cNumSale
 		EndIf
@@ -124,6 +126,7 @@ Cancela Venda em Andamento
 /*/
 //-------------------------------------------------------------------
 Function STWCSProgressSale( cSupervisor , cDoc, cNome, cCGCCli, cSerie )
+
 Local lRet			:= .T.									// Retorna se Cancelou a venda
 Local lAllNotfiscal	:= .F.									// Todos os Itens são não fiscais?
 Local lDelChange	:= SuperGetMV("MV_LJTRLOC",,.F.)	// Define se Usa troco localizado
@@ -165,6 +168,7 @@ If lRet
 		
 		lRet := STBCSCancCupPrint( cSupervisor , cDoc, /*cNumSale*/, lNFCETSS, /*lForceCancel*/, /*cTipoCanc*/, .T.)
 		If lRet
+
 			/*/
 				Desfazimento Transação TEF
 			/*/
@@ -238,8 +242,9 @@ Cancelar Vendas Finalizadas
 @sample
 /*/
 //-------------------------------------------------------------------
-Function STWCSFinalized( cSupervisor , cDoc , cNumSale, cNome,;
- 						cCGCCli, cNFisCanc, cFlowAction, lCancNf, cSerie )
+Function STWCSFinalized( cSupervisor	, cDoc		, cNumSale		, cNome		,;
+ 						 cCGCCli		, cNFisCanc	, cFlowAction	, lCancNf	,;
+						 cSerie			, lTemCCCD	, lTemPD		)
 Local lRet			:= .T.									// Retorna se Efetuou Cancelamento
 Local oTEF20		:= Nil									// Objeto TEF
 Local oCliModel		:= NIL									// Model do cliente
@@ -262,6 +267,9 @@ Local oCancNfce		:= Nil									//Armazena o objeto CancNfce
 Local lEmitNFCe		:= STBGetNFCE()							//Indica se NFC-e
 Local nPosSL4 		:= 0
 Local lCmpsIdTRN	:= SL4->(ColumnPos("L4_TRNID")) > 0 .And. SL4->(ColumnPos("L4_TRNPCID")) > 0 .And. SL4->(ColumnPos("L4_TRNEXID")) > 0 //Verifica se existem os campos que guardam os IDs das transações TEF
+Local cTRNID		:= "" //ID da Transação (Payment Hub)
+Local cTRNPCID		:= "" //ID Transação Processador (Payment Hub)
+Local cTRNEXID		:= "" //ID da Transação Externa (Payment Hub)
 
 Default cSupervisor := ""
 Default cDoc   		:= ""	
@@ -270,6 +278,9 @@ Default cNFisCanc  	:= ""
 Default cFlowAction := ""	//Recebe conteudo quando reprocessando. Exemplo: STBCSCancCupPrint|1 , sendo o ultimo parametro a qtde de vezes que ja tentou reprocessar para evitar looping infinito.
 Default lCancNf		:= .F. 	//Sinaliza que eh uma venda nao fiscal venda de vale presente ou vale credito
 Default cSerie		:= STFGetStation("SERIE")
+
+Default lTemCCCD	:= .F.
+Default lTemPD		:= .F.
 
 If Valtype(lNFCETSS) == "U" //Default é enviar NFCe pelo TSS
 	lNFCETSS := .T.
@@ -285,6 +296,10 @@ Aadd(aParamFlow,cNFisCanc)
 Aadd(aParamFlow,cFlowAction)
 Aadd(aParamFlow,.F.)	//-- Evitar erro ao iniciar o recuperar venda pq senao cSerie entra no lugar
 Aadd(aParamFlow,cSerie)
+
+Aadd(aParamFlow,lTemCCCD)
+Aadd(aParamFlow,lTemPD)
+
 
 DbSelectArea("SL1")
 DbSetOrder(1)//L1_FILIAL+L1_NUM
@@ -329,36 +344,44 @@ If lRet
 
 	If lExecCanCup 	
 		IIF(lSTBAddFlow,STBAddFlow("STBCSCancCupPrint",aParamFlow),Nil)  //Controle de fluxo, sinaliza que ira executar a rotina STBCSCancCupPrint
-		lRet := STBCSCancCupPrint( cSupervisor , cDoc, , lNFCETSS,,@cTipoCanc, ,cSerie )
+		lRet := STBCSCancCupPrint( cSupervisor , cDoc, , lNFCETSS,,@cTipoCanc, ,cSerie,lTemCCCD,lTemPD)
 	EndIf			
 EndIf
 
 //FlowControl: Se possuir TEF, cancela a transacao(Desfazimento Transação TEF) -> "TEFDesfazer" 
-If lRet		
+If lRet
+
 	IIF(lSTBAddFlow,STBAddFlow("TEFDesfazer",aParamFlow),Nil)
+
 	DbSelectArea("SL4")
 	SL4->(DbSetOrder(1))
+
 	If SL4->(DbSeek(xFilial("SL4") + cNumSale))			
 		While !SL4->(Eof()) .AND. SL4->L4_FILIAL + SL4->L4_NUM == xFilial("SL4") + cNumSale
-			If (Alltrim(SL4->L4_FORMA) == "CC" .OR. Alltrim(SL4->L4_FORMA) == "CD") .And. !Empty(SL4->L4_DOCTEF)
-				nPosSL4 := aScan(aVendaTEF,{|x| AllTrim(x[1]) == Alltrim(SL4->L4_DOCTEF) })
+
+			If (Alltrim(SL4->L4_FORMA) == "CC" .OR. Alltrim(SL4->L4_FORMA) == "CD" .OR. Alltrim(SL4->L4_FORMA) == "PD" .OR. Alltrim(SL4->L4_FORMA) == "PX" ) .AND. (!Empty(SL4->L4_DOCTEF) .OR. (lCmpsIdTRN .AND. !Empty(SL4->L4_TRNPCID)))
+				If lCmpsIdTRN
+					cTRNID		:= Alltrim(SL4->L4_TRNID) 	//ID da Transação (Payment Hub)
+					cTRNPCID	:= Alltrim(SL4->L4_TRNPCID) //ID Transação Processador (Payment Hub)
+					cTRNEXID	:= Alltrim(SL4->L4_TRNEXID) //ID da Transação Externa (Payment Hub)
+				EndIf
+
+				nPosSL4 := aScan(aVendaTEF,{|x| AllTrim(x[1] + x[3] ) == Alltrim(SL4->(L4_DOCTEF)) + cTRNPCID })
+
 				If nPosSL4 == 0
 					Aadd(aVendaTEF, {} )
 					nPosSL4 := Len(aVendaTEF)
-					Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_DOCTEF) )
-					Aadd(aVendaTEF[nPosSL4], SL4->L4_VALOR )
-					If lCmpsIdTRN
-						Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_TRNID) )
-						Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_TRNPCID) )
-						Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_TRNEXID) )
-					Else
-						Aadd(aVendaTEF[nPosSL4], "" )
-						Aadd(aVendaTEF[nPosSL4], "" )
-						Aadd(aVendaTEF[nPosSL4], "" )
-					EndIf
-					Aadd(aVendaTEF[nPosSL4], SL4->L4_DATATEF )
+					Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_DOCTEF) )		//01-DOCTEF
+					Aadd(aVendaTEF[nPosSL4], SL4->L4_VALOR )				//02-Valor Total da transação
+					Aadd(aVendaTEF[nPosSL4], cTRNID )						//03-ID da Transação
+					Aadd(aVendaTEF[nPosSL4], cTRNPCID )						//04-ID Transação Processador
+					Aadd(aVendaTEF[nPosSL4], cTRNEXID )						//05-ID da Transação Externa
+					Aadd(aVendaTEF[nPosSL4], SL4->L4_DATATEF )				//06-Data da Transação
+					Aadd(aVendaTEF[nPosSL4], Alltrim(SL4->L4_FORMA) )		//07-Forma de Pagamento
+					Aadd(aVendaTEF[nPosSL4], { SL4->(Recno()) } )			//08-Recnos relacionados a transação
 				Else
-					aVendaTEF[nPosSL4][2] += SL4->L4_VALOR
+					aVendaTEF[nPosSL4][2] += SL4->L4_VALOR			//Aglutina o Valor Total da transação
+					aAdd( aVendaTEF[nPosSL4][8], SL4->(Recno()) )	//Recnos relacionados a transação
 				Endif
 			Endif				
 			SL4->(DbSkip())
@@ -502,7 +525,7 @@ If lRet
 	
 	If !lSTDSatRecovery
 		LjGrvLog( "NumOrc: "+cNumSale, "Reinicia variáveis para iniciar próxima venda" )  //Gera LOG
-		STFRestart()
+		STFRestart(.T.)
 	EndIf
 Else
 	IIF(lSTBAddFlow,STBAddFlow(""),Nil) // finaliza controle de fluxo da rotina
@@ -749,6 +772,7 @@ Function STWDelPay( cNum )
 
 Local lRet := .F.
 Local lFinishSales	:= IsInCallStack("STWFinishSale")
+Local lUsePayHub	:= ExistFunc("LjUsePayHub") .And. LjUsePayHub()
 
 Default cNum := ""
 
@@ -762,6 +786,10 @@ If lRet
 	STDSPBasket("SL1", "L1_DINHEIR"	, CriaVar("L1_DINHEIR")	)
 	STDSPBasket("SL1", "L1_CHEQUES"	, CriaVar("L1_CHEQUES") )
 	STDSPBasket("SL1", "L1_CARTAO"	, CriaVar("L1_CARTAO")	)
+	If lUsePayHub
+		STDSPBasket("SL1", "L1_VLRPGDG"	, CriaVar("L1_VLRPGDG")	)
+		STDSPBasket("SL1", "L1_VLRPGPX"	, CriaVar("L1_VLRPGPX")	)
+	EndIf 
 	STDSPBasket("SL1", "L1_CONVENI"	, CriaVar("L1_CONVENI") )
 	STDSPBasket("SL1", "L1_VALES"	, CriaVar("L1_VALES") 	)
 	STDSPBasket("SL1", "L1_FINANC"	, CriaVar("L1_FINANC")	)

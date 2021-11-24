@@ -289,7 +289,7 @@ oLbxGrCmp:SetArray(aLinGrCmp)
 oLbxGrCmp:bLine		:= LocxBLin('oLbxGrCmp',aCpoGrCmp,.T.)
 oLbxGrCmp:bLDblClick	:={ || ChgMarkLb(oLbxGrCmp,aLinGrCmp,{|| .T. },.F.), DROShowGrp(aLinGrCmp) }
 
-ACTIVATE MSDIALOG oDlgGrupo ON INIT EnchoiceBar(oDlgGrupo,{|| IIf(DROSelGrupo(@aFiliais,aLinGrCmp),(lRet := .T.,oDlgGrupo:End()),NIL)},{|| lRet := .F.,oDlgGrupo:End()},,)
+ACTIVATE MSDIALOG oDlgGrupo ON INIT EnchoiceBar(oDlgGrupo,{|| IIf(DROSelGrupo(@aFiliais,aLinGrCmp),(lRet := .T.,oDlgGrupo:End()),NIL)},{|| lRet := .F.,oDlgGrupo:End()},,,,,,,,.T.)
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Analise por ponto de pedido - extraido do MATA170         ³
@@ -1289,7 +1289,7 @@ oLbxFil:nFreeze	:= 1
 oLbxFil:SetArray(aLinFil)
 oLbxFil:bLine		:= LocxBLin('oLbxFil',aCpoFil,.T.)
 
-ACTIVATE MSDIALOG oDlgFil ON INIT EnchoiceBar(oDlgFil,{|| oDlgFil:End()},{|| oDlgFil:End()},,)
+ACTIVATE MSDIALOG oDlgFil ON INIT EnchoiceBar(oDlgFil,{|| oDlgFil:End()},{|| oDlgFil:End()},,,,,,,,.T.)
 
 Return .T.
 

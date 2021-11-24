@@ -24,6 +24,7 @@ Static lLjxFune 	:= GetAPOInfo("LOJXFUNE.PRW")[4] >= Ctod("12/08/2019")
 Static lAutoExA		:= IsBlind()										// Verifica se a rotina sera executada via execauto ou nao
 Static lAutomato 	:= If(Type("lAutomatoX")<>"L",.F.,lAutomatoX)
 Static lTelaPesq	:= .F.												// Indica que item foi incluso via tela de pesquisa unificada
+Static cLQCliente	:= ""												// Backup do cliente digitado na venda
 
 /*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
 ±±ºPrograma  ³Lj7Prod   ºAutor  ³ Vendas Clientes    º Data ³  01/07/05   º±±
@@ -57,7 +58,7 @@ Local nPosPrdCob	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpo,{|x| AllTrim(Upper(x[1]))
 Local nPosNSerie   	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_NSERIE" }))				// Posicao do Numero de serie
 Local nGarant	    := 0																		// Posicao do valor da garantia
 Local nSerie	    := 0																		// Posicao do valor de série
-Local nPosDtReserva	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"}))				// Posicao do codigo da reserva
+Local nPosCodRes	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"}))				// Posicao do codigo da reserva
 Local nPosDtLocal  	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOCAL"}))				// Posicao do local (armazem)
 Local nPosValePre	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_VALEPRE"}))				// Posicao do codigo do Vale Presente
 Local nPosPrcTab	:= IIf(lVldDroCPr , 0 , Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_PRCTAB"}))				// Posicao do Preco de Tabela
@@ -138,7 +139,6 @@ Local lVPNewRegra 	:= Lj7VPNew() 																// Verifica se utiliza as novas
 Local lGiftCard 	:= Lj7CP_OK() 																// Verifica se permite utilizar a implementacao de Cartao Presente (Gift Card)
 Local lSFinanc		:= SuperGetMV("MV_LJCSF",,.F.)												// Valida implementação do servico financeiro
 Local lVincServ		:= IIF(!lVldDroCPr .And. ExistFunc("Lj7GetServ"), Lj7GetServ(), .F.)
-Local lNT2015002	:= ExistFunc("NT2015002")  													// Verifica se a funcao provisoria da NT2015/002 esta compilada (LOJNFCE)
 Local lUseSat		:= LjUseSat()																// Usa Sat
 Local nValorVP		:= 0																		// Valor do Vale Presente
 Local aAreaSB1		:= {}																		// Variável Auxiliar
@@ -223,14 +223,7 @@ Else
 		EndIf
 	
 	EndIf
-	
-	// NFC-e: Apresenta uma mensagem ao usuário, informando que se for ambiente de homologação,
-	// a Descrição do primeiro item da Nota Fiscal (tag:xProd) deve ser informada como
-	// "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-	If (lEmitNFCe .Or. lIsPafNfce) .AND. lNT2015002 .AND. n == 1 .And. !lUseSat
-		NT2015002(Nil, M->LR_PRODUTO)
-	EndIf
-	
+
 	//Verifica se foi informado o codigo do produto
 	If "LR_PRODUTO" $ ReadVar()
 		If Empty(&(ReadVar()))
@@ -294,8 +287,8 @@ Else
 		//³ deixar fazer altaracao                                       ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		If ( "LR_" $ ReadVar() .And. &(ReadVar()) != GDFieldGet(Replace(ReadVar(),"M->","")) ) .And. ;
-			((Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosDtReserva])) .AND. !lFtvdVer12 .OR. ;
-			(Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosDtReserva])) .AND. !lAutoExA .AND. lFtvdVer12) .AND. !lIntSynt .AND.; 
+			((Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosCodRes])) .AND. !lFtvdVer12 .OR. ;
+			(Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosCodRes])) .AND. !lAutoExA .AND. lFtvdVer12) .AND. !lIntSynt .AND.; 
 			!lIntegDef
 			
 			If lAutoExA  .AND. !lFtvdVer12
@@ -342,7 +335,8 @@ Else
 			//------------------------------------------------------------------------------
 			//	Preenche com 1 caso a quantidade seja zero ou caso o produto seja alterado	
 			//------------------------------------------------------------------------------
-			If aCols[n][nPosQuant] == 0 .Or. "LR_PRODUTO" $ ReadVar() .And. !Empty(GDFieldGet("LR_PRODUTO")) .And. GDFieldGet("LR_PRODUTO") <> &(ReadVar())
+			If aCols[n][nPosQuant] == 0 .Or. ;
+						("LR_PRODUTO" $ ReadVar() .And. !Empty(GDFieldGet("LR_PRODUTO")) .And. GDFieldGet("LR_PRODUTO") <> &(ReadVar()) .AND. !IsInCallStack("LJKITPROD"))
 				aCols[n][nPosQuant] := 1
 			Endif
 	
@@ -1316,7 +1310,7 @@ Local nPosProvEnt	:= Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_PROVENT"})		
 Local nPosDtVldProd := Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_VLGAPRO"})						// Posicao do Campo Qtde dias validade da garantia do produto
 Local nPosPrcTab	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_PRCTAB"})						// Posicao do Preco de Tabela
 Local nPosDtDProp	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_DESCPRO"})						// Posicao do Desconto proporcional
-Local nPosDtReserva	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"})						// Posicao do codigo da reserva
+Local nPosCodRes	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"})						// Posicao do codigo da reserva
 Local nPosDtLocal  	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOCAL"})						// Posicao do local (armazem)
 Local nPosLoteCtl	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOTECTL"})						// Posicao do lote do produto
 Local nPosSubLote	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_NLOTE"})						// Posicao do sublote do produto
@@ -1729,6 +1723,23 @@ If lCenVenda .And. !lIntegDef //Integracao nao valida regra de desconto
 	EndIf
 EndIf
 
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Nao permite efetuar alteracoes nos campos se jah foi efetuada³
+//³ a reserva                                                    ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If ( "LR_" $ ReadVar() .And. &(ReadVar()) != GDFieldGet(Replace(ReadVar(),"M->","")) ) .And. ;
+	( Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosCodRes]) .AND. !lFtvdVer12 .OR. ;
+	Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosCodRes]) .AND. !lAutoExA .AND. lFtvdVer12 ) .AND.; 
+	!lIntSynt .AND. !lIntegDef
+	If !lAutoExA
+		Aviso( STR0001, STR0002, {STR0003} ) //"Aviso"###"Já existe uma reserva para esse produto, não é possível ser alterado."###"Ok"
+	Else
+		ConOut(STR0002)
+	EndIf
+	LjGrvLog(SL1->L1_NUM, STR0002)//"Já existe uma reserva para esse produto, não é possível ser alterado."
+	Return .F.
+Endif
+
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Nao permite valor negativo no campo quantidade quando nao ha concomitancia ou se PAF-ECF     ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -1745,23 +1756,6 @@ If !lVAssConc .OR. LjNfPafEcf(SM0->M0_CGC)
 		aCols[n][nPosQuant] := M->LR_QUANT
 	EndIf
 EndIf
-
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³ Nao permite efetuar alteracoes nos campos se jah foi efetuada³
-//³ a reserva                                                    ³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If ( "LR_" $ ReadVar() .And. &(ReadVar()) != GDFieldGet(Replace(ReadVar(),"M->","")) ) .And. ;
-	( Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosDtReserva]) .AND. !lFtvdVer12 .OR. ;
-	Len(aColsDet) >= n .AND. !Empty(aColsDet[n][nPosDtReserva]) .AND. !lAutoExA .AND. lFtvdVer12 ) .AND.; 
-	!lIntSynt .AND. !lIntegDef
-	If !lAutoExA
-		Aviso( STR0001, STR0002, {STR0003} ) //"Aviso"###"Já existe uma reserva para esse produto, não é possível ser alterado."###"Ok"
-	Else
-		ConOut(STR0002)
-	EndIf
-	LjGrvLog(SL1->L1_NUM, STR0002)//"Já existe uma reserva para esse produto, não é possível ser alterado."
-	Return .F.
-Endif
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Armazena a linha atual (aCols e aColsDet). Quando o caixa nao³
@@ -1989,9 +1983,13 @@ If SB1->( DbSeek(xFilial("SB1") + aCols[n][nPosProd]) )
 	   	    nValorItem := aColsDet[n][nPosPrcTab]
    	    	nVlUnit := nValorItem
 	   	Else
-			LjxeValPre (@nValorItem	, aCols[n][nPosProd], M->LQ_CLIENTE, M->LQ_LOJA	,;
-						nMoedaCor	, aCols[n][nPosQuant])
-	   		nVlUnit	:= oDesconto:DescontoValor( nValorItem, aCols[n][nPosQuant], aCols[n][nPosValDesc] )
+			If nRotina == 4 .AND. !Empty(aColsDet) .AND. Len(aColsDet) >= n  .AND. !Empty(aColsDet[n][nPosPrcTab])
+		   	    nValorItem := aColsDet[n][nPosPrcTab]
+			Else
+				LjxeValPre (@nValorItem	, aCols[n][nPosProd], M->LQ_CLIENTE, M->LQ_LOJA	,;
+							nMoedaCor	, aCols[n][nPosQuant])
+			EndIf
+			nVlUnit	:= oDesconto:DescontoValor( nValorItem, aCols[n][nPosQuant], aCols[n][nPosValDesc] )
 	   	Endif
 	ElseIf nField == 2
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -2198,7 +2196,7 @@ If SB1->( DbSeek(xFilial("SB1") + aCols[n][nPosProd]) )
 				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 				nRegDesc := LjRgrDesc(aCols[n][nPosProd],M->LQ_CLIENTE,M->LQ_LOJA,aColsDet[n][nPosNumTab],M->LR_QUANT ,1)
 
-				If nRegDesc > 0		
+				If nRegDesc > 0	.OR. (aCols[n][nPosDesc] > 0 .AND. nRegDesc = 0)		//Se Maior que 0, ou se 0 e seu conteúdo tinha algum desconto antes
 					aCols[n][nPosDesc] := nRegDesc
 				EndIf	
 			EndIf
@@ -2414,20 +2412,20 @@ If SB1->( DbSeek(xFilial("SB1") + aCols[n][nPosProd]) )
 	If (nValDes > 0 .Or. ReadVar()=="M->LR_DESC") .AND. (nVlrDesc > 0)
 		aCols[n][nPosDesc] 	:= &(ReadVar())
 	EndIf
-	
-	If lFtvdVer12
-		//Realiza o calculo do Suframa, quando o cliente for Apto a recebe-lo
-		If cPaisLoc == "BRA" .AND. MaFisRet(,"NF_SUFRAMA")
-			nSuframa := LjVDSuframa()
-		EndIf
 
-		//Atualiza o valor de desconto do suframa
-		If Len(aTotais) > 6
-			LjVDT_SUFR( 2, nSuframa	)
-		EndIf
-		
-		nAuxTotal := MaFisRet(, "NF_TOTAL" ) + IIF(LjNewCalSol() , Lj7T_DescV(2) , 0)
-	EndIf
+    //Realiza o calculo do Suframa, quando o cliente for Apto a recebe-lo
+    If cPaisLoc == "BRA" .AND. MaFisRet(,"NF_SUFRAMA")
+        nSuframa := LjVDSuframa()
+    EndIf
+
+    //Atualiza o valor de desconto do suframa
+    If Len(aTotais) > 6
+        LjVDT_SUFR( 2, nSuframa	)
+    EndIf
+    
+    If lFtvdVer12
+        nAuxTotal := MaFisRet(, "NF_TOTAL" ) + IIF(LjNewCalSol() , Lj7T_DescV(2) , 0)
+    EndIf
 
 	//Atualiza Subtotal e Total jah com os impostos calculados 
 	If !lFtvdVer12 .And. cPaisLoc == "BRA" .AND. !aCols[n][Len(aHeader) + 1] 
@@ -2477,9 +2475,7 @@ If SB1->( DbSeek(xFilial("SB1") + aCols[n][nPosProd]) )
 
     		nAuxQuant := Lj7CalcQtd(aCols,n,nQuant)
 
-			If !lFtvdVer12
-    			IIF(!MaFisRet(,"NF_SUFRAMA"),Lj7T_Quant( 2, nAuxQuant ),Nil)
-            EndIf
+            Lj7T_Quant( 2, nAuxQuant )
             
             LjGrvLog(M->LQ_NUM," Existe desconto no cabeçalho ?",lDescCab)
             LjGrvLog(M->LQ_NUM," Caixa pode aplicar desconto quando MV_LJCNVDA com .T. ?",LjOpcDesc())
@@ -3711,7 +3707,7 @@ Return Nil
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³Loja701                                                     º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Function LJ7VldDesc( oPanVA3, nPercDesc, nValorDesc )
+Function LJ7VldDesc( oPanVA3, nPercDesc, nValorDesc, lValida )
 Local lRet 			:= .T.																			// Indica o retorno da funcao
 Local lConfirma		:= .F.																			// Indica se o usuario confirmou ou nao o descto
 Local nPerDesc	 	:= 0																			// Percentual de Desconto
@@ -3755,9 +3751,11 @@ Local aLJ7107		:= {0, 0}
 Local lMvArrefat    := SuperGetMv("MV_ARREFAT") == "S"
 Local lIntegDef  	:= Lj701GtInD() //Venda Origem Integração
 Local lPBMDesc		:= ExistTemplate("DroPbmDe") .AND. T_DroPbmDe()
+Local nDecDescNF    := TamSX3("L1_DESCNF")[2]														// Tamannho Decimais campo L1_DESCNF
 
 Default nPercDesc   := 0    // Percentual de desconto
 Default nValorDesc  := 0	// Valor de desconto
+Default lValida     := .F.  //Define que ira realizar as validações
 
 If Empty(aCols[n][nPosProd]) .OR. aCols[n][nPosVrUnit] == 0
 	Return .F.
@@ -3767,7 +3765,7 @@ EndIf
 //³Verifica se a rotina foi acionada atraves de outra funcao,		 ³
 //³ou via ExecAuto, recebendo o percentual do desconto como parametro³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If lCenVenda .OR. lAutoExec
+If lCenVenda .OR. lAutoExec .Or. lValida
 
 	If (nPercDesc <> Nil) .AND. ValType(nPercDesc) == "N" .AND. nPercDesc > 0
 		lExibeTela		:= .F.
@@ -3779,7 +3777,7 @@ If lCenVenda .OR. lAutoExec
 	//³Verifica se a rotina foi acionada atraves de outra funcao,³
 	//³recebendo o valor do desconto como parametro              ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	If (nValorDesc <> Nil) .AND. ValType(nValorDesc) == "N" .AND. nValorDesc > 0
+	If ( (nValorDesc <> Nil) .AND. ValType(nValorDesc) == "N" .AND. nValorDesc > 0 ) .Or. lValida
 		lExibeTela		:= .F.
 		nVlrDesc		:= nValorDesc
 		lConfirma		:= .T.
@@ -3988,7 +3986,7 @@ If Lj7T_Total( 2 ) <> 0 .AND. lRet
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		If cPaisLoc == "BRA"
 			If nMvLjTpDes == 0
-				oVlrDesc:bLostFocus := { || If( nPerDesc == 0 .OR. ( nVlrDescBkp <> nVlrDesc ), (nPerDesc := Round(nVlrDesc*100/(Lj7T_Total(2) + Lj7T_DescV(2) - nValSol - nIT_ValIpi),nDecimais),;
+				oVlrDesc:bLostFocus := { || If( nPerDesc == 0 .OR. ( nVlrDescBkp <> nVlrDesc ), (nPerDesc := Round(nVlrDesc*100/(Lj7T_Total(2) + Lj7T_DescV(2) - nValSol - nIT_ValIpi), nDecDescNF),;
 												nVlrDescBkp := nVlrDesc, oPerDesc:Refresh(), lConfirma := .F.), Nil )}
 			Else
 				If lMvAjstDes
@@ -4046,7 +4044,7 @@ If Lj7T_Total( 2 ) <> 0 .AND. lRet
 			If cPaisLoc == "BRA"
 				If nMvLjTpDes == 0
 					If nPerDesc == 0 .OR. ( nVlrDescBkp <> nVlrDesc )
-						nPerDesc := Round(nVlrDesc*100/(Lj7T_Total(2) +Lj7T_DescV(2)),nDecimais)
+						nPerDesc := Round(nVlrDesc*100/(Lj7T_Total(2) +Lj7T_DescV(2)),nDecDescNF)
 						nVlrDescBkp := nVlrDesc
 					EndIf
 				Else
@@ -4058,7 +4056,7 @@ If Lj7T_Total( 2 ) <> 0 .AND. lRet
 			Else
 				nVlrMerc := Lj7T_Total(2) - Lj7T_ImpsV("1",2) + Lj7T_DescV(2)
 				If nPerDesc == 0
-					nPerDesc := Round(nVlrDesc*100/nVlrMerc,nDecimais)
+					nPerDesc := Round(nVlrDesc*100/nVlrMerc,nDecDescNF)
 				EndIf
 			EndIf
 
@@ -4303,7 +4301,7 @@ Local nPosDtPrcTab  := Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_PRCTAB"
 Local nPosDtFrete	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_VALFRE" })					// Posicao do Valor do frete do item
 Local nPosDtSeguro 	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_SEGURO"})					// Posicao do Valor do Seguro do item
 Local nPosDtDespesa	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_DESPESA"})					// Posicao do Valor das desepesas acessorias do item
-Local nPosDtReserva	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"})					// Posicao do codigo da reserva
+Local nPosCodRes	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_RESERVA"})					// Posicao do codigo da reserva
 Local nPosDtLojaRes	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOJARES"})					// Posicao do Loja da reserva
 Local nPosDtOrcRes 	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_ORCRES" })					// Posicao do orcamento da reserva
 Local nPosDtEmpRes 	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_EMPRES" })					// Posicao do codigo da empresa da reserva
@@ -4328,7 +4326,6 @@ Local cTesInt		:= ""																			// Codigo do Tes de saida
 Local nPrecoTab		:= 0																			// Varivel para armazenar o preco da tabela
 Local cTurnoPad		:= SuperGetMv("MV_LJTURNO",,"M")												// Pega o turno padrao
 Local cB1Tes		:= ""
-Local aTmpColsD    	:= {} 						       											    // Possui aColsDet Zerado
 Local aImps			:= {}
 Local nX			:= 0
 Local cTmpHas		:= ""
@@ -4461,17 +4458,7 @@ If nPos == 0
 		LjSatMxFis()
 	EndIf
 
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³SigaPhoto - Inicializa campos do aColsDet.³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	If nModulo == 72
-		// Carrega aColsDet vazio.
-		aTmpColsD := KDaColsDet()
-
-		AAdd( aColsDet, aTmpColsD[1] )
-	Else
-		aAdd( aColsDet, Array( Len(aHeaderDet)+1 ) )
-	EndIf
+	aAdd( aColsDet, Array( Len(aHeaderDet)+1 ) )
 
 	nPos	:= Len( aColsDet )
 
@@ -4921,10 +4908,10 @@ ElseIf nModulo == 72
 	aColsDet[nPos][nPosDtPrcTab]	:= nPrecoTab
 ElseIf !lIntSynt .AND. !(lAutoExec .AND. !Empty(aColsDet[nPos][nPosDtPrcTab]) )
 	If lCenVenda
-		If ( (!Empty(aCols[n][nPosProd]) .AND. lFTVDVer12) .OR. !lFTVDVer12 ) .AND. ( !IsInCallStack("Lj7LinOk") )
+        If !Empty(aCols[n][nPosProd]) .AND. !IsInCallStack("Lj7LinOk")
 			LjxeValPre (@nPrecoTab	, aCols[n][nPosProd], M->LQ_CLIENTE, M->LQ_LOJA	,;
 						nMoedaCor	, If("LR_QUANT"$ReadVar(),&(ReadVar()),aCols[n][nPosQuant]) )
-			If !(nRotina == 4 .AND. lValidCli) 						
+			If !(nRotina == 4 .AND. (lValidCli .OR. Replace(ReadVar(),"M->","") $ "LR_DESC|LR_VALDESC"))
 				aColsDet[nPos][nPosDtPrcTab]	:= nPrecoTab
 			EndIf
 		EndIf
@@ -4960,7 +4947,7 @@ If !lIntegDef
 	aColsDet[nPos][nPosDtSeguro]	:= If(MaFisFound("IT",n),MaFisRet(n,"IT_SEGURO"),Nil)
 	aColsDet[nPos][nPosDtDespesa]	:= If(MaFisFound("IT",n),MaFisRet(n,"IT_DESPESA"),Nil)
 Endif
-aColsDet[nPos][nPosDtReserva]	:= If(Empty(aColsDet[nPos][nPosDtReserva]),Space(TamSx3("L2_RESERVA")[1]),aColsDet[nPos][nPosDtReserva])
+aColsDet[nPos][nPosCodRes]	:= If(Empty(aColsDet[nPos][nPosCodRes]),Space(TamSx3("L2_RESERVA")[1]),aColsDet[nPos][nPosCodRes])
 aColsDet[nPos][nPosDtLojaRes]	:= If(Empty(aColsDet[nPos][nPosDtLojaRes]),Space(TamSx3("L2_LOJARES")[1]),aColsDet[nPos][nPosDtLojaRes])
 aColsDet[nPos][nPosDtOrcRes]	:= If(Empty(aColsDet[nPos][nPosDtOrcRes]),Space(TamSx3("L2_ORCRES")[1]),aColsDet[nPos][nPosDtOrcRes])
 aColsDet[nPos][nPosDtFilRes]	:= If(Empty(aColsDet[nPos][nPosDtFilRes]),Space(TamSx3("L2_FILRES")[1]),aColsDet[nPos][nPosDtFilRes])
@@ -5596,7 +5583,7 @@ Local nPosQuant		:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_QUANT
 Local nPosDtLocal	:= Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOCAL"})		// Posicao do armazem no aColsDet
 Local nPosLote      := Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_LOTECTL"})     // Posicao do Lote no aColsDet.
 Local nPosSubLote   := Ascan(aPosCpoDet,{|x| AllTrim(Upper(x[1])) == "LR_NLOTE"})       // Posicao do SubLote no aColsDet.
-Local nPosDtReserva	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_RESERVA"})			// Posicao do codigo da reserva
+Local nPosCodRes	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_RESERVA"})			// Posicao do codigo da reserva
 Local nQuanTotal	:= 0								// Soma a Quant. do produto em todas as linhas para ser conferido com o saldo em estoque
 Local nX			:= 0								// Contador para o For que varre o aCols
 Local cTesInt		:= ""								// Codigo do Tes de saida
@@ -5676,7 +5663,7 @@ If SF4->F4_ESTOQUE == "S"
 		//³Se a linha nao estiver deletada³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		If !aCols[nX][Len(aCols[nx])]					// se ja possui reserva nao valida estoque
-			If ValType(aColsDet) == "A" .AND. Len( aColsDet ) >= nX .AND. !Empty(aColsDet[nX][nPosDtReserva])
+			If ValType(aColsDet) == "A" .AND. Len( aColsDet ) >= nX .AND. !Empty(aColsDet[nX][nPosCodRes])
 				lTemRes := .T.
 			Else
 				lTemRes := .F.
@@ -5798,7 +5785,7 @@ Return lRet
 ±±ºParametros³ExpL1 - determina se inicializa o array aCrdCliente         º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³Loja701                                                     º±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+ßßßßßßßßßßßß??ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Function Lj7ValCli(lIniCliCRD)
 Local lRet 			:= .T.
 
@@ -5858,7 +5845,7 @@ Local lMsgExibida	:= .F. 																		// variavel para exibir somente uma v
 Local nPosItem 		:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_ITEM"})][2]		// Posicao da coluna Item
 Local nLenItens		:= 0
 Local nMVLJZRDSC 	:= SuperGetMV("MV_LJZRDSC",,1) 												// Define se o desconto será zerado ou mantido ao alterar o cliente - 1 = Zera | 2 = Mantem o desconto
-Local lRet			:= .T.																		// Define retorno da função
+Local lRet			:= .T.	
 
 Default lIniCliCRD  	:= .T.
 
@@ -5896,7 +5883,6 @@ EndIf
 //³ cliente para os casos em que for digitado F3 e for escolhido o mesmo     ³
 //³ cliente.                                                                 ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-Static cLQCliente := ""
 Static cLQProvEnt := ""
 
 If Empty(cLQCliente) // Caso esteja vazia esta sendo utilizado portanto cliente e loja padrao.
@@ -6232,23 +6218,22 @@ If cLQCliente <> M->LQ_CLIENTE + M->LQ_LOJA
 			M->LQ_RECISS := Posicione( "SA1",1,xFilial("SA1")+M->LQ_CLIENTE+M->LQ_LOJA,"A1_RECISS" )
 		EndIf
 
-		If lFtvdVer12
-			/*Quando o cliente é alterado e tenha produto no aCols e no aClosDet,
-			valida os itens novamente para recalcular o valor dos impostos  */
-			If MaFisFound()
-				If cPaisLoc == "BRA" .AND. Len(aColsDet) > 0 .And. lTrocaCli
-					Lj7VlItem()
-				Else
-					Lj7Detalhe()
-					//Zera o valor do Suframa, quando o cliente não for Suframa
-					If Len(aTotais) > 6 .And. LjVDT_SUFR(2) > 0
-						LjVDT_SUFR( 2, 0 )
-					EndIf
-				EndIf
-			Else
-				Lj7Detalhe()
-			EndIf
-		EndIf
+        /*Quando o cliente é alterado e tenha produto no aCols e no aClosDet,
+        valida os itens novamente para recalcular o valor dos impostos  */
+        If MaFisFound()
+            If cPaisLoc == "BRA" .AND. Len(aColsDet) > 0 .And. lTrocaCli
+                Lj7VlItem()
+            Else
+                Lj7Detalhe()
+                //Zera o valor do Suframa, quando o cliente não for Suframa
+                If Len(aTotais) > 6 .And. LjVDT_SUFR(2) > 0
+                    LjVDT_SUFR( 2, 0 )
+                EndIf
+            EndIf
+        Else
+            Lj7Detalhe()
+        EndIf
+
 	EndIf	
 Endif
 
@@ -6279,7 +6264,6 @@ If lRet
 			Next nX
 		EndIf
 	EndIf
-
 
 	//Aplica regra de desconto se existente, para os itens da venda utilizados na regra.
 	If lFtvdVer12 .AND. cPaisLoc == "BRA" .AND. lCenVenda .And. !Empty(aCols[n][nPosProd]) .And. nPosDesc > 0 .And. nPosVDesc > 0 .And. Lj7TrocCli( lAutoExA , cLQCliente , nTamLQCliente )
@@ -8173,7 +8157,7 @@ Default nTipoDoc	:= 0					//Tipo de documento para emissao
 Static	lImpConc	:= .F.					//Determina se deve efetuar a impressao Concomitante
 
 If nTipoDoc <> 0
-	cLQCliente := ""						//Reinicializa o cliente
+
 	cLQProvEnt := ""
 
 	//³Verifica se eh usuario Fiscal.³
@@ -8443,7 +8427,7 @@ Return lRet
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºParametros³ExpC1 - Codigo do produto digitado                          º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºUso       LOJA701                                                     º±±
+±±ºUso       ??LOJA701                                                     º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Function  Lj7GetMot()
 
@@ -8459,7 +8443,7 @@ Return oBk
 ±±ºDesc.     ³Calcula o valor do item, aplicando descontos da regra de    º±±
 ±±º          ³descontos, quando houver regras cadastradas.                º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
-±±ºParametros³ExpC1 - Codigo do produto digitado                          ±±
+±±ºParametros³ExpC1 - Codigo do produto digitado                          ??±±
 ±±º          ³ExpL2 - Indica se utiliza venda concomitante                º±±
 ±±º          ³ExpA3 - aCols da Venda assistida                            º±±
 ±±º          ³ExpA4 - aHeader da Venda assistida                          º±±
@@ -8638,7 +8622,7 @@ If lSFinanc
 	aAreB1			:=  GetArea ("SB1") // Armazena area SB1
 	DbSelectArea("SB1")
 	DbSetOrder(1) // B1_FILIAL+B1_COD
-	If DbSeek ( xFilial ("SB1")+cProdAtu) .AND. SB1->B1_TIPO == SuperGetMV("MV_LJTPSF",,"SF")
+	If DbSeek ( xFilial ("SB1")+cProdAtu) .AND. SB1->B1_TIPO == SuperGetMV("MV_LJTPSF",,"SF") .AND. !IsBlind()
 		MsgAlert (STR0110) //#"Desconto não permitido para produtos do tipo Serviço Financeiro"
 		lRet 	:= .F.
 	EndIf
@@ -8831,17 +8815,19 @@ Local nDesconto		:= 0		// Caso o desconto esteja preenchida no cabecalho, esta v
 Local aColsAux      := aClone(aCols[n]) //Armazena a copia do aCols que sera usado como referencia para incluir um novo registro no acols
 Local aB1DePrv      := {}
 Local nPosProd		:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_PRODUTO"})][2]			// Posicao da codigo do produto
-Local nPosDescri	:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_DESCRI"})][2]			// Posicao da descricao do produto
+Local nPosDescri	:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_DESCRI"})][2]				// Posicao da descricao do produto
 Local nPosQuant		:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_QUANT"})][2]				// Posicao da Quantidade
 Local nPosVlUnit	:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_VRUNIT"})][2]				// Posicao do Valor unitario do item
 Local nPosVlItem	:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_VLRITEM"})][2]			// Posicao do Valor do item
 Local nPosDesc		:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_DESC"})][2]				// Posicao do percentual de desconto
 Local nPosValDesc	:= aPosCpo[Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_VALDESC"})][2]			// Posicao do valor de desconto
-Local nPosKit       := Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_KIT"})			    	// Posicao do campo que indica se o item eh kit
-Local cItOri        := AllTrim(Str(Len(aCols)))
+Local nPosKit       := Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_KIT"})			    			// Posicao do campo que indica se o item eh kit
+Local nPosItem 		:= Ascan(aPosCpo,{|x| AllTrim(Upper(x[1])) == "LR_ITEM"}) 							// Posicao do campo LR_ITEM
+Local cItOri        := aCols[n,nPosItem]
 Local nBkpLinha		:= 0
 Local lContinua		:= .T.
 Local cChaveMEV		:= ""
+Local cItem 		:= ""
 
 Default aCols  		:= {}
 Default nItem  		:= 0
@@ -8849,7 +8835,7 @@ Default cProduto  	:= ""
 Default nQtdKit		:= 1
 
 nBkpLinha := n
-nItem := len(aCols)
+nItem := n
 
 DbSelectArea("MEU")
 MEU->(DbSetOrder(1)) // MEU_FILIAL+MEU_CODIGO
@@ -8913,8 +8899,10 @@ If lContinua
 
             If (MEV->MEV_FILIAL + MEV->MEV_CODKIT == cChaveMEV)
                 aColsAux    := aClone(aCols[n])//registro modelo para incluir mais um registro
-                nItem = Len(aCols) + 1   //incrementa o contador
-                aColsAux[1] := padl(AllTrim(str(nItem)),2,"0") //atualiza o item sequencial do registro
+                nItem := Len(aCols)
+				cItem := aCols[nItem,nPosItem]	// Atribui o valor do último item do aCols
+				nItem++   //incrementa o contador
+				aColsAux[nPosItem] 	:= Soma1(cItem) //Atualiza o item sequencial do registro
                 AAdd(aCols,aColsAux) //adiciona um novo registro
                 n:= nItem //atualiza a posicao do registro
                 aCols[n][nPosVlItem] := 0
@@ -9152,7 +9140,7 @@ If !Lj7T_VlTp(nTipo, "Lj7T_Quant", uParam)
 	Return .F.
 EndIf
 
-Return Lj7T_Array( 7, nTipo, uParam )
+Return Lj7T_Array( 8, nTipo, uParam )
 
 
 /*
@@ -9624,15 +9612,15 @@ Default nVlrDespesa	:= 0			// Valor digitado do Despesas
 
 Do Case
 	Case nVlrFtrete < 0
-		Aviso(STR0035, STR0138)		// "Ateção", "Não é permitido informar valor negativo para Frete!"
+		Aviso(STR0035, STR0138)		// "Atenção", "Não é permitido informar valor negativo para Frete!"
 		M->LQ_FRETE	:= 0    // Se o valor for invalidp, zera a variável
 		lRet := .F.
 	Case nVlrSeguro < 0
-		Aviso(STR0035, STR0139)		// "Ateção", "Não é permitido informar valor negativo para Seguro!"
+		Aviso(STR0035, STR0139)		// "Atenção", "Não é permitido informar valor negativo para Seguro!"
 		M->LQ_SEGURO := 0	// Se o valor for invalidp, zera a variável
 		lRet := .F.		
 	Case nVlrDespesa < 0
-		Aviso(STR0035, STR0140)		// "Ateção", "Não é permitido informar valor negativo para Despesas!"
+		Aviso(STR0035, STR0140)		// "Atenção", "Não é permitido informar valor negativo para Despesas!"
 		M->LQ_DESPESA := 0	    // Se o valor for invalidp, zera a variável
 		lRet := .F.
 EndCase
@@ -9676,7 +9664,7 @@ Return cLQCliente
 Function Lj7ApagRes()
 	
 Local nPosProd		:= aPosCpo[Ascan(aPosCpo,{|x| Alltrim(Upper(x[1])) == "LR_PRODUTO"})][2]	// Posicao da codigo do produto
-Local nPosDtReserva	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_RESERVA"})				// Posicao do codigo da reserva
+Local nPosCodRes	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_RESERVA"})				// Posicao do codigo da reserva
 Local nPosDtLojaRes	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_LOJARES"})				// Posicao do codigo da reserva
 Local nPosDtLocal  	:= Ascan(aPosCpoDet,{|x| Alltrim(Upper(x[1])) == "LR_LOCAL"})				// Posicao do local (armazem)
 Local nPosItem		:= aPosCpo[Ascan(aPosCpo,{|x| Alltrim(Upper(x[1])) == "LR_ITEM"})][2]		// Posicao do Codigo do item
@@ -9696,12 +9684,13 @@ Local lRet			:= .T.																		// Retorna se é para trocar o cliente
 Local lItReserv 	:= .F.																		// Controla se já foi gravado orçamento
 Local aAreaSL2		:= SL2->(GetArea())            												// Guarda Area SL2
 Local lApagaSC 		:= .F.																		// Guarda que as Solicitações de compras já foram apagadas
+Local nLjGerSc 		:= SuperGetMV("MV_LJGERSC",,1)												// Se utiliza o conceito de gerar Solicitação de Compras para reserva sem estoque.
 
 If !Empty(aColsDet)
 	For nX := 1 to Len(aCols)
-		If !aCols[nX][Len(aCols[nX])] .AND. Len(aColsDet) >= nX .AND. !Empty(aColsDet[nX][nPosDtReserva]) .AND. aCols[nX][nPosEntr] <> "5"
+		If !aCols[nX][Len(aCols[nX])] .AND. Len(aColsDet) >= nX .AND. !Empty(aColsDet[nX][nPosCodRes]) .AND. aCols[nX][nPosEntr] <> "5"
 
-			aAdd(aReservas, {	aColsDet[nX][nPosDtReserva],;		// Codigo da reserva
+			aAdd(aReservas, {	aColsDet[nX][nPosCodRes],;		// Codigo da reserva
 								aColsDet[nX][nPosDtLojaRes],;		// Codigo da loja
 								aCols[nX][nPosProd],;				// Codigo do produto
 								aColsDet[nX][nPosDtLocal],;			// Local (armazem) da reserva
@@ -9722,7 +9711,7 @@ If !Empty(aColsDet)
 			// Verifica se já foi gravado orçamento
 			DbSelectArea("SL2")
 			DbSetOrder(5) 		// SL2->L2_FILIAL + SL2->L2_RESERVA + SL2->L2_LOJARES + SL2->L2_PRODUTO + SL2->L2_ITEM
-			If !lItReserv .AND. SL2->(DbSeek(xFilial("SL2") + aColsDet[nX][nPosDtReserva] + aColsDet[nX][nPosDtLojaRes] + aCols[nX][nPosProd] + aCols[nX][nPosItem]))
+			If !lItReserv .AND. SL2->(DbSeek(xFilial("SL2") + aColsDet[nX][nPosCodRes] + aColsDet[nX][nPosDtLojaRes] + aCols[nX][nPosProd] + aCols[nX][nPosItem]))
 				lItReserv := .T.
 			EndIf	
 
@@ -9760,14 +9749,14 @@ If Len(aReservas) > 0
 					aCols[nX][nPosEntr]	 := ""
 
 					// Só chama função para apagar solicitações se houver SC (!Empty(aColsDet[nX][nPosSolCom]))
-					If !lApagaSC .AND. !Empty(aColsDet[nX][nPosSolCom])
+					If nLjGerSc <> 1 .AND. !lApagaSC .AND. !Empty(aColsDet[nX][nPosSolCom])
 						// Apaga as Solicitações de Compras 
 						LA590CncVA(M->LQ_NUM, xFilial("SL1"), aColsDet[nX][nPosSolCom], IIf(nPosFilRes>0,aColsDet[nX][nPosFilRes],""), aCols, nPosProd, nPosQuant, .T.)				
 						lApagaSC := .T.
 					Endif
 
 					// Atualiza dados do aColsDet
-					aColsDet[nX][nPosDtReserva] := ""
+					aColsDet[nX][nPosCodRes] := ""
 					aColsDet[nX][nPosDtLojaRes] := ""
 
 				EndIf

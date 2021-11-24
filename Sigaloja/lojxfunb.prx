@@ -3330,6 +3330,7 @@ Local lLjxImpRed	:= ExistFunc("LjxImpRede")
 Local lMvFisNota	:= SuperGetMv("MV_FISNOTA",, .F.)		//Imprime Nota Fiscal		
 Local lMvLjLbNt		:= SuperGetMv("MV_LJLBNT",,0) > 0		//Liberação de Geração de Nota.(0- Verificação Padrão, 1- Emissão de Nota para Pessoa Jurídica, 2 - Emissão de Nota para Pessoa Física e Jurídica) .	
 Local lPOS			:= STFIsPOS() 							// Valida se é POS
+Local oTEF20 		:= Nil
 
 /* O nome da impressora foi alterada na DLL depois de enviado para producao
  criada a impressora BEMATECH MP20FI I e foi preciso acrescentar o II para diferenciar.  */
@@ -3583,6 +3584,7 @@ If IsCaixaLoja( cNumCaixa )
 			EndIf
 			
 			If nRet <> 0
+				lImpENF := .F.
 				lFiscal := .F.
 				MsgStop(	STR0148 +  cImpressora + STR0149 + CHR(10) + CHR(13) + ;	//"Houve falha de comunicação com a impressora configurada nessa estação: " ## " e a conexão será finalizada."
 							STR0150 + CHR(13) + ; 										//"Motivo: O usuário atual possui permissão para utilizar TEF onde é obrigatório a impressão do comprovante na finalização da venda."
@@ -3683,8 +3685,13 @@ If IsCaixaLoja( cNumCaixa )
 			EndIf
 
 			//Consulta o Firmware da Impressora
-			If "DARUMA DR800" $ Upper(Alltrim(cImpressora)) .And. nHdlEcf == 0
-				cVerFirm := LjVerFirm(nHdlECF, "1")
+			If nHdlEcf == 0
+				If "DARUMA DR800" $ Upper(Alltrim(cImpressora))
+					cVerFirm := LjVerFirm(nHdlECF, "1")
+				EndIf
+				lImpENF := .T.
+			Else
+				lImpENF := .F. //Seta como falso a comunicação com a Impressora Não Fiscal
 			EndIf
 
 		EndIf
@@ -3703,10 +3710,15 @@ If IsCaixaLoja( cNumCaixa )
 			
 			If nRet <> 0
 		    	lImpTk	:= .F.
+				lImpENF := .F. //Seta como falso a comunicação com a Impressora Não Fiscal
 		    	Final( STR0115 )								//"Falha na comunicação com a Impressora..."
+			Else
+				lImpENF := .T.
 			EndIf
 		EndIf
 	EndIf
+
+	LjGrvLog("[TPD] LjOpenDevices ", " Antes da inicialização do objeto oTEF - lUsaTEF ", lUsaTEF)
 
 	If lUsaTEF
 		If cTipTEF $ TEF_SEMCLIENT_DEDICADO+";"+TEF_COMCLIENT_DEDICADO+";"+TEF_DISCADO
@@ -3740,6 +3752,16 @@ If IsCaixaLoja( cNumCaixa )
 			oTEF 	:= LJACENTPAG():New()	    				//Prepara o objeto TEF e carrega as variáveis necessárias para a utilização do TEF
 			lUsaTef := oTef:lAtivo						//Indica se a abertura de terminal foi processada com sucesso
 		EndIf
+
+		//--------------------
+		// Instancia o TEF 2.0
+		//--------------------
+		LjGrvLog("[TPD] LjOpenDevices ", " Antes de iniciar o objeto oTEF20", )
+		If ExistFunc("LjIniTEF20")
+			LjIniTEF20(@oTEF20)
+		EndIf
+		LjGrvLog("[TPD] LjOpenDevices ", " Após iniciar o objeto oTEF20 - Type -> oTEF20", ValType(oTEF20) )
+
 	EndIf
 
 EndIf
@@ -3863,7 +3885,7 @@ If lFiscal .AND. (!lEmitNfce .Or. lIsPafNfce)
 	nRet := IFFechar( nHdlECF, LJGetStation("PORTIF") )
 EndIf
 
-If lImpTk
+If lImpTk .Or. (lFtvdVer12 .And. lImpENF)
 	nRet := INFFechar()
 EndIf
 
@@ -4053,6 +4075,15 @@ If ExistFunc("LjMExeParam")
 
 	cNatAux := LjMExeParam("MV_NATDEV")
 	GravaSED( cNatAux,  cNatAux )   // Natureza DEV./TROCA
+
+	If ExistFunc("LjUsePayHub") .And. LjUsePayHub()
+		cNatAux := LjMExeParam("MV_NATPGDG")
+		GravaSED( cNatAux,  "PAGAMENTO DIGITAL" )   // Natureza PAGDIGITAL (Pagamento Digital)
+
+		cNatAux := LjMExeParam("MV_NATPGPX")
+		GravaSED( cNatAux,  "PIX" )
+	EndIf
+
 Else
 	/* Realiza a verificacao do conteudo do parametro MV_NATTEF */
 	cNattef := SuperGetMV("MV_NATTEF")
@@ -4328,7 +4359,8 @@ Local lIsMDI 		:= Iif(ExistFunc("LjIsMDI"),LjIsMDI(),SetMDIChild(0)) //Verifica 
 Local lMvFisNota	:= SuperGetMv("MV_FISNOTA",, .F.)						//Imprime Nota Fiscal		
 Local lMvLjLbNt		:= SuperGetMv("MV_LJLBNT",,0) > 0						//Liberação de Geração de Nota.(0- Verificação Padrão, 1- Emissão de Nota para Pessoa Jurídica, 2 - Emissão de Nota para Pessoa Física e Jurídica) .	
 Local lAdmin		:= (__cUserID == "000000")								//User Admin
-Local aCodRet		:= {}
+Local aCodPgto		:= {} 													// array com meios de pagamento da SEFAZ NT 006 v 1.2
+Local aCodBand		:= {}													// array com código de bandeira da SEFAZ NT 006 v 1.2
 
 Default lAuto 		:= .F.
 
@@ -4413,7 +4445,6 @@ ElseIf lFtvdVer12
 
 	Public lFTStartSilenc
 	Public lFTVDStartLoja
-
 
 	If ValType(lFTVDStartLoja) == "L"
 		Return(NIL)
@@ -4572,8 +4603,9 @@ If AliasInDic("MHW")
 	MHW->(DbGoTop())
 
 	If MHW->(EoF())
-		aCodRet := CriaPgSEFAZ()
-		LJIncMHW(aCodRet)
+		aCodPgto := CriaPgSEFAZ()
+		aCodBand := CriaCBSEFAZ()
+		LJIncMHW(aCodPgto, aCodBand)
 	EndIf
 EndIf
 
@@ -4634,6 +4666,11 @@ EndIf
 //Essa função deve ser removida quando mudar a release do protheus
 If ExistFunc("LjxAAjSX")
 	LjxAAjSX()
+EndIf
+
+//Cria objeto RAAS Integration
+If ExistFunc("LjxRaasInt") .And. LjxRaasInt()
+    LjxRaasNew(cEstacao)
 EndIf
 
 Return
@@ -6731,7 +6768,7 @@ cCodSup	:= LjSelSup( aCodSup , @cSuperSel, aUsers )
 //2.  Se o parametro MV_AUTOCOM, estiver configurado como 1 (Autocom e Sigaloja) ou 2 (Autocom)
 //3.  Se existe comunicação com o PinPad
 
-If lCliSitef .AND. (nAUTOCOM == DLL_SIGALOJA_AUTOCOM .OR. nAUTOCOM == DLL_AUTOCOM) .AND.  oAutocom:SIT_VERPIN() == 1
+If lCliSitef .AND. (nAUTOCOM == DLL_SIGALOJA_AUTOCOM .OR. nAUTOCOM == DLL_AUTOCOM) .AND. Type("oAutocom") == "O" .And. oAutocom:SIT_VERPIN() == 1
 
 	If !Empty(cCodSup)
 		dbSelectArea("SLF")
@@ -8126,13 +8163,17 @@ Return nil
 
 /*/
 //-------------------------------------------------------------------
-Function Lj7DelSC1(cOrcamento, cLojaRes)
+Function Lj7DelSC1(cOrcamento, cLojaRes, cProduto, nQuant )
 Local cFilAux 		:= cFilAnt		// Guarda Filial original 
 Local cFilTrab		:= ""			// Filial da loja que foi feita reserva
 Local cFilialSC1	:= ""			// Filial que foi feita Solicita de Compras
+Local cAliasSC1		:= GetNextAlias()
+Local cQuery		:= ""
 
 Default cLojaRes	:= ""			// Loja que foi gerada a reserva
 Default cOrcamento  := ""			// Número do orçamento(SL2->L2_NUM)
+Default cProduto	:= ""			// Produto da solicitação de Compras
+Default nQuant		:= 0			// Quantidade da Solicitação de Compras
 
 If SLJ->(dbSeek(xFilial("SLJ")+cLojaRes))
 	cFilTrab 	:= SLJ->LJ_RPCFIL
@@ -8143,17 +8184,44 @@ If !Empty(cFilTrab) .AND. !Empty(cOrcamento)
 	cFilAnt 	:= cFilTrab				
 	cFilialSC1	:= xFilial("SC1")		
 
-	SC1->( DbSetOrder(10) ) //C1_FILIAL+C1_ORCAM
-	If  SC1->( DbSeek(cFilialSC1+cOrcamento) )
-		While SC1->( !(Eof()) .And. (SC1->C1_FILIAL) == cFilialSC1 .And. (SC1->C1_ORCAM == cOrcamento) )
-			If Lj7VerifSC1() // Verifica se a SolicitaçãO de Compras não contém pendências e pode ser excluída
-				RecLock("SC1",.F.)
-				SC1->(dbDelete())
-				SC1->(MsUnLock())
-			EndIf
-			SC1->(DbSkip())	
-		End	
+	// Trecho para caso a rotina for acionada ao deletar o item na linha do orçamento
+	// para soh deletar a solicitação do item da linha.
+	If !Empty(cProduto) .AND. nQuant > 0
+
+		cQuery := " SELECT C1_FILIAL, C1_NUM, C1_PRODUTO, C1_QUANT, C1_ORCAM, R_E_C_N_O_ AS RECNOSC1 "
+		cQuery += " FROM " + RetSQLName("SC1") + " SC1 "
+		cQuery += " WHERE SC1.C1_FILIAL = '" + cFilialSC1 + "'"
+		cQuery += " AND SC1.C1_ORCAM 		= '" + cOrcamento + "' "
+		cQuery += " AND SC1.C1_PRODUTO		= '" + cProduto + "' "
+		cQuery += " AND SC1.C1_QUANT		= " + Str(nQuant) + " "
+		cQuery += " AND SC1.D_E_L_E_T_ 	= ' ' "
+
+		LJa801ExQu(cAliasSc1,@cQuery)		
+
+		If !(cAliassc1)->(EOF())
+			SC1->(dbgoto((cAliassc1)->RECNOSC1))
+			RecLock("SC1",.F.)
+			SC1->(dbDelete())
+			SC1->(MsUnLock())
+		Endif
+
+		(cAliasSc1)->(DbCloseArea())
+
+	Else		
+
+		SC1->( DbSetOrder(10) ) //C1_FILIAL+C1_ORCAM
+		If  SC1->( DbSeek(cFilialSC1+cOrcamento) )
+			While SC1->( !(Eof()) .And. (SC1->C1_FILIAL) == cFilialSC1 .And. (SC1->C1_ORCAM == cOrcamento) )
+				If Lj7VerifSC1() // Verifica se a SolicitaçãO de Compras não contém pendências e pode ser excluída
+					RecLock("SC1",.F.)
+					SC1->(dbDelete())
+					SC1->(MsUnLock())
+				EndIf
+				SC1->(DbSkip())	
+			End	
+		EndIf
 	EndIf
+
 EndIf	
 // Retorna para Filial de original
 cFilAnt := cFilAux	
@@ -8270,11 +8338,12 @@ Popula tabela MHW.
 @author     eduardo.sales
 @since      11/03/2021
 @version    P12
-@param 		aCodRet, Array, Array com a lista de Códigos de Meios de pagamento do Sefaz.
+@param 		aCodPgto, Array, Array com a lista de Códigos de Meios de pagamento do Sefaz.
+@param 		aCodBand, Array, Array com a lista de Códigos da Bandeira do Sefaz.
 @return 	Nil, Nulo
 /*/
 //-------------------------------------------------------------------------------------
-Static Function LJIncMHW(aCodRet)
+Static Function LJIncMHW(aCodPgto, aCodBand)
 
 Local nCont		:= 0  
 Local nSaveSx8 	:= GetSx8Len()
@@ -8283,12 +8352,23 @@ INCLUI := .T.
 
 //Carga inicial na tabela MHW
 DbSelectArea("MHW")
-For nCont := 1 To Len(aCodRet)
+For nCont := 1 To Len(aCodPgto)
 	MHW->(RecLock("MHW",.T.))
 	MHW->MHW_FILIAL	:= xFilial("MHW")
 	MHW->MHW_CODIGO	:= CriaVar("MHW_CODIGO")
-	MHW->MHW_FORMPG	:= aCodRet[nCont,1]
-	MHW->MHW_CDNFCE := aCodRet[nCont,2]
+	MHW->MHW_TIPO	:= 'PG'
+	MHW->MHW_CONTEU	:= aCodPgto[nCont,1]
+	MHW->MHW_CDNFCE := aCodPgto[nCont,2]
+	MHW->(MsUnlock())
+Next nCont
+
+For nCont := 1 To Len(aCodBand)
+	MHW->(RecLock("MHW",.T.))
+	MHW->MHW_FILIAL	:= xFilial("MHW")
+	MHW->MHW_CODIGO	:= CriaVar("MHW_CODIGO")
+	MHW->MHW_TIPO	:= 'BD'
+	MHW->MHW_CONTEU := aCodBand[nCont,1]
+	MHW->MHW_CDNFCE := aCodBand[nCont,2]
 	MHW->(MsUnlock())
 Next nCont
 
@@ -8345,3 +8425,52 @@ EndIf
 RestArea( aAreaSED )
 
 Return lRet
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} CriaCBSEFAZ
+Cria o array com codigo de bandeiras que deveram ser enviados para SEFAZ
+
+@author  caio.okamoto
+@since   10/05/2021
+@version P12
+@return	 Array, Array com a lista de Códigos de Bandeiras do Sefaz.
+/*/
+//-------------------------------------------------------------------
+Static Function CriaCBSEFAZ()
+
+Local aCodBand := {}
+
+//--------------------------------------------
+//	Código da Bandeira SEFAZ - Tag <tBand>
+//--------------------------------------------
+
+aAdd( aCodBand, { "Visa"			, "01" } ) //01 Visa
+aAdd( aCodBand, { "Mastercard"		, "02" } ) //02 Mastercard
+aAdd( aCodBand, { "American Express", "03" } ) //03	American Express
+aAdd( aCodBand, { "Sorocred"		, "04" } ) //04	Sorocred
+aAdd( aCodBand, { "Diners Club"		, "05" } ) //05	Diners Club
+aAdd( aCodBand, { "Elo"				, "06" } ) //06	Elo
+aAdd( aCodBand, { "Hipercard"		, "07" } ) //07	Hipercard
+aAdd( aCodBand, { "Aura"			, "08" } ) //08	Aura
+aAdd( aCodBand, { "Cabal"			, "09" } ) //09	Cabal
+aAdd( aCodBand, { "Alelo"			, "10" } ) //10	Alelo
+aAdd( aCodBand, { "Banes Card"		, "11" } ) //11	Banes Card
+aAdd( aCodBand, { "CalCard"			, "12" } ) //12	CalCard 
+aAdd( aCodBand, { "Credz"			, "13" } ) //13	Credz
+aAdd( aCodBand, { "Discover"		, "14" } ) //14	Discover
+aAdd( aCodBand, { "GoodCard"		, "15" } ) //15	GoodCard
+aAdd( aCodBand, { "GreenCard"		, "16" } ) //16	GreenCard
+aAdd( aCodBand, { "Hiper"			, "17" } ) //17	Hiper
+aAdd( aCodBand, { "JcB"				, "18" } ) //18	JcB
+aAdd( aCodBand, { "Mais"			, "19" } ) //19	Mais
+aAdd( aCodBand, { "MaxVan"			, "20" } ) //20	MaxVan
+aAdd( aCodBand, { "Policard"		, "21" } ) //21	Policard
+aAdd( aCodBand, { "RedeCompras"		, "22" } ) //22	RedeCompras
+aAdd( aCodBand, { "Sodexo"			, "23" } ) //23	Sodexo
+aAdd( aCodBand, { "ValeCard"		, "24" } ) //24	ValeCard
+aAdd( aCodBand, { "Verocheque"		, "25" } ) //25	Verocheque
+aAdd( aCodBand, { "VR"				, "26" } ) //26	VR
+aAdd( aCodBand, { "Ticket"			, "27" } ) //27	Ticket
+aAdd( aCodBand, { "Outros"			, "99" } ) //99	Outros
+
+Return aCodBand

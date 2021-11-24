@@ -297,6 +297,7 @@ Local aDadosNFCp	:= {}						// Dados para a exclusão da Nota Sobre Cupom
 Local cNFCupom   	:= ""						// Numero da Nota Sobre Cupom
 Local lCancNFCup	:= .T.						// Informar se cancelou NF sobre Cupom
 Local lIsNFeDen		:= .F.						// Informa se é nota Denegada
+Local aPagDigPix 	:= {} 											//Informações de Pagamentos Digitais da venda
 
 Private aHeader[0]
 Private aCols[0]
@@ -914,12 +915,25 @@ While .T.
 							Return .F.
 						EndIf
 					EndIf
+
+					//Cancela transações de Pagamento Digital.
+					If ExistFunc("LjPDGtPGrv") .And. ExistFunc("LjPDCanTrn")
+						//Busca informações de Pagamentos Digitais gravados na venda.
+						aPagDigPix	:= LjPDGtPGrv(SL1->L1_NUM, .T.)
+
+						If Len(aPagDigPix) > 0 .And. !LjPDCanTrn(@aPagDigPix)
+							//Se o cancelamento de Pagamento Digital não teve sucesso, não permito prosseguir com o cancelamento da venda
+							Help( 	" ", 1, "TOTVSTDP", ,STR0228, 1, 0 ) // "Operação de cancelamento de Pagamento Digital/PIX não realizada, portanto a venda não poderá ser cancelada."
+							Return .F.
+						EndIf
+					EndIf
+
 				EndIf
 			Else
 				Return .F.
 			Endif
 
-			If !aAuxRet[14] .Or. (cModDoc $ "55|65" .And. !Lj140DOCe(aOrcamento)) .AND. !lIsNFeDen
+			If !aAuxRet[14] .Or. (cModDoc $ "55|65|59" .And. !Lj140DOCe(aOrcamento)) .AND. !lIsNFeDen
 				Return .F.
 			EndIf
 
@@ -1220,13 +1234,7 @@ While .T.
 					HS_ExclRAt(M->L1_NUM, aOrcamento[nCnt][3])
 				EndIf		
 				
-				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-				//³Verifica se o Integraçao com o Plano de Saude   	 					       ³
-				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-				If lRetorno .AND. (HasTemplate("DRO") .Or. (ExistFunc("LjIsDro") .And. LjIsDro())) .AND. SuperGetMv("MV_PLSATIV",.F.,.F.);
-					.AND. !Empty(SL1->L1_MATRIC) .AND. ExistFunc("PLSDELVE")
-						PLSDELVE(M->L1_DOC,SL1->L1_MATRIC)
-				Endif
+				//trecho retirado dédito técnico funções não compiladas
 			
 				If cPaisLoc == "GUA" .AND. lGeraNCC .AND. lRetorno
 					Lj021Imprime()
@@ -1517,8 +1525,20 @@ If lRet
 	//------------------------------------------------------------------
 	// Verifica se a venda foi paga com Vale Presente e estorna o mesmo.
 	//------------------------------------------------------------------
-	LjGrvLog( SL1->L1_NUM, "lj140Exc | Antes de enviar para LJ140Grava " , )
+	LjGrvLog( SL1->L1_NUM, "lj140Exc | Antes de enviar para Lj140EstVP" , )
 	Lj140EstVP( cNum )
+
+    //Cancela o bonus de uma venda cancelada    
+    If ExistFunc("LjxRaasInt") .And. LjxRaasInt() .And. SL1->L1_FIDCORE
+
+        Lj7FidCanc(SL1->L1_FILIAL + SL1->L1_NUM, SL1->L1_ESTACAO)
+
+        RecLock("SL1", .F.)
+            SL1->L1_DESCONT := SL1->L1_DESCONT - SL1->L1_DESCFID
+            SL1->L1_DESCFID := 0
+            SL1->L1_FIDCORE := .F.
+        SL1->( MsUnLock() )
+    EndIf
 EndIf
 
 Return lRet
@@ -1967,6 +1987,17 @@ Begin Transaction
 			EndIf
 
 		   	If SC5->(DbSeek(xFilial("SC5")+ cPedRes))
+
+                RecLock("SC5", .F.)
+					SC5->C5_STATUS  := "90"	//Cancelado
+					SC5->C5_VOLTAPS := ""
+				SC5->( MsUnLock() )
+
+				//Mensagem de rastreio de pedido
+				If FwHasEai("MATA410B", .T., , .T.)
+					FwIntegDef("MATA410B")
+				EndIf
+
 	    		DbSelectArea("SC6")
 				SC6->(DbSetOrder(1)) //C6_FILIAL+C6_NUM
 				If SC6->(DbSeek(xFilial("SC6")+SC5->(C5_NUM)))
@@ -2002,17 +2033,7 @@ Begin Transaction
 						End
 					EndIf
 
-				EndIf	
-				
-				RecLock("SC5", .F.)
-					SC5->C5_STATUS  := "90"	//Cancelado
-					SC5->C5_VOLTAPS := ""
-				SC5->( MsUnLock() )
-
-				//Mensagem de rastreio de pedido
-				If FwHasEai("MATA410B", .T., , .T.)
-					FwIntegDef("MATA410B")
-				EndIf
+				EndIf									
 				
 				If lAtStEC
 					RecLock("SL1", .F.)
@@ -2389,6 +2410,7 @@ Local lRet	 		:= .T.																// Retorno da funcao
 Local cTexto 		:= If(lVendido,STR0032,STR0033) 									// "do orçamento"###"da venda"
 Local nRegs         := Len(aCols)														// Qunantidade de registros
 Local cOrcPai       := ""                                                        		// Orcamento Pai
+Local cOrigemPai    := ""
 Local nCntRes       := 0																// Contador de reserva
 Local lLjPrdRes		:= ExistBlock("LJPRDRES")											// Se existe ponto de entrada
 Local lLjPrdResT	:= ExistTemplate("LJPRDRES")										// Template
@@ -2432,7 +2454,8 @@ EndIf
 
 If !Empty( SL1->L1_DOCPED )
 	
-	cOrcPai := SL1->L1_NUM
+	cOrcPai    := SL1->L1_NUM
+    cOrigemPai := SL1->L1_ORIGEM
 	SL1->( DbSetOrder( 1 ) )
 	
 	For nX := 1 to nRegs
@@ -2452,7 +2475,7 @@ If !Empty( SL1->L1_DOCPED )
 					cPedSFat := SL1->L1_PEDRES
 				EndIf
 
-				If lPedVen .AND. !Empty(SL1->L1_PEDRES) .AND. !LjCancPed(aReservas[nX][1], SL1->L1_PEDRES)
+				If lPedVen .AND. !Empty(SL1->L1_PEDRES) .AND. Alltrim(cOrigemPai) <> "N" .AND. !LjCancPed(aReservas[nX][1], SL1->L1_PEDRES)
 					lRet := .F.
 					Exit
 				EndIf
@@ -3271,6 +3294,9 @@ Local cCliLoja		:= ""							// Loja da Nota
 Local aRetCartao 	:= {}							//Variavel para guardar as informacoes do array "oTef:aRetCartao" caso estiver configurado a CLISITEF
 Local aCartaoSL4	:= {}							//Variavel para guardar as informacoes do cancelamento do cartao para atualizar campos na tabela SL4
 
+Local lContinua 	:= .T.
+Local aPagDigPix 	:= {} 							//Informações de Pagamentos Digitais da venda
+
 Default cProtoNfce	:= ""
 Default lCancECF	:= .F.
 
@@ -3290,15 +3316,29 @@ If SL2->(ColumnPos("L2_PEDSC5")) > 0 .And. SL2->(ColumnPos("L2_ITESC6")) > 0 .An
 	EndIf
 Endif
 
-/* Cancela o TEF na base de dados */
-Lj140CnTEF(@lTefOk		, @lJob			, @lVendTef		, @aChave	,;
-		   @cNumNota	, @cSerNota		, @cCliNota		, @cCliLoja	,; 
-		   @cDescMot	, @lAchouSF2	, @lExisteFT	, @lNfCup	,;	
-		   @aItensSD2	, @cNumNfCup	, @cSerNfCup	, @nTamDoc	,;
-		   @lCrdxInt	, @aRetCrd		, @lGeraNCC		, @aItensSF2,;
-		   @aItensSD2	, cNumNFDev		, cSerieDev		, cMotivo	,;
-		    cNum	 	, aRetCartao	, aCartaoSL4	, aChaveSL1 ,;
-			cProtoNfce)
+If lTefOk
+	//Cancela transações de Pagamento Digital.
+	If ExistFunc("LjPDGtPGrv") .And. ExistFunc("LjPDCanTrn")
+		//Busca informações de Pagamentos Digitais gravados na venda.
+		aPagDigPix	:= LjPDGtPGrv(SL1->L1_NUM, .T.)
+
+		If Len(aPagDigPix) > 0
+			lContinua := LjPDCanTrn(@aPagDigPix)
+		EndIf
+	EndIf
+EndIf
+
+If lContinua
+	/* Cancela o TEF na base de dados */
+	Lj140CnTEF(@lTefOk		, @lJob			, @lVendTef		, @aChave	,;
+			   @cNumNota	, @cSerNota		, @cCliNota		, @cCliLoja	,; 
+			   @cDescMot	, @lAchouSF2	, @lExisteFT	, @lNfCup	,;	
+			   @aItensSD2	, @cNumNfCup	, @cSerNfCup	, @nTamDoc	,;
+			   @lCrdxInt	, @aRetCrd		, @lGeraNCC		, @aItensSF2,;
+			   @aItensSD2	, cNumNFDev		, cSerieDev		, cMotivo	,;
+			    cNum	 	, aRetCartao	, aCartaoSL4	, aChaveSL1 ,;
+				cProtoNfce)
+EndIf
 
 Return .T.
 
@@ -4131,6 +4171,11 @@ If FunName() <> "STBORCCANCEL"
 	REPLACE SL1->L1_BLCRED   	With ""
 	REPLACE SL1->L1_VALICM		With 0
 	
+	If SL1->(ColumnPos("L1_VLRPGDG")) > 0
+		REPLACE SL1->L1_VLRPGDG  With 0
+		REPLACE SL1->L1_VLRPGPX  With 0
+	EndIf
+
 	If lCrdxInt .AND. SL1->(ColumnPos("L1_CONTRA")) > 0
 		REPLACE SL1->L1_CONTRA  With ""
 	EndIf
@@ -4240,6 +4285,7 @@ Static Function Lj140CnFin( aChave, lCrdxInt, aRetCrd, aChaveSL1, lReserva )
 
 Local aParc        	:= {}							                //Parcelas
 Local cChaveSE1    	:= ""							                //Chave para SE1
+Local cChvSemPar    := ""							                //Chave para SE1 sem a parcela
 Local lDelSE5      	:= .F. 						                	//Variavel que verificara se o SE5 foi excluido                               
 Local lCancelouCRD	:= .F.                                          //Indica se o contrato ja foi cancelado
 Local lTroco		:= .F.						                    //Troco Ativo ?
@@ -4320,7 +4366,8 @@ If Substr(SL1->L1_CONFVEN,6,1) <> "N"
 					//-----------------------------------------------
 					//Tratamento de exclusao de troco em dinheiro
 					//-----------------------------------------------
-					cChaveSE1 := SE1->E1_PREFIXO+SE1->E1_NUM+SE1->E1_PARCELA+Space(Len(SE5->E5_TIPO))
+					cChaveSE1   := SE1->E1_PREFIXO + SE1->E1_NUM + SE1->E1_PARCELA + Space( Len(SE5->E5_TIPO) )
+                    cChvSemPar  := SE1->E1_PREFIXO + SE1->E1_NUM + Space( Len(SE5->E5_PARCELA) ) + Space( Len(SE5->E5_TIPO) )
 					If lFinProp
 						cCodCli := SL1->L1_CLIENTE
 						cCodLoj := SL1->L1_LOJA
@@ -4330,7 +4377,7 @@ If Substr(SL1->L1_CONFVEN,6,1) <> "N"
 					EndIf
 
 					//Excluir os registros de troco correspondentes
-					Lj140ExTr(cChaveSE1, @lDelSE5, Nil, cCodCli, cCodLoj)
+					Lj140ExTr(cChaveSE1, @lDelSE5, Nil, cCodCli, cCodLoj, cChvSemPar)
 				EndIf
 			
 				If cPaisLoc == "BRA"
@@ -4435,11 +4482,11 @@ Excluir os registros de troco correspondentes.
 @return lRet, Lógico, Retorna se excluiu o movimento de Troco com sucesso (.T.) ou não (.F.)
 /*/
 //-------------------------------------------------------------------------------------
-Static Function Lj140ExTr(cChaveSE1, lDelSE5, cSEQ, cCodCli, cCodLoj)
+Static Function Lj140ExTr(cChaveSE1, lDelSE5, cSEQ, cCodCli, cCodLoj, cChvSemPar)
                     
 Local aAreaAtu 		:= GetArea()
 Local aAreaSE5 		:= GetArea("SE5")  
-Local lAmbOffLn		:= SuperGetMv("MV_LJOFFLN", Nil, .F.)	//Identifica se o ambiente esta operando em offline
+Local lAmbOffLn		:= SuperGetMv("MV_LJOFFLN", Nil, .F.)	        //Identifica se o ambiente esta operando em offline
 Local lNewGrvTC 	:= ExistFunc("LjNewGrvTC") .And. LjNewGrvTC() 	//Verifica se o sistema está atualizado para executar o novo procedimento para gravação dos movimentos de troco.
 Local cMsgErro 		:= ""
 Local lRet 	   		:= .T.
@@ -4450,6 +4497,7 @@ Local nTamE1Loj		:= TamSx3("E1_LOJA")[1]
 Default cSEQ 		:= StrZero(1,TamSX3("E5_SEQ")[1])
 Default cCodCli 	:= Space(nTamE1Cli)
 Default cCodLoj 	:= Space(nTamE1Loj)
+Default cChvSemPar  := ""
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //|   Excluir os registros de troco correspondentes                                                 |
@@ -4457,13 +4505,31 @@ Default cCodLoj 	:= Space(nTamE1Loj)
 DbSelectArea("SE5")
 SE5->( DbSetOrder(7) ) //E5_FILIAL+E5_PREFIXO+E5_NUMERO+E5_PARCELA+E5_TIPO+E5_CLIFOR+E5_LOJA+E5_SEQ
 If !( lAchouSE5 := SE5->( DbSeek(xFilial("SE5") + cChaveSE1 + cCodCli + cCodLoj ) ) )
+
+    //Tenta localizar sem a parcela
+    If !Empty(cChvSemPar)
+        lAchouSE5 := SE5->( DbSeek(xFilial("SE5") + cChvSemPar + cCodCli + cCodLoj ) )
+
+        If lAchouSE5
+            cChaveSE1 := cChvSemPar
+        EndIf
+    EndIf
 	
 	//Se o sistema estiver atualizado com o novo tratamento de gravacao do troco, o troco não é mais gravado com informações do codigo do cliente e loja (os campos ficam em branco)
-	If lNewGrvTC
+	If lNewGrvTC .And. !lAchouSE5
 		//Faz a busca considerando o codigo do cliente e loja em branco
 		cCodCli := Space(nTamE1Cli)
 		cCodLoj := Space(nTamE1Loj)
 		lAchouSE5 := SE5->( DbSeek(xFilial("SE5") + cChaveSE1 + cCodCli + cCodLoj) )
+
+        //Tenta localizar sem a parcela
+        If !lAchouSE5 .And. !Empty(cChvSemPar)
+            lAchouSE5 := SE5->( DbSeek(xFilial("SE5") + cChvSemPar + cCodCli + cCodLoj ) )
+
+            If lAchouSE5
+                cChaveSE1 := cChvSemPar
+            EndIf
+        EndIf
 	EndIf
 EndIf
 
@@ -4735,6 +4801,7 @@ Static Function LJ140ExDin(lDelSE5, aChave, aParc)
 
 Local nI		:= 0								// Contador de For
 Local lAmbOffLn := SuperGetMv("MV_LJOFFLN", Nil, .F.)	//Identifica se o ambiente esta operando em offline
+Local aAreaSE5	:= {}								// Guarda area
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³Se for Dinheiro e SE5 nao estiver sido excluido acima³
@@ -4746,8 +4813,10 @@ If SL1->L1_DINHEIR <> 0 .AND. !lDelSE5
 		If SE5->( DbSeek(xFilial() + "LJ" + aChave[2] + aChave[3] + Space(TamSX3("E5_PARCELA")[1]) + SuperGetMv("MV_SIMB1") + " ") )
 
 			If oIntCVenda <> Nil
+                aAreaSE5 := SE5->(GetArea())
 				oIntCVenda:Inserir("SE5", xFilial("SE5") + SE5->E5_NATUREZ + SE5->E5_PREFIXO + SE5->E5_NUMERO + SE5->E5_PARCELA + SE5->E5_TIPO + DTOS(dDatabase), "4", "5")
-				oIntCVenda:Gerar()				
+				oIntCVenda:Gerar()
+				RestArea(aAreaSE5)
 			EndIf
 
 			//Adiciona a tabela para exclusao no processo off-line
@@ -4897,6 +4966,7 @@ Local lTemGerent 	:= .F.							// Guarda se o o Gerente recebe comissão
 Local nRecVend		:= 0							// Guarda o recno do Vendedor da tabela SA3	
 Local nRecnoSE3		:= 0							// Guarda o recno da comissão do Vendedor na tabela SE3
 Local lIsNFeDen		:=	.F.							// Informa se é Nota Denegada
+Local cNumNotAnt	:= ""							// Número da Nota Fiscal gravada anteriormente
 
 Default cProtoNfce := ""
 					
@@ -4975,6 +5045,7 @@ If lTefOk
 	cSerNota := SL1->L1_SERIE
 	cCliNota := SL1->L1_CLIENTE
 	cCliLoja := SL1->L1_LOJA
+	cNumNotAnt := cNumNota
 	
 	//Tratamento para cancelar multiplas NFS's(Nota Fiscal Serviço) geradas pela venda em questão 
 	If SL1->( ColumnPos("L1_DOCRPS") ) > 0
@@ -5191,6 +5262,10 @@ If lTefOk
 
 	Lj140LpSL1(lCrdxInt, cNum, nVlrOrc)
 	
+	If !Empty(cNumNotAnt)		//Somente Orçamentos de Venda, com L1_DOC gravado anteriormente
+		Lj140LpSl4(cNum, nVlrOrc)
+	EndIf
+
 	SEF->(DbSetOrder(1))
 	SE1->(DbSetOrder(1))
 	dbCommitAll()
@@ -5679,7 +5754,7 @@ If Empty(SL1->L1_NUM)	// Verifica se Nao ‚ Devolucao
 		Return ( .F. )
 	EndIf		
 Else
-	If !lIsVendaVP .And. !lIsVdRecCP
+	If !lIsVendaVP .And. !lIsVdRecCP .and. !lIntegDef
 		If !Empty(SL1->L1_DOC) .And. AllTrim(SF2->F2_ECF) == "S"
 			If Month( SF2->F2_EMISSAO ) <> Month( dDataBase ) .OR. Year( SF2->F2_EMISSAO ) <> Year( dDataBase )
 				If !lExcAuto
@@ -7729,9 +7804,12 @@ Next
 
 If SL1->L1_TPORC == 'E' .AND. (!Empty(SL1->L1_KEYNFCE) .OR. SL1->L1_STORC == "A") .AND. IIF(lL1SERSAT,Empty(AllTrim(SL1->L1_SERSAT)),.T.)
 	lRetAux := .T.
-	cModDoc := "65"
+	cModDoc := "65" // NFC-e
+ElseIf SL1->L1_TPORC == 'E' .AND. (!Empty(SL1->L1_KEYNFCE) .OR. SL1->L1_STORC == "A") .AND. IIF(lL1SERSAT,!Empty(AllTrim(SL1->L1_SERSAT)),.T.)
+	lRetAux := .T.
+	cModDoc := "59"	// SAT
 ElseIf SL1->L1_IMPNF	
-	cModDoc := "55"
+	cModDoc := "55" // NF-e
 	
 	//armazena a area, pois a funcao FATComTSS exige que o registro j?esteja posicionada
 	aSF2Area := SF2->( GetArea() )
@@ -7882,7 +7960,15 @@ If lRetAux
 			lRet := .F.
 			LjGrvLog( SL1->L1_NUM, "SITUA invalido para enviar cancelamento: " + SL1->L1_SITUA )
 		EndIf
-	
+
+	// Se for SAT
+	ElseIf cModDoc == "59"
+
+		If LJSatxCanc(.F.) // Envia para cancelamento
+			//Grava log informando que a venda foi cancelada
+			LjGrvLog( "NumOrc: " + SL1->L1_NUM, " Documento SAT cancelado, Id: " + SL1->(L1_SERIE+L1_DOC) ) 	
+		EndIf
+
 	// se for NF-e
 	ElseIf cModDoc == "55"		
 		LjGrvLog( SL1->L1_NUM, "SL1.L1_SITUA da venda com NF-e", SL1->L1_SITUA )		
@@ -9161,7 +9247,14 @@ Next nX
 // obtem o modelo do documento
 //
 If SL1->L1_TPORC == 'E' .AND. ( !Empty(SL1->L1_KEYNFCE) .OR. SL1->L1_STORC == "A" ) .AND. IIF(lL1SERSAT, Empty(AllTrim(SL1->L1_SERSAT)),.T.)
-	cModDoc := "65"
+	cModDoc := "65" // NFC-e
+	
+	cDoc 	:= SL1->L1_DOC
+	cSerie	:= SL1->L1_SERIE 
+	cSitua	:= SL1->L1_SITUA
+	
+ElseIf SL1->L1_TPORC == 'E' .AND. ( !Empty(SL1->L1_KEYNFCE) .OR. SL1->L1_STORC == "A" ) .AND. IIF(lL1SERSAT, !Empty(AllTrim(SL1->L1_SERSAT)),.T.)		
+	cModDoc := "59" // SAT
 	
 	cDoc 	:= SL1->L1_DOC
 	cSerie	:= SL1->L1_SERIE 
@@ -9445,6 +9538,7 @@ Local cF2_Cliente	:= "" // Campo F2_Cliente
 Local cF2_Loja		:= "" // Campo F2_Loja
 Local aAreaSF2		:= {} //WorArea SF2
 Local cEstNF		:= "" //Estado da nota
+Local cNatISS	   	:= &(SuperGetMv("MV_ISS",,"")) // Guarda Natureza configurada para ISS
 
 Default cChaveSF6	:= "" //Chave do título SF6
 Default lFoundSE1	:= .F. //Achou o SE1
@@ -9463,7 +9557,7 @@ If lFoundSE1
 
 		While SE2->(!EOF()) .AND. AllTrim(SE2->E2_TITPAI) == AllTrim( SE1->(E1_PREFIXO + E1_NUM + E1_PARCELA + E1_TIPO + E1_CLIENTE + E1_LOJA) )
 			
-			If Alltrim(SE2->E2_NATUREZ) == "ISS"					
+			If Alltrim(SE2->E2_NATUREZ) == Alltrim(cNatISS)
 				aAdd(aRetSE2, { SE2->(Recno()), SE2->(E2_FILIAL + E2_PREFIXO + E2_NUM + E2_PARCELA + E2_TIPO + E2_FORNECE + E2_LOJA)})
 			EndIf			
 			SE2->(DbSkip(1))
@@ -10193,7 +10287,7 @@ ElseIf cTabela == "SLX"
 	cDocSer 	:= SLX->LX_SERIE
 	dDocData	:= SLX->LX_DTMOVTO
 EndIf
-
+//Caso seja uma inutilização SmartConector Integração
 If Len(aDadoInut) > 0 //Se contiver os dados da Inutilização não se comunica com o TSS
 	Lj140AtuSF3({}, aDadoInut, cTabela,	cDocSer, cDocNum, "" )
 Else
@@ -10295,11 +10389,14 @@ If SF3->( DbSeek(xFilial("SF3") + cDocSer + cDocNum) )
 					cChave	:=  LjxBChvTss(cXMLProt,,cDocNum,cDocSer)
 					Replace SF3->F3_CHVNFE with cChave
 				EndIf
-			ElseIf Len(aDadoInut) > 0
+			ElseIf Len(aDadoInut) > 0//Integração Smart Atualizado na função RMIDadoInu
 				Replace SF3->F3_PROTOC 	with aDadoInut[1][2]			//Protocolo de autorizcao da NFC-e
 				Replace SF3->F3_CODRSEF with aDadoInut[1][3] 			//Codigo do retorno da SEFAZ
 				Replace SF3->F3_DESCRET with aDadoInut[1][5] 			//Descricao do retorno da SEFAZ
 				Replace SF3->F3_DTCANC  with aDadoInut[1][1] 		//Data do retorno da SEFAZ
+				Replace SF3->F3_ENTRADA with aDadoInut[1][1] 			//Data do retorno da SEFAZ
+				Replace SF3->F3_EMISSAO with aDadoInut[1][1] 			//Data do retorno da SEFAZ
+				Replace SF3->F3_OBSERV  with "NF Inutilizada"
 				
 				If AllTrim(aDadoInut[1][3]) == "101"
 					cChave := aDadoInut[1][4]
@@ -10328,9 +10425,12 @@ If SFT->( DbSeek(xFilial("SFT") + "S" + cDocNum + cDocSer) )
 				EndIf 
 				If cTabela == "SLX" .And. aRetSEFAZ[2][2] == "101" .AND. !Empty(cChave)
 					Replace SFT->FT_CHVNFE with cChave
-				EndIf 
-			ElseIf Len(aDadoInut) > 0
+				EndIf
+			ElseIf Len(aDadoInut) > 0 //Integração Smart Atualizado na função RMIDadoInu
 				Replace SFT->FT_DTCANC with aDadoInut[1][1] //Data do retorno da SEFAZ
+				Replace SFT->FT_ENTRADA with aDadoInut[1][1] //Data do retorno da SEFAZ
+				Replace SFT->FT_EMISSAO with aDadoInut[1][1] //Data do retorno da SEFAZ
+				Replace SFT->FT_OBSERV  with "NF Inutilizada"
 				Replace SFT->FT_CHVNFE with cChave
 			EndIf
 			SFT->( MsUnlock() )
@@ -10408,5 +10508,50 @@ If lLxIteracao .And. ExistFunc("LjMonitora") //Verifica se a funcao existe no fo
 		EndIf
 	EndIf
 EndIf
+
+Return lRet
+
+//----------------------------------------------------------------------
+/*/{Protheus.doc} Lj140LpSl4
+@Apaga os registros da tabela SL4.
+@author 			Gilmar Costa
+@param 				Numero do Orçamento
+@param				Valor do Orçamento
+@since 				07/05/2021
+@version version	P12
+@return Lógico, Indica se a exclusão e a incçusão do novo registro ocorreu
+/*/
+//----------------------------------------------------------------------
+Function Lj140LpSl4(cNumOrc, nVlrOrc)
+Local lRet 	:= .T.							// Retorno da função
+Local cFilL4	:= xFilial("SL4")			// Filial SL4
+Local cMvSimb1	:= SuperGetMv("MV_SIMB1")	// Simbolo da moeda principal
+Local aSL4		:= {}						// Array para rtavação SL4
+Local nCont		:= 1						// Contador inicial
+
+Default cNumOrc	:= ""
+Default nVlrOrc	:= 0
+	DbSelectArea("SL4")
+	SL4->( DbSetOrder(1) )	//L4_FILIAL+L4_NUM+L4_ORIGEM
+	If SL4->( DbSeek(cFilL4 + cNumOrc) )
+
+		While SL4->(!Eof()) .AND. cFilL4 == SL4->L4_FILIAL .AND. SL4->L4_NUM == cNumOrc
+
+			RecLock('SL4',.F.)  
+			SL4->( DbDelete() )
+			SL4->( MsUnLock() )
+
+			SL4->( DbSkip() )
+		Enddo
+	EndIf
+
+	aAdd(aSL4,{})
+	aAdd( aSL4[nCont], { "L4_FILIAL", 	cFilL4})
+	aAdd( aSL4[nCont], { "L4_NUM", 		cNumOrc})
+	aAdd( aSL4[nCont], { "L4_DATA", 	dDataBase})
+	aAdd( aSL4[nCont], { "L4_VALOR", 	nVlrOrc})
+	aAdd( aSL4[nCont], { "L4_FORMA", 	cMvSimb1})
+
+	lRet := Lj7GeraSL( "SL4", aSL4[nCont], .T. )
 
 Return lRet

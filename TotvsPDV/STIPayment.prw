@@ -9,7 +9,7 @@
 
 #DEFINE SE1SALDO		6	// Posicao do campo E1_SALDO do Array aNCCs
 
-Static nUsedCards	:= 0                                // Numero de cartoes usados na venda Homologacao TEF
+Static nUsedCards	:= 0                                	// Numero de cartoes usados na venda Homologacao TEF
 Static oPay			:= STBWCPayment():STBWCPayment()
 Static aGetSX5Pay   := STIGetSx5()
 Static aPaym 		:= aClone(aGetSX5Pay[1])
@@ -27,12 +27,12 @@ Static lDisableBtn	:= .T.									//Desabilita/Habilita os botoes de Limpar e Fi
 Static bDataCheck	:= Nil
 Static lIsPAF		:= STBIsPAF()
 Static lHomolPaf	:= ExistFunc("STBHomolPaf") .AND. STBHomolPaf() //HomologaÁ„o PAF-ECF
-Static lPayImport	:= .F.	//Pagamento no momento da importacao do orcamento
+Static lPayImport	:= .F.									//Pagamento no momento da importacao do orcamento
 Static aCallADM		:= {}									// Armazena formas de pagamento para informar Adm. Fin.
-Static aCheckRms	:= {} //Valores pagos em cheque para RMS 
-Static aConvRms		:= {} //Valores pagos em convenio para RMS 
-Static nPayROnly	:= 0	//indica se os campos de pagamentos ser„o Somente Leitura 
-Static oPPanel 		:= Nil	//Paint Painel para pagamentos modo scroll
+Static aCheckRms	:= {} 									//Valores pagos em cheque para RMS 
+Static aConvRms		:= {} 									//Valores pagos em convenio para RMS 
+Static nPayROnly	:= 0									//indica se os campos de pagamentos ser„o Somente Leitura 
+Static oPPanel 		:= Nil									//Paint Painel para pagamentos modo scroll
 Static oPanPayment	:= Nil
 Static lSTIAtvTefP	:= NIL
 Static lMFE			:= IIF( ExistFunc("LjUsaMfe"), LjUsaMfe(), .F. )		//Se utiliza MFE
@@ -135,7 +135,7 @@ Local lBonificacao	:= .F. 				//Identifica se a venda tera alguma bonificacao ou
 Local lRegDesc		:= SuperGetMV('MV_LJRGDES',,.F.) .AND. ExistFunc("STBFORMBF") .AND. ExistFunc("STIDSCBONF") .AND. GetAPOInfo("STFTOTALUPDATE.PRW")[4] >= Ctod("19/12/2019") //Regra de desconto
 Local oTotal        := STFGetTot()      											//Recebe o Objeto totalizador
 Local lIsOrc		:= STBIsImpOrc()												// -- Indica se È importaÁ„o de orÁamento
-Local bZeraPay		:= { || STIZeraPay(Iif(lIsOrc,.T.,.F.), Iif(lIsOrc,.F.,.T.)) }	// -- Zera os pagamentos baseados na Permiss„o de usuario + a variavel lIsOrc
+Local bZeraPay		:= { || IIf(Empty(oModel), Nil,  STIZeraPay(Iif(lIsOrc,.T.,.F.), Iif(lIsOrc,.F.,.T.))) }	// -- Zera os pagamentos baseados na Permiss„o de usuario + a variavel lIsOrc
 Local nVSubsidio	:= 0 				//Valor de subsidio da venda referente ao PBM (Drogaria)
 Local cFormaSub		:= ""				//Forma de Pagamento de subsidio da venda referente ao PBM (Drogaria)
 Local lTFrtAltPg	:= .F.
@@ -459,7 +459,7 @@ For nI := 1 To Len(aCallAdm)
 		/* Tela do financiamento */
 		STIFinOrc(oPnlAdconal, aCallAdm[nI][2] , aCallAdm[nI][3], aCallAdm[nI][5], aCallAdm[nI][1])
 
-	ElseIf aCallAdm[nI][5] $ "CC|CD"	//retiramos o trecho que faz a chamada do TEF quando um orÁamento È importado		
+	ElseIf aCallAdm[nI][5] $ "CC|CD|PD|PX"	//retiramos o trecho que faz a chamada do TEF quando um orÁamento È importado
 		If lFirstTime
 			oPnlAdconal := Eval(bCreatePan)
 		
@@ -612,6 +612,7 @@ Local lMobile		:= STFGetCfg("lMobile", .F.)		//Smart Client Mobile
 Local lVldDesc		:= .F. //Valida se concede o desconto para a forma de pagamento
 Local lCart			:= IIF(ExistFunc('STBGetCart'),STBGetCart(),.T.) //Verifica se aplica o desconto para CC ou CD
 Local lClearDesc	:= IIF(ExistFunc('STBVldDesc'),STBVldDesc( '3', oModel:GetModel('PARCELAS') ),.F.)  //Verifica se limpa o desconto antes de abrir a tela para uma nova forma de pagamento
+Local lZeraDesc		:= .F.
 
 Default oPanPayment		:= Nil
 Default oListTpPaym		:= Nil
@@ -642,7 +643,11 @@ EndIf
 
 lVldDesc := IIF(ExistFunc('STBVldDesc'),STBVldDesc( '1', oModel:GetModel('PARCELAS') ),.T.) 
 
-If lClearDesc
+
+lZeraDesc:= SuperGetMv("MV_LJRGDES",,.F.) .AND. !STBPromPgto(cPgtoSelected) .AND. !STIGetRecTit() .AND. STIDescRegVar()  
+
+
+If lClearDesc .OR. lZeraDesc
 	STIClearDisc(.T.)
 EndIf
 
@@ -666,7 +671,7 @@ Do Case
 		STIPayCash(oPnlAdconal)//Dentro da PayCash que validar· se existe regra por Brinde, porque n„o precisar· adicionar nenhuma forma de pagto somente exibir as opÁıes de brinde para selecionar
 	
 	/* OpÁ„o de pagamento credito ou debito */
-	Case cPgtoSelected $ 'CC|CD'
+	Case cPgtoSelected $ 'CC|CD|PD|PX'
 
 		// Homologacao TEF
 		// Se for homologacao limita o Numero de cartoes em no Maximo 2 por venda
@@ -696,7 +701,7 @@ Do Case
 			oPnlAdconal := Eval(bCreatePan)
 			
 			If lPromPgto .AND. STBPromPgto("FI") .AND. lVldDesc //Verifica se existe regra de bonificacao
-		    	STBTotRlDi( ,,, .T.,"FI",oPnlAdconal)
+				STBTotRlDi( ,,, .T.,"FI",oPnlAdconal)
 			EndIf 
 			STIPayFinancial(oPnlAdconal, cTpForm)
 		Endif	
@@ -710,7 +715,7 @@ Do Case
 			
 		If !STDGUpdShopCardFundsResult() // Caso haja um produto de recarga de cartao fidelidade, a opcao fica indisponivel.
 			If lPromPgto .AND. STBPromPgto("FID") .AND. lVldDesc //Verifica se existe regra de bonificacao
-		    	STBTotRlDi( ,,, .T.,"FID",oPnlAdconal)
+				STBTotRlDi( ,,, .T.,"FID",oPnlAdconal)
 		    Else	
 				STIPayShopCard(oPnlAdconal)
 			Endif	
@@ -727,7 +732,7 @@ Do Case
 		oPnlAdconal := Eval(bCreatePan)
 		
 		If lPromPgto .AND. STBPromPgto("CH") .AND. lVldDesc //Verifica se existe regra de bonificacao
-	    	STBTotRlDi( ,,, .T.,"CH",oPnlAdconal)
+			STBTotRlDi( ,,, .T.,"CH",oPnlAdconal)
 	    EndIf	
 
 		/* Telado do cheque */
@@ -740,7 +745,7 @@ Do Case
 		oPnlAdconal := Eval(bCreatePan)
 		
 		If lPromPgto .AND. STBPromPgto("VP") .AND. lVldDesc //Verifica se existe regra de bonificacao
-	    	STBTotRlDi( ,,, .T.,"VP",oPnlAdconal)
+			STBTotRlDi( ,,, .T.,"VP",oPnlAdconal)
 	    Else	
 			/* Tela do vale presente */
 			STIPayGiftV(oPnlAdconal)  
@@ -757,7 +762,7 @@ Do Case
 			oPnlAdconal := Eval(bCreatePan)
 			
 			If lPromPgto .AND. STBPromPgto("CP") //Verifica se existe regra de bonificacao
-		    	STBTotRlDi( ,,, .T.,"CP",oPnlAdconal)
+				STBTotRlDi( ,,, .T.,"CP",oPnlAdconal)
 		    Else	
 				/* Tela da condicao de pagamento */
 				STIPayCdPg(oPnlAdconal)
@@ -1310,8 +1315,12 @@ Local nOpcDesc	:= STFUserProfInfo("LF_OPCDESC") // Opcao de desconto -> 1 - Prio
 Local nTotDA1	:= IIF(ExistFunc('STDGetDA1'),STDGetDA1(),0) // Total dos itens para conceder o desconto 
 Local nCols		:= 0
 Local lBonif	:= .F.																//ProteÁ„o para n„o deletar bonificaÁ„o
-Local lRegDesc		:= SuperGetMV('MV_LJRGDES',,.F.) .AND. ExistFunc("STBFORMBF") .AND. ExistFunc("STIDSCBONF") .AND. GetAPOInfo("STFTOTALUPDATE.PRW")[4] >= Ctod("19/12/2019") //Regra de desconto
-Local oTotal        := STFGetTot()      											//Recebe o Objeto totalizador
+Local lRegDesc	:= SuperGetMV('MV_LJRGDES',,.F.) .AND. ExistFunc("STBFORMBF") .AND. ExistFunc("STIDSCBONF") .AND. GetAPOInfo("STFTOTALUPDATE.PRW")[4] >= Ctod("19/12/2019") //Regra de desconto
+Local oTotal    := STFGetTot()			//Recebe o Objeto totalizador
+Local lBtZeraPay:= !Empty(lPermis)    	//Evento disparado pelo bot„o Zerar Pagamento
+Local oRaas 	:= Nil
+Local oFidelityC:= Nil
+Local nValDFidel:= 0
 
 Default lCheca  := .F.
 Default lPermis := .T. //Verifica permissao para zerar formas de pagamento
@@ -1343,13 +1352,13 @@ Else
 			lZeraTEF := .T.
 		EndIf
 
-			If lRegDesc
-				For nCols := 1 to Len(oListResPg:aItems)
-					If Left(oListResPg:aItems[nCols],2) = "BF"  //oListResPg:aItems
-						lBonif := .T.
-					EndIf
-				Next
-			EndIf
+		If lRegDesc
+			For nCols := 1 to Len(oListResPg:aItems)
+				If Left(oListResPg:aItems[nCols],2) = "BF"  //oListResPg:aItems
+					lBonif := .T.
+				EndIf
+			Next
+		EndIf
 
 		If lZeraTEF .Or. !lTemTEF .Or. (lTemTEF .And. cMV_TEFPEND == "0")	
 		
@@ -1470,7 +1479,18 @@ Else
 		Else		
 			If lCheca .And. !STIGetRecTit() .And. SuperGetMv("MV_LJRGDES",,.F.) .And.;
 			 	STBPromPgto() .or. IIf(ExistFunc("STIDescRegVar"),STIDescRegVar(),.F.)
-				STIClearDisc()  //limpas os descontos da regra de desconto varejo
+				If ExistFunc("LjxRaasInt") .And. LjxRaasInt()		
+					oRaas := STBGetRaas()
+
+					If Valtype(oRaas) == "O" .And. oRaas:ServiceIsActive("TFC")
+						oFidelityC := oRaas:GetFidelityCore()
+						If oFidelityC:ChoseToUse()
+							nValDFidel := STDGPBasket("SL1","L1_DESCTOT") - oFidelityC:GetBonus() // -- Valor que ser· removido do desconto no TOTAL
+						EndIf 
+					EndIf 
+				EndIf
+				
+				STIClearDisc(lBtZeraPay,nValDFidel,.T.)  //limpas os descontos da regra de desconto varejo e mantem o valor do fidelity Core
 			EndIf
 		EndIf
 		
@@ -1512,13 +1532,13 @@ Function STIGetSx5()
 
 Local aPayments	:= {}									//Array com todas as formas de pagamento
 Local aCopyPaym	:= {}									//Array com todas as formas de pagamento
-Local nI			:= 0									//Variavel de Loop
+Local nI			:= 0								//Variavel de Loop
 Local oDataAe		:= oPay:oPayX5:GetAllData()			//Recebe todos os models
 Local oModDt		:= oDataAe:GetModel("GridStr")		//Recebe o model GridStr
 
 For nI := 1 To oModDt:Length()
 	oModDt:GoLine(nI)
-	If !(AllTrim(oModDt:GetValue("X5_TYPE")) $ 'BOL|CR|DC|BF')
+	If !(AllTrim(oModDt:GetValue("X5_TYPE")) $ 'BOL|CR|DC|BF|PD|PX') .OR. (AllTrim(oModDt:GetValue("X5_TYPE")) == 'PD' .AND. STWChkTef("PD")) .OR. (AllTrim(oModDt:GetValue("X5_TYPE")) == 'PX' .AND. STWChkTef("PX"))
 		Aadd(aPayments, AllTrim(Str(nI)) + ' - ' + oModDt:GetValue("X5_DESC"))
 		Aadd(aCopyPaym, {AllTrim(oModDt:GetValue("X5_TYPE")),AllTrim(Str(nI)) + ' - ' + AllTrim(oModDt:GetValue("X5_DESC")),oModDt:GetValue("X5_DESC")})
 	EndIf
@@ -1555,6 +1575,7 @@ Confirmacao dos pagamentos
 /*/
 //-----------------------------------------------------------------
 Function STIConfPay( lShowRgIt, cKey )
+
 Local oMdl 			:= Nil													//Recupera o model ativo
 Local oMdlGrd		:= Nil													//Seta o model do grid
 Local oMdlPaym		:= Nil													//Seta o model do pagamento
@@ -1648,7 +1669,7 @@ EndIf
 
 Return lRet
 
-//-----------------------------------------------------------------------------
+//‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 /*/{Protheus.doc} STIGetTotal
 Retorna o saldo dos pagamentos
 
@@ -1656,9 +1677,11 @@ Retorna o saldo dos pagamentos
 @author  	Vendas & CRM
 @version 	P12
 @since   	06/02/2013
-@return  	nTotal, numerico, total da venda
+@return  	
+@obs     
+@sample
 /*/
-//-----------------------------------------------------------------------------
+//‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
 Function STIGetTotal()
 
 Local oMdl		:= oModel 	//Recupera o model ativo
@@ -1820,10 +1843,17 @@ Local lHabTroco 	:= SuperGetMV("MV_LJTROCO",,.F.) 	//Habilita troco
 Local lMvLjTrDin	:= SuperGetMV("MV_LJTRDIN", , 0 ) == 0	// Determina se utiliza troco para diferentes formas de pagamento
 Local nVlrCredito	:= 0 //Valor total de credito da venda. (NCC)
 Local oTotal		:= Nil
+Local lUsePayHub  	:= ExistFunc("LjUsePayHub") .And. LjUsePayHub()
 
 //Limpa conteudo para evitar duplicidade caso retorne para a venda por erro apÛs clicar em Finalizar Venda (exemplo: NFC-e entrando em contingÍncia)
 STDSPBasket("SL1", "L1_VLRDEBI"	, CriaVar("L1_VLRDEBI") )
 STDSPBasket("SL1", "L1_CARTAO"	, CriaVar("L1_CARTAO")	)
+
+If lUsePayHub
+	STDSPBasket("SL1", "L1_VLRPGDG"	, CriaVar("L1_VLRPGDG")	)
+	STDSPBasket("SL1", "L1_VLRPGPX"	, CriaVar("L1_VLRPGPX")	)
+EndIf 
+
 
 For nI := 1 To oModel:Length()
 	oModel:GoLine(nI)
@@ -1832,16 +1862,24 @@ For nI := 1 To oModel:Length()
 			STDSPBasket("SL1", "L1_DINHEIR", oModel:GetValue('L4_VALOR') - STBGetTroco() )
 		Case AllTrim(oModel:GetValue('L4_FORMA')) == 'CH'
 			STDSPBasket("SL1", "L1_CHEQUES", oModel:GetValue('L4_VALOR') )//Valores de Cheque ja foram acumulados na rotina STIUpdBask
-		Case AllTrim(oModel:GetValue('L4_FORMA')) $ 'CC|CD'
+		Case AllTrim(oModel:GetValue('L4_FORMA')) $ 'CC|CD|PD|PX'
 			IF !STBIsRecovered() 
 					IF AllTrim(oModel:GetValue('L4_FORMA')) == 'CC'  
 						STDSPBasket("SL1", "L1_CARTAO", STDGPBasket( "SL1" , "L1_CARTAO" ) + oModel:GetValue('L4_VALOR') )
+					ElseIF AllTrim(oModel:GetValue('L4_FORMA')) == 'PD'
+						STDSPBasket("SL1", "L1_VLRPGDG", oModel:GetValue('L4_VALOR') )
+					ElseIF AllTrim(oModel:GetValue('L4_FORMA')) == 'PX'
+						STDSPBasket("SL1", "L1_VLRPGPX", oModel:GetValue('L4_VALOR') )
 					Else
 						STDSPBasket("SL1", "L1_VLRDEBI", STDGPBasket( "SL1" , "L1_VLRDEBI" ) + oModel:GetValue('L4_VALOR') )
 					EndIf
 			Else 
 					IF AllTrim(oModel:GetValue('L4_FORMA')) == 'CC'  
 						STDSPBasket("SL1", "L1_CARTAO", oModel:GetValue('L4_VALOR') )
+					ElseIF AllTrim(oModel:GetValue('L4_FORMA')) == 'PD'
+						STDSPBasket("SL1", "L1_VLRPGDG", oModel:GetValue('L4_VALOR') )
+					ElseIF AllTrim(oModel:GetValue('L4_FORMA')) == 'PX'
+						STDSPBasket("SL1", "L1_VLRPGPX", oModel:GetValue('L4_VALOR') )
 					Else
 						STDSPBasket("SL1", "L1_VLRDEBI", oModel:GetValue('L4_VALOR') )
 					EndIf
@@ -1929,7 +1967,7 @@ Retornar a tela das formas de pagamento
 @sample
 /*/
 //‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹
-Function STIPayCancel()
+Function STIPayCancel(oPnlAdconal)
 
 Local lMobile := STFGetCfg("lMobile", .F.)		//Smart Client Mobile
 
@@ -1945,7 +1983,6 @@ Else
 		oPnlAdconal:Hide()
 	EndIf
 
-    STIEnblPaymentOptions()
 
 	If !lMobile
 		oListTpPaym:SetFocus()
@@ -1958,6 +1995,7 @@ Else
 		STFRestVlr()    // FunÁ„o presente no Fonte STFTotalUpdate, Restura os valores antes da seleÁ„o da forma de pagamento
 	EndIf
 
+	STIEnblPaymentOptions()
 EndIf
 
 Return .T.
@@ -2447,7 +2485,7 @@ If STIAtvTefP() .And. !STIBlqMnTef()
 	EndIf
 	
 	lRet := .F.	
-	STIPayCancel()
+	STIPayCancel(oPnlAdconal)
 EndIf
 
 Return lRet

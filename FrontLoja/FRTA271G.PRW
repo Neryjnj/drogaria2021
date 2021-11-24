@@ -6948,7 +6948,7 @@ Return cRet
 北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北北
 哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌哌
 */
-Static Function FRgTelaSAE(aListAdms,cDescAdm,lSelManual,cIdCard)
+Function FRgTelaSAE(aListAdms,cDescAdm,lSelManual,cIdCard )
 
 Local nPosAdmSitef	:= 0
 Local aCoordAdms    := MsAdvSize(.T.)  //Vetor com as coordenadas da tela

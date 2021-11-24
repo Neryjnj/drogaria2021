@@ -27,6 +27,7 @@
 #DEFINE __NRECNO   	18		 //Num. Recno SL4
 #DEFINE __DESCMN   	19		 //Desconto MultNegociacao
 #DEFINE __FORMATEF	"CC;CD"  //Formas de pagamento que utilizam operação TEF para validação
+#DEFINE _FORMAPGDG	"PD/PX"  //Forma de pagamento considerado Pagamento Digital
 #DEFINE __PREDIC		11	 //Posicao Reducao de Base
 #DEFINE __CONHTL		20 	 //Conta Hotelaria
 #DEFINE __AUTORIZ       21 	 //Codigo Autorizacao TEF
@@ -569,6 +570,25 @@ Else
 	//Atribuo a série de Serviços Financeiros: As vezes a série pode estar preenchida após a emissão fiscal, mas o número de ordem não.
 	If nItensSF > 0 .AND. nItensServ = 0 .AND. nItensProd = 0
 		cSerie := cMVLOJASF
+	EndIf
+	
+	//-----------------------
+	// Se for Emissao de NF-e
+	//-----------------------
+	If !IsBlind() .And. !lNFePDV .And. SL1->L1_IMPNF .And. AllTrim(LjNfEspeci(cSerie)) == "SPED"
+		//---------------------------------------------------------------------------
+		// Quando é NF-e, valida a situação do Cliente (Contribuinte) junto a SEFAZ,
+		// para verificar se existe alguma restrição antes de transmitir a NF-e,
+		// evitando assim, que ocorra erro de Nota Denegada.
+		//---------------------------------------------------------------------------
+		If ExistFunc("LjVldContr")
+			//Valida se o Contribuite está com alguma Restrição junto a SEFAZ.
+			If !LjVldContr(SL1->L1_CLIENTE,SL1->L1_LOJA,@cDescErro)
+				lErroNFe	:= .T.	//Sinaliza como ERRO para venda NF-e
+				LjMsgGrvTudo(lScreen, cNumOrc, STR0193) //"Venda abortada devido Restrição do Cliente junto à SEFAZ."
+				Return .F.
+			EndIf
+		EndIf
 	EndIf
 EndIf
 
@@ -1492,8 +1512,6 @@ Function LjGrvSF2(	lFim	,	lImpCupFis	,	cNumNota	,	cFirst	,;
 					lRetIncSx5, cCgcCli   	,	lNfManual	, 	nBaseRed,;
 					lIsNextNF, 	lNxtNFServ 	,	cSerieNF	, 	lNFServ )
 
-Local nCount     	:= 0										// Usada em lacos For..Next
-Local nPosSign 		:= 0										// Posicao do sinal dentro da string
 Local cTiposDoc 	:= AllTrim( SuperGetMv( 'MV_ESPECIE' ) )	// Tipos de documento (busca no param. MV_ESPECIE)
 Local cEspecie  	:= SPACE(5)									// Especie do Documento
 Local cMV_TPNRNFS	:= LjTpNrNFS()								// Retorno do parametro MV_TPNRNFS, utilizado pela Sx5NumNota() de onde serah controlado o numero da NF  1=SX5  2=SXE/SXF  3=SD9
@@ -1703,21 +1721,7 @@ Else
 		Elseif SL1->L1_IMPNF .or. Substr(cChaveNfce,21,2) == "55" //Colocado duas validacoes devido a usuario mudar o L1_IMPNF para .F.
 			cEspecie := "SPED"
 		ElseIf cTiposDoc <> NIL
-			cTiposDoc := StrTran( cTiposDoc, ";", CHR(13)+CHR(10))
-			For nCount := 1 TO MLCount( cTiposDoc )
-				cEspecie := AllTrim( StrTran( MemoLine( cTiposDoc,, nCount ), CHR(13), CHR(10) ) )
-				nPosSign := Rat( "=", cEspecie)
-				If nPosSign > 0 .AND. AllTrim( cSerie ) == AllTrim( SubStr( cEspecie, 1, nPosSign - 1 ) )
-					If SX5->( DbSeek( xFilial("SX5") + "42" + SubStr( cEspecie, nPosSign + 1 ) ) )
-						cEspecie := SubStr( cEspecie, nPosSign + 1 )
-					Else
-						cEspecie := SPACE(5)
-					EndIf
-					Exit
-				Else
-					cEspecie := SPACE(5)
-				EndIf
-			Next nCount
+			cEspecie := LjNfEspeci(cSerie, cTiposDoc)
 		EndIf
 	Else
 		LjGravaLog( .T., SL1->L1_NUM, '43) cEspecie MVNOTAFIS - ' + MVNOTAFIS, LMALERT)
@@ -2057,25 +2061,25 @@ If cPaisLoc == "BRA"
 		nValFat := MafisRet(Nil, "NF_TOTAL")
 	EndIf	
 	
-	If lIntegDef //Integracao mantem valores da venda		 		
+    //Integracao mantem valores da venda
+	If lIntegDef
 		REPLACE SF2->F2_VALBRUT	WITH SL1->L1_VALBRUT
 		REPLACE SF2->F2_VALFAT	WITH SL1->L1_VLRLIQ
-	ElseIf !lFtvdVer12
-		REPLACE SF2->F2_VALMERC	WITH A410Arred(aTotais[__VALMERC]	, "F2_VALMERC")
+
+	ElseIf MaFisRet(,"NF_SUFRAMA")
+		REPLACE SF2->F2_VALMERC	WITH A410Arred( aTotais[__VALMERC] - MafisRet(Nil, "NF_DESCZF"), "F2_VALMERC" )
+		REPLACE SF2->F2_VALBRUT	WITH MafisRet(Nil, "NF_TOTAL")
+   		REPLACE SF2->F2_VALFAT	WITH nValFat
+        REPLACE SF2->F2_DESCZFR WITH MafisRet(Nil, "NF_DESCZF")
+
+    Else
+    	REPLACE SF2->F2_VALMERC	WITH A410Arred( aTotais[__VALMERC], "F2_VALMERC" )
 		REPLACE SF2->F2_VALBRUT	WITH MafisRet(Nil, "NF_TOTAL")
 		REPLACE SF2->F2_VALFAT	WITH nValFat
-	ElseIf lFtvdVer12 .AND. !MaFisRet(,"NF_SUFRAMA")
-		REPLACE SF2->F2_VALMERC	WITH A410Arred(aTotais[__VALMERC]	, "F2_VALMERC")
-		REPLACE SF2->F2_VALBRUT	WITH MafisRet(Nil, "NF_TOTAL")
-		REPLACE SF2->F2_VALFAT	WITH nValFat
-	ElseIf lFtvdVer12 .AND. MaFisRet(,"NF_SUFRAMA")
-		REPLACE SF2->F2_VALMERC	WITH A410Arred((aTotais[__VALMERC] - MafisRet(Nil, "NF_DESCZF"))	, "F2_VALMERC")
-		REPLACE SF2->F2_VALBRUT	WITH MafisRet(Nil, "NF_TOTAL") - MafisRet(Nil, "NF_DESCZF")
-   		REPLACE SF2->F2_VALFAT	WITH nValFat - MafisRet(Nil, "NF_DESCZF")
+
 	EndIf
 
 	nBaseDup += MaFisRet(Nil, "NF_BASEDUP")
-
 
 	If	lMenNota .AND.  SL1->(ColumnPos("L1_MENNOTA")) > 0 .AND. SF2->(FieldPos("F2_MENNOTA")) > 0
 		REPLACE SF2->F2_MENNOTA	WITH SL1->L1_MENNOTA
@@ -4866,7 +4870,7 @@ Function Lj7CalcPgt( nValor		, cCondicao	, aCondNeg	, nVlrSoma	,;
 					 nTmpJuros	, nTmpDesc	, nMoeda	, nICMSSol	,;
 					 lDiaFixo	, nMoedaCor	, nDecimais , nVlrAcrsFi,;
 					 cFomPag	, nValJurDIa, nDiferenca, nOpc      ,;
-					 lAltCond   , nValIpi	, lUsoMultN  )
+					 lAltCond   , nValIpi	, lUsoMultN , lIntegra )
 
 Local aArea 		:= GetArea()				// Armazena area atual (alias, order e recno)
 Local aRet	 		:= {}						// Array com os dados de retorno da funcao
@@ -4932,20 +4936,21 @@ DEFAULT nOpc		:= 0						// Controla o tipo de Gravação
 DEFAULT lAltCond	:= .F.						// Controla o tipo de Gravação
 DEFAULT nValIpi		:= 0
 DEFAULT lUsoMultN   := .F.
+DEFAULT lIntegra	:= .F.
 
 If nValor < 0
 	nValor := 0
 EndIf
 
-If Type("nNccUsada") <> "N" .AND. nModulo == 23 .AND. ExistFunc("Frt060Ret")
-	nNccUsada := Frt060Ret( "NCC_USADA" )
-EndIf
+If !lIntegra
+	If Type("nNccUsada") <> "N" .AND. nModulo == 23 .AND. ExistFunc("Frt060Ret")
+		nNccUsada := Frt060Ret( "NCC_USADA" )
+	EndIf
 
-//se tiver ICMS Solidario, seu valor deve ser recalculado, pois o Frete altera a Base de Calculo
-If MaFisFound("NF") .AND. MaFisRet(Nil, "NF_VALSOL") > 0
-	nVlrFrete := Lj7CalcFrete(,.T.,@nICMSolDif) + nICMSolDif
-Else
-	If ExistFunc("Lj7CalcFrete")
+	//se tiver ICMS Solidario, seu valor deve ser recalculado, pois o Frete altera a Base de Calculo
+	If MaFisFound("NF") .AND. MaFisRet(Nil, "NF_VALSOL") > 0
+		nVlrFrete := Lj7CalcFrete(,.T.,@nICMSolDif) + nICMSolDif
+	Else
 		nVlrFrete := Lj7CalcFrete()
 	EndIf
 EndIf
@@ -5276,7 +5281,7 @@ Else
 					EndIf
 				EndIf
 	  		Else
-	  			If FunName() == cNomeProg .AND. ( aDadosJur[01] <> 0 .OR. aDadosJur[09] <> 0 )
+	  			If !lIntegra .And. FunName() == cNomeProg .AND. ( aDadosJur[01] <> 0 .OR. aDadosJur[09] <> 0 )
 
 					//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 					//³Acerta o valor base para o calculo das parcelas³
@@ -5591,6 +5596,7 @@ Local nPCC			:= 0													// Controle de numeracao das parcelas de Cartao de
 Local nPCD			:= 0													// Controle de numeracao das parcelas de Cartao de Debito (CD) SE1
 Local nPCO			:= 0													// Controle de numeracao das parcelas de Convenio (CO) SE1
 Local nPDI      	:= 0													// Controle de numeracao das parcelas de Dinheiro SE1 - Localizacoes
+Local nPPD			:= 0													// Controle de numeracao das parcelas de Pagamento Digital (PD) SE1 // Incluso PIX
 Local nMoedaBco		:= 1													// Moeda do Banco vigente para gravaçao no SE5 - Localizações
 Local nRndBco		:= 1													// Casas decimais do Banco vigente para gravaçao no SE5 - Localizações
 Local nPOU			:= 0													// Controle de numeracao das parcelas de Outros SE1
@@ -5665,6 +5671,7 @@ Local lAtuSalDup    := .T. 													// Controla se atualiza o saldo de dupli
 Local lAbatOrc		:= .F.
 Local lPedido		:= .F.													// Controla se a venda tem pedido
 Local lRet			:= .T.													// Retorno Logico
+Local lGvr          := .T.
 Local aAreaSE1      := {}                                                  	// Area do SE1 para recuperar na atualizacao do Contas a Receber
 Local lUsaVP		:= SuperGetMV("MV_LJVALEP",,.F.)  						// Utiliza Vale Presente
 Local cNatureza		:= ""													// Natureza da operacao
@@ -5767,6 +5774,7 @@ local cE1Naturez 	:= "" 				                    // Valor do campo E1_NATUREZ
 Local cNatDinh   	:= LjMExeParam("MV_NATDINH")            // Natureza em Dinheiro
 local aSE1			:= {}				                    // Avvay para gravação de dados na SE1
 Local nE1Valor		:= 0				                    // Valor do campo E1_VALOR
+Local nE1ValIss     := 0									// Valor do campo E1_VALOR Calculo ISS
 Local dE1Vencto		:= DATE()			                    // Valor do campo E1_VENCTO
 Local nE1IRRF		:= 0 				                    // Valor do campo E1_IRRF
 Local nE1PIS		:= 0				                    // Valor do campo E1_PIS
@@ -5780,6 +5788,9 @@ Local nCountaSE1    := 0				                    // Variavel para percorrer aSE1
 Local aAuxReceb		:= {}
 Local lAutomato 	:= IIf(Type("lAutomatoX")<>"L",.F.,lAutomatoX)	//Teste Automatizado
 Local cLogErro		:= ""				// Log para MostraErro()
+Local nPosVCruz     := 0   				// Posição no Array aSE1 do campo E1_VLCRUZ
+Local nPosVlReal	:= 0				// Posição no Array aSE1 do campo E1_VLRREAL
+Local nPosISS		:= 0				// Posição no Array aSE1 do campo E1_ISS
 
 Default lFinanceiro	:= .T.				// Se gera financeiro
 Default aReceb 		:= {}				// Titulos a receber
@@ -5817,6 +5828,7 @@ Default nVFunrural	:= 0				// Valor do FUNRURAL
 Default cDescErro	:= "" 				// Descrição caso ocorra erro na transação
 Default lNFePDV	:= .F.					// Parametro para verificar se chamada origina do Totvs PVD com NFe
 
+Private nPosValor	:= 0
 Private nValFun		:= 0				// Essa variavel Private é utilizada na função A040DupRec para geraar o Titulo a Pagar referente a Taxa da Contribuicao Seguridade Social (FUNRURAL)
 
 lRetemPCC := LjRetemPCC(SL1->L1_VLRTOT, nValPIS, nValCOFI, nValCSLL)
@@ -5903,16 +5915,6 @@ nLoopParc  := Len( aReceb )
 //³correta.                                             ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 nPosDin := 	Ascan(aReceb, {|x| AllTrim(x[__FORMA]) == AllTrim(cMvSimb1)})
-
-If _lScreen
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//|Se MV_LJTROCO = F e a venda tiver produto reservado, os titulos deverao ser gerados com valores liquidos|
-	//|Somente deve ser executado quando nao for via JOB (_lScreen)                                            |
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	If nPosDin <> 0 .AND. !SuperGetMV( "MV_LJTROCO", ,.F. ) .AND. SL1->L1_RESERVA == "S"
-		aReceb[nPosDin][2] -= Lj7T_Troco(2) //essa funcao retorna o troco da venda
-	EndIf
-EndIf
 
 //Faz a verificacao se o valor do ISS deve ser abatido no valor total da venda.
 lAbateISS := !( lECommerce ) .AND. LjxDAbISS(SL1->L1_CONDPG,SL1->L1_FORMPG,SL1->L1_VALISS)
@@ -6392,7 +6394,13 @@ If (SL1->L1_DINHEIR > 0 .OR. lAbatOrc ) .AND. ((lRetLJTES .AND. !lFtvdVer12) .OR
 	EndIf
 
 	For nVend := 1 To Min(Len(aVendedor),5) // So existem 5 campos no SD2 e SE1
-		nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + nNccUsada) ) * SL1->L1_DINHEIR,nDecimal )
+
+		If IsBlind() .AND. SL1->L1_CREDITO > 0 .AND. !lComiDev
+			nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + SL1->L1_CREDITO) ) * SL1->L1_DINHEIR,nDecimal )
+		Else
+			nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + nNccUsada) ) * SL1->L1_DINHEIR,nDecimal )
+		EndIf
+
 		AADD( aSE1 , { "E1_VEND"+Str(nVend,1) 	, aVendedor[nVend][1] } )
 		AADD( aSE1 , { "E1_COMIS"+Str(nVend,1) 	, aVendedor[nVend][2] } )
 		AADD( aSE1 , { "E1_BASCOM"+Str(nVend,1) , nBaseCom } )
@@ -6700,6 +6708,8 @@ If lFinanceiro .AND. lRet
 
 	For i := 1 To Len(aReceb)
 
+		aSE1 := {}	//Reinicializando os elementos para cada registro lido no SE1
+
 		//---------------------------------------------------------------------------
 		//|A data de vencimento inicial deve ser zerada a cada mudanca de           |
 		//|Forma de Pagamento + Administradora + ID do Cartao , para nao gerar datas|
@@ -6880,25 +6890,27 @@ If lFinanceiro .AND. lRet
 				AADD(aSE1,{"E1_VLRREAL",SE1->E1_VLRREAL + aReceb[i][__VALOR]})
 			EndIf
 			
-			If lFtvdVer12
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³Tratamento da natureza ref. ao recolhimento de ISS na gravacao dos titulos³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			DbSelectArea("SED")
+			SED->(DbSetOrder(1))
+			SED->(DbSeek(xFilial("SED")+SE1->E1_NATUREZ))
 
-				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-				//³Tratamento da natureza ref. ao recolhimento de ISS na gravacao dos titulos³
-				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-				DbSelectArea("SED")
-				SED->(DbSetOrder(1))
-				SED->(DbSeek(xFilial("SED")+SE1->E1_NATUREZ))
-
-				If SED->ED_CALCISS=="S"
-					//Calculo e atribuição do campo SE1->E1_ISS
-					LjCalcRecIss(	@nTotNFISS	, @nRestISS	, .F.	, .F.			,;
-									nImpostos	, .F.		, i		, @nValE1ISS	,;
-									@nE1Valor	)
-					
-					AADD( aSE1 , { "E1_ISS" , nValE1ISS } )
-					AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
-				EndIf
-
+			If SED->ED_CALCISS=="S" // Calcula ISS sobre o Valor de cada parcela 
+	
+				//Calculo e atribuição do campo SE1->E1_ISS
+				nE1ValIss := aReceb[i][__VALOR] //Valor de cada parcela 
+				LjCalcRecIss(	@nTotNFISS	, @nRestISS	, .F.	, .F.			,;
+								nImpostos	, .F.		, i		, @nValE1ISS	,;
+								@nE1ValIss	)
+				
+				AADD( aSE1 , { "E1_ISS" , nValE1ISS } )
+				nPosValor	:= aScan(aSE1,{|x| x[1] == "E1_VALOR" })
+				nPosVlReal 	:= aScan(aSE1,{|x| x[1] == "E1_VLRREAL" })
+				If nPosValor > 0 .AND. nPosVlReal > 0	//Lembrando que o elemento já foi atribuído anteriormente
+					aSE1[nPosValor][2] := (aSE1[nPosVlReal][2] - aReceb[i][__VALOR]) + nE1ValIss // LjCalcRecIss() calculou ISS o nE1ValIss deve ser atualizado.
+				EndIf 
 			EndIf
 
 		Else
@@ -6986,7 +6998,7 @@ If lFinanceiro .AND. lRet
 				EndIf
 			EndIf
 
-            If ( lUsaTef .And. AllTrim(aReceb[i][__FORMA]) $ __FORMATEF ) .Or. lIntegDef
+			If ( lUsaTef .And. AllTrim(aReceb[i][__FORMA]) $ __FORMATEF + _FORMAPGDG ) .Or. lIntegDef //Forma de pagamento TEF ou Pagamento Digital e PIX
 				If SE1->(ColumnPos("E1_NSUTEF")) > 0
 					AADD( aSE1 , { "E1_NSUTEF" , aReceb[i,__NSUTEF] } )
 				Endif
@@ -7045,10 +7057,21 @@ If lFinanceiro .AND. lRet
 
 			EndIf
 
-			AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+			nPosValor	:= aScan(aSE1,{|x| x[1] == "E1_VALOR" })
+			nPosVlReal 	:= aScan(aSE1,{|x| x[1] == "E1_VLRREAL" })
+
+			If nPosValor = 0
+				AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+			Else
+				aSE1[nPosValor][2] := nE1Valor
+			EndIf
 
 			nE1VlrReal := aReceb[i][__VALOR]
-			AADD( aSE1 , { "E1_VLRREAL" , nE1VlrReal } ) 
+			If nPosVlReal = 0
+				AADD( aSE1 , { "E1_VLRREAL" , nE1VlrReal } )
+			Else
+				aSE1[nPosVlReal][2] := nE1VlrReal
+			EndIf 
 
 			If Empty(SL1->L1_EMISNF) .AND. !lECommerce
 				dE1Emissao := dDatabase
@@ -7111,8 +7134,20 @@ If lFinanceiro .AND. lRet
 									nImpostos	, .F.		, i		, @nValE1ISS	,;
 									@nE1Valor	)
 					
+					nPosISS	:= aScan(aSE1,{|x| x[1] == "E1_ISS" })
+					nPosValor	:= aScan(aSE1,{|x| x[1] == "E1_VALOR" })
+
 					AADD( aSE1 , { "E1_ISS" , nValE1ISS } )
-					AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+					If nPosISS = 0
+						AADD( aSE1 , { "E1_ISS" , nValE1ISS } )
+					Else
+						aSE1[nPosISS][2] := nValE1ISS
+					EndIf
+					If nPosValor = 0
+						AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+					Else
+						aSE1[nPosValor][2] := nE1Valor
+					EndIf
 				EndIf
 
 			EndIf
@@ -7138,7 +7173,7 @@ If lFinanceiro .AND. lRet
 		Do Case
 			Case AllTrim(aReceb[i][__FORMA]) == "CH"	// Cheques
 
-				nPCH ++
+		 		nPCH ++
 				cParcela := LJParcela(nPCH, c1DUP)
 				cE1Parcela := cParcela
 				AADD( aSE1 , { "E1_PARCELA" , cE1Parcela } )
@@ -7158,8 +7193,8 @@ If lFinanceiro .AND. lRet
 				   AADD( aSE1 , { "E1_NUMCHQ" , aReceb[i][__NUMCART] } )
 				EndIf
 
-			// Cartao Credito, Vales, Vale-Presente, Convenio, Cartao de Debito, Financiamento, Cartao Fidelidade (R11.5)
-			Case AllTrim(aReceb[i][__FORMA]) $ "CC|VA|CO|CD|FI|BO|BOL" .OR.;
+			// Cartao Credito, Vales, Vale-Presente, Convenio, Cartao de Debito, Financiamento, Cartao Fidelidade, Pagto Digital, PIX (R11.5)
+			Case AllTrim(aReceb[i][__FORMA]) $ "CC|VA|CO|CD|FI|BO|BOL|PD|PX" .OR.;
 				(AllTrim(aReceb[i][__FORMA]) $ "VP" .AND. lUsaVP) .OR.;
 				(AllTrim(aReceb[i][__FORMA]) $ "FID" .AND. lLjcFid)
 				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -7268,6 +7303,24 @@ If lFinanceiro .AND. lRet
 							nPBOL ++
 							cParcela	:= LJParcela(nPBOL, c1DUP)
 							cNatureza	:= LjMExeParam("MV_NATFIN")
+						Case AllTrim(aReceb[i][__FORMA]) $ "PD" //Pagamento Digital
+							nPPD ++
+							cParcela	:= LJParcela(nPPD, c1DUP)
+							cNatureza	:= LjMExeParam("MV_NATPGDG", .F. , "PAGDIGITAL")
+							//Verifica se existe a Natureza configurada no parametro MV_NATPGDG
+							cNatureza	:= AllTrim(GetAdvFVal("SED","ED_CODIGO",xFilial("SED") + cNatureza,1,""))
+							If Empty(cNatureza)
+								cNatureza	:= LjMExeParam("MV_NATOUTR")
+							EndIf
+						Case AllTrim(aReceb[i][__FORMA]) == "PX" //Pagamento Digital
+							nPPD ++
+							cParcela	:= LJParcela(nPPD, c1DUP)
+							cNatureza	:= LjMExeParam("MV_NATPGPX", .F. , "PAGTOPIX")
+							//Verifica se existe a Natureza configurada no parametro MV_NATPGPX
+							cNatureza	:= AllTrim(GetAdvFVal("SED","ED_CODIGO",xFilial("SED") + cNatureza,1,""))
+							If Empty(cNatureza)
+								cNatureza	:= LjMExeParam("MV_NATOUTR")
+							EndIf
 					EndCase
 
 					If lNotFinPro
@@ -7299,7 +7352,7 @@ If lFinanceiro .AND. lRet
 				AADD( aSE1 , { "E1_HIST" 	, "" } ) 
 
 				// Gravacao no SE1 dos campos utilizandos pelo conciliador TEF
-				If AllTrim(aReceb[i][__FORMA]) $ __FORMATEF   //Forma de pagamento TEF
+				If AllTrim(aReceb[i][__FORMA]) $ __FORMATEF + "/" + _FORMAPGDG //Forma de pagamento TEF ou Pagamento Digital
 				   If SE1->(ColumnPos("E1_NSUTEF")) > 0
 					  AADD( aSE1 , { "E1_NSUTEF" , aReceb[i,__NSUTEF] } )
 				   Endif
@@ -7438,24 +7491,63 @@ If lFinanceiro .AND. lRet
 		DbSetOrder(1)
 		MsSeek(xFilial("SED") + cE1Naturez )
 
-		If SED->ED_CALCISS=="S"
+		If SED->ED_CALCISS=="S" 
 			//Calculo e atribuição do campo SE1->E1_ISS
 			LjCalcRecIss(	@nTotNFISS	, @nRestISS	, lAltParcela	, .F.			,;
 							nImpostos	, .F.		, i				, @nValE1ISS	,;
 							@nE1Valor	)
 
 			AADD( aSE1 , { "E1_ISS" , nValE1ISS } )
-			AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+			If !lAglutina // Quando é aglutina o calculo ISS é feito na linha 6892 
+				AADD( aSE1 , { "E1_VALOR" , nE1Valor } )
+			Else
+				nPosValor	:= aScan(aSE1,{|x| x[1] == "E1_VALOR" }) //Atualiza o valor ISS no Array E1_VALOR
+				If Len(aReceb) > 0 .AND. Valtype(i) <> "U" .AND. i == 1 //verifica se é a primeira vez depois o calculo é feito na linha 6892 
+					aSE1[nPosValor][2] := nE1Valor
+				EndIf	
+			EndIf	
 		EndIf
 		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 		//|   So atualiza o saldo caso nao seja dinheiro...   |
 		//|   vale-presente OU Cartão fidelidade (R11.5)      |
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-		If !IsMoney(aReceb[i,__FORMA]) .AND. aReceb[i,__FORMA] <> "VP" .AND. AllTrim(aReceb[i,__FORMA]) <> "FID"
+		If !IsMoney(aReceb[i,__FORMA]) .AND. aReceb[i,__FORMA] <> "VP" .AND. AllTrim(aReceb[i,__FORMA]) <> "FID" .AND. !lAglutina
 			AADD( aSE1 , { "E1_SALDO" , nE1Valor } )
 		EndIf
 
-		AADD( aSE1 , { "E1_VLCRUZ" 	, xMoeda(nE1Valor, nE1Moeda, 1, dE1Emissao) } )
+		// Ajuste para E1_VLCRUZ considerar o E1_VALOR quando lAglutina = .T. 
+		If AllTrim(aReceb[i][__FORMA]) $ "CC|VA|CO|CD|FI" .AND. SE1->(DbSeek(cSeek)) .AND. !lAdmin .AND. lAglutina
+			nPosValor	:= aScan(aSE1,{|x| x[1] == "E1_VALOR" })
+			nPosVCruz   := aScan(aSE1,{|x| x[1] == "E1_VLCRUZ" })
+			If nPosValor > 0
+				If nPosVCruz > 0
+					aSE1[nPosVCruz][2] := xMoeda(aSE1[nPosValor][2], nE1Moeda, 1, dE1Emissao)
+				Else
+					AADD( aSE1	, { "E1_VLCRUZ", xMoeda(aSE1[nPosValor][2], nE1Moeda, 1, dE1Emissao)} )
+				EndIf
+
+				//Recalcular Comissões E1_BASCOM1 caso aglutina parcelas
+				For nVend := 1 To Min(Len(aVendedor),5) // So existem 5 campos no SD2 e SE1
+
+					If IsBlind() .AND. (nVlTotal + SL1->L1_CREDITO) > 0 .AND. !lComiDev
+						nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + SL1->L1_CREDITO) ) * aSE1[nPosValor][2],nDecimal )
+					ElseIf (nVlTotal + nNccUsada) > 0
+						nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + nNccUsada) ) * aSE1[nPosValor][2],nDecimal )
+					Else
+						nBaseCom := 0
+					EndIf
+
+					AADD( aSE1 , { "E1_VEND"+Str(nVend,1) 	, aVendedor[nVend][1] } )
+					AADD( aSE1 , { "E1_COMIS"+Str(nVend,1) 	, aVendedor[nVend][2] } )
+					AADD( aSE1 , { "E1_BASCOM"+Str(nVend,1) , nBaseCom } )
+					AADD( aSE1 , { "E1_VALCOM"+Str(nVend,1) , Round(nBaseCom * (aVendedor[nVend][2]/100),nDecimal) } )
+				Next nVend
+
+			EndIf
+		Else
+			AADD( aSE1 , { "E1_VLCRUZ" 	, xMoeda(nE1Valor, nE1Moeda, 1, dE1Emissao) } )
+		EndIf
+		
 		AADD( aSE1 , { "E1_VENCREA" , DataValida(dE1Vencto,.T.) } )
 		AADD( aSE1 , { "E1_VENCORI" , dE1Vencto } )
 
@@ -7555,12 +7647,7 @@ If lFinanceiro .AND. lRet
 		//Alimenta campo Conta do Cliente - Integracao Hotel
 		If lIntegHtl
 			//Armazena Reserva Hotel
-			AADD( aSE1 , { "E1_CONHTL" , SL1->L1_RESEHTL } )
-				 								
-			//Se forma de pagamento RA, alimenta array para compensacao
-			If AllTrim(aReceb[i][__FORMA]) == "RA"				
-				aAdd(aRecRa, {SE1->(Recno()), Val(aReceb[i][__CONHTL]), dE1Emissao })
-			EndIf						
+			AADD( aSE1 , { "E1_CONHTL" , SL1->L1_RESEHTL } )					
 		EndIf
 
 		// Envia para gravação da SE1
@@ -7602,6 +7689,12 @@ If lFinanceiro .AND. lRet
 
 			// Garante o posicionamento do registro
 			SE1->( dbGoTo(nE1Recno) )
+
+			If lIntegHtl
+				If AllTrim(aReceb[i][__FORMA]) == "RA"				
+					aAdd(aRecRa, {SE1->(Recno()), Val(aReceb[i][__CONHTL]), dE1Emissao })
+				EndIf
+			Endif	
 
 			aAdd( aRecnoFin, { "SE1", SE1->E1_NUM, SE1->(Recno()) } )
 
@@ -7844,7 +7937,7 @@ If lFinanceiro .AND. lRet
 								{"E2_NATUREZ"	,SE1->E1_NATUREZ,Nil}	,;						   					// 05
 								{"E2_FORNECE"	,cNumSA2	 	,Nil}	,;											// 06
 								{"E2_LOJA"		,SE1->E1_LOJA   ,Nil}	,; 							  				// 07
-								{"E2_EMISSAO"	,dDataBase      ,NIL}	,;				   			  				// 08
+								{"E2_EMISSAO"	,Iif(dDataBase > SE1->E1_VENCTO,SL1->L1_EMISNF,dDataBase)      ,NIL}	,;				   			  				// 08
 								{"E2_VENCTO"	,SE1->E1_VENCTO ,NIL}	,; 							   				// 09
 								{"E2_VENCREA"	,SE1->E1_VENCREA,NIL}	,; 											// 10
 								{"E2_VALOR"		,A410Arred((nValAdm)/100 , "L2_VRUNIT"),NIL},;						// 11
@@ -8086,14 +8179,86 @@ If lFinanceiro .AND. lRet
 	Next nContaParc
 
 EndIf
+/*
+	Ponto para Gerar NCC para integração 
+	quando o pagamento for credito vale troca.
+	Issue: DVARLOJ1-5656
+*/
+If lIntegDef .AND. SL1->L1_CREDITO > 0 	
+	// nNccGerada e nNccUsada Usada na função FrtIncluiNCC para calcular o valor a ser criado da NCC
+	nNccGerada := SL1->L1_CREDITO
+	nNccUsada  := 0
+	//aNccItens Simulando a NCC selecionada em Tela.
+	aAdd(aNccItens, {.T.,SL1->L1_CREDITO,SL1->L1_DOC,SL1->L1_EMISSAO,0,SL1->L1_CREDITO,SuperGetMV("MV_MOEDA1"),SL1->L1_SERIE,"A","NCC",SL1->L1_LOJA})
+	LjGrvLog(SL1->L1_NUM,"Vai realizar a baixa das NCCs",aNCCItens)
+
+	//--------------------------------
+	// Inclui nova NCC para o cliente
+	//--------------------------------
+	lGvr := StaticCall( WSFRTNCC		, FrtIncluiNCC		,;
+						aNCCItens		, 	nNccUsada		, nNccGerada		, SL1->L1_DOC		,;
+						SL1->L1_SERIE	,	SL1->L1_OPERADO	, SL1->L1_EMISSAO	, SL1->L1_CLIENTE	,;
+						SL1->L1_LOJA,,lIntegDef)//passa lIntegDef se é integração para função FrtIncluiNCC
+
+	LjGrvLog(SL1->L1_NUM,"Retorno se incluiu a nova NCC",lRet)
+	LjGrvLog(SL1->L1_NUM,"Valor da nova NCC:",nNccGerada)
+	
+	If lGvr
+		//Adiciona Recno para que função LjInMovNCC possa posicionar na NCC
+		aNCCItens[1][5] := SE1->(Recno())
+		//Ajustar o valor da NCC Gerada para o valor SL1->L1_CREDITO 
+		RecLock( "SE1",.F.)
+			REPLACE SE1->E1_VALOR 		WITH SL1->L1_CREDITO
+			REPLACE SE1->E1_SALDO 		WITH SL1->L1_CREDITO
+			REPLACE SE1->E1_VALLIQ 		WITH SL1->L1_CREDITO
+			REPLACE SE1->E1_VLCRUZ 		WITH SL1->L1_CREDITO
+			REPLACE SE1->E1_BASCOM1		WITH SL1->L1_CREDITO
+		SE1->(MsUnlock())
+		//------------------------------------------------------------------
+		// Inclui tipo CR para fazer a compensação das NCCs usadas na venda
+		//------------------------------------------------------------------
+		lGvr := StaticCall( WSFRTNCC		, FrtIncluiCR		,;
+							SL1->L1_SERIE	, @cDocCred			, @nRecnoSE1	, SL1->L1_DOC		,;
+							SL1->L1_SERIE	, SL1->L1_CLIENTE	, SL1->L1_LOJA	, SL1->L1_CREDITO	,;
+							SL1->L1_OPERADO	, nNccUsada			, nNccGerada   	, aNccItens			)
+
+		LjGrvLog(SL1->L1_NUM,"Retorno se incluiu o CR para compensacao da NCC",lRet)
+
+		//----------------------
+		// Efetua a compensacao
+		//----------------------
+		If lGvr
+			nNccGerada := 0
+			nNccUsada  := SL1->L1_CREDITO
+			
+			LjGrvLog(SL1->L1_NUM,"Executa a baixa da NCC utilizada na venda")
+			LjInMovNCC(	aNccItens,	nRndMoed1,	cDocCred,	;
+					nRecnoSE1,	nNccUsada, nNccGerada, SL1->L1_NUM, nMoedaCor, lNFePDV )
+		Else
+			cTextoErro := "Não foi possível realizar a inclusão do título do tipo CR referente a NCC"
+			LjGrvLog(SL1->L1_NUM,cTextoErro)
+		EndIf
+	Else
+		cTextoErro := "Não foi possível realizar a inclusão da Nota de Crédito"
+		LjGrvLog(SL1->L1_NUM,cTextoErro) 
+	EndIf
+	
+	If !lGvr
+		RPCOpenTables({"MHL"}) //Necessario abrir tabela especifica         
+		RMIGRVLOG( "IR"       ,"SL1"   ,SL1->(Recno()), "GRVBAT"    ,;
+			cTextoErro ,        ,              ,             ,;
+			.F.        , 1      ,SL1->L1_FILIAL+ SL1->L1_NUM, 'GRVBATCH', 'PROTHEUS' )
+	endIf		
+EndIf
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //|  Baixas os Creditos do Cliente   |
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
-//Tratamento Mini GrvBatch do Totvs PDV para emissao NF-e
+//Tratamento Mini GrvBatch do Totvs PDV para emissao NF-e8
 If !lNFePDV .and. nNccGerada > 0 .AND. lRet
 	cParcela := PadR(SuperGetMV("MV_1DUP"), nTamE1_PARCELA) // Ajusta de acordo com o tamanho do E1_PARCELA
+	nE1Valor := SL1->L1_CREDITO
 
 	While SE1->(DbSeek(xFilial("SE1") + cPrefE1 + cNumE1 + cParcela + "NCC"))
 		cParcela := CHR(ASC(cParcela)+1)
@@ -8131,6 +8296,10 @@ If SL1->L1_CREDITO > 0 .AND. lFinanceiro .AND. lScreen .AND. lRet
 	//|  1 - Valor pago em Credito  |
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	cParcela := PadR(SuperGetMV("MV_1DUP"), nTamE1_PARCELA) // Ajusta de acordo com o tamanho do E1_PARCELA
+
+	If nE1Valor == 0
+			nE1Valor := SL1->L1_CREDITO
+	EndIf
 
 	SE1->(DbSetOrder(1))
 	While SE1->(DbSeek(cWhileSE1))
@@ -8268,7 +8437,16 @@ If SL1->L1_CREDITO > 0 .AND. lFinanceiro .AND. lScreen .AND. lRet
 			If Ascan(aRegSE1, SE1->(Recno()) ) = 0
 				aAdd( aRegSE1, SE1->(Recno()) )
 			EndIf
-			nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + nNccUsada) ) * SL1->L1_CREDITO, nDecimal )
+
+			If ( AllTrim(SE1->E1_TIPO) == "CR" .AND. lComiDev ) .AND. nNccUsada <= SL1->L1_CREDITO
+				nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + nNccUsada) ) * SL1->L1_CREDITO, nDecimal )
+			ElseIf ( AllTrim(SE1->E1_TIPO) == "CR" .AND. lComiDev ) .AND. nNccUsada > SL1->L1_CREDITO .AND. nVlTotal == 0
+				nBaseCom := Round((aVendedor[nVend][3] / (nVlTotal + SL1->L1_CREDITO) ) * SL1->L1_CREDITO, nDecimal )
+			Else
+				// Caso lComiDev estiver como .F. não gera comissão para NCC
+				nBaseCom := 0
+			EndIf
+			
 			&("SE1->E1_VEND"  +Str(nVend,1)) := aVendedor[nVend][1]
 			&("SE1->E1_COMIS" +Str(nVend,1)) := aVendedor[nVend][2]
             &("SE1->E1_BASCOM"+Str(nVend,1)) := nBaseCom
@@ -9038,8 +9216,6 @@ Return NIL
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 Function LjInclSF2(cNumNota, lImpCupFis, cSerie, cFirst, cSerieNF, lNFServ)
 
-Local nCount     	:= 0														// Usada em lacos For..Next
-Local nPosSign 		:= 0														// Posicao do sinal dentro da string
 Local cTiposDoc 	:= AllTrim( SuperGetMv( 'MV_ESPECIE' ) )					// Tipos de documento (busca no param. MV_ESPECIE)
 Local cEspecie  	:= SPACE(5)													// Especie do Documento
 Local cChaveNfce	:= SL1->L1_KEYNFCE											// Verifica se foi gerado NFC-e para a venda
@@ -9161,21 +9337,7 @@ If !SF2->( DbSeek( xFilial( "SF2" )+ cNumNota + cSerieNF + cCliente + cLoja ) )
 		SF2->F2_ECF	:= ""
 		If cPaisLoc == "BRA"
 			If cTiposDoc <> NIL
-				cTiposDoc := StrTran( cTiposDoc, ";", CHR(13)+CHR(10))
-				For nCount := 1 TO MLCount( cTiposDoc )
-					cEspecie := AllTrim( StrTran( MemoLine( cTiposDoc,, nCount ), CHR(13), CHR(10) ) )
-					nPosSign := Rat( "=", cEspecie)
-					If nPosSign > 0 .AND. AllTrim( cSerie ) == AllTrim( SubStr( cEspecie, 1, nPosSign - 1 ) )
-						If SX5->( DbSeek( xFilial("SX5") + "42" + SubStr( cEspecie, nPosSign + 1 ) ) )
-							cEspecie := SubStr( cEspecie, nPosSign + 1 )
-						Else
-							cEspecie := SPACE(5)
-						EndIf
-						Exit
-					Else
-						cEspecie := SPACE(5)
-					EndIf
-				Next nCount
+				cEspecie := LjNfEspeci(cSerie, cTiposDoc)
 			EndIf
 		Else
 			LjGravaLog( .T. , cNumNota + " - " + cSerieNF , '40) Especie MVNOTAFIS - ' + MVNOTAFIS, LMALERT)
@@ -11529,7 +11691,7 @@ If lFaturar
 				EndIf
 	    	EndIf
 
-			If MaFisRet(,"NF_SUFRAMA") .AND. lFtvdVer12
+			If MaFisRet(,"NF_SUFRAMA")
 	        	REPLACE SD2->D2_DESCZFR	WITH MaFisRet(nItens,"IT_DESCZF")
 	        EndIf
 
@@ -12756,7 +12918,7 @@ EndIf
 //Nesse caso o cliente preenchendo o campos L1_VEND1, L1_VEND2, L1_VEND3, L1_VEND4, L1_VEND5 e considera na comissao
 //Tratamento no Loja440 funcionava apenas para Calculo de Comissao Off-Line, adicionado aqui para funcionar
 //no calculo de Comissao On-Line
-If cPaisLoc == "BRA" .And. lScreen //Protecao GravaBatch, funcionalidade apenas para Venda Assistida 
+If cPaisLoc == "BRA"
 	For nX := 1 To 5 //Maximo de 5 vendedores	 				
 		If SL1->(FieldPos("L1_VEND" + AllTrim(Str(nX)))) > 0 .And. !Empty(&("SL1->L1_VEND" + AllTrim(Str(nX))))																
 			nComisAux := Posicione("SA3", 1, xFilial("SA3") + &("SL1->L1_VEND" + AllTrim(Str(nX))), "A3_COMIS") //Armazena percentual de comissao
@@ -13105,6 +13267,13 @@ If lFaturar .And. lRet
 		SFT->(MsUnlock())
 		
 		MAFISCDA(,2)  //Gravacao dos lancamentos fiscais
+
+        //---------------------------------------------------------
+        // Atualiza dados dos complementos do SPED automaticamente
+        //--------------------------------------------------------
+        If SuperGetMV("MV_ATUCOMP",,.F.)
+            AtuComp(SF2->F2_DOC,SF2->F2_SERIE,SF2->F2_ESPECIE,SF2->F2_CLIENTE,SF2->F2_LOJA,"S",SF2->F2_TIPO)
+        EndIf
 		
 	EndIf
 EndIf
@@ -16414,3 +16583,43 @@ RestArea(aAreaSF2)
 RestArea(aArea)
 
 Return lRet
+
+//-----------------------------------------------------------------------
+/*/{Protheus.doc} LjNfEspeci
+Retorna a Especie do Documento Fiscal com base na Série da nota e na 
+configuração do parâmetro MV_ESPECIE.
+
+@author  Alberto Deviciente
+@since 	 27/07/2021
+@version P12.1.27
+
+@param 	 cSerie, Caractere, Série do Documento
+@param 	 cTiposDoc, Caractere, Tipos de Documento (MV_ESPECIE)
+
+@return  cRet, Caractere, Especie do Documento Fiscal
+/*/
+//-----------------------------------------------------------------------
+Function LjNfEspeci(cSerie, cTiposDoc)
+Local cRet 			:= ""
+Local nCount     	:= 0
+Local nPosSign 		:= 0 	// Posicao do sinal dentro da string
+
+Default cTiposDoc	:= AllTrim( SuperGetMv( 'MV_ESPECIE' ) ) // Tipos de documento
+
+cTiposDoc := StrTran( cTiposDoc, ";", CHR(13)+CHR(10))
+For nCount := 1 TO MLCount( cTiposDoc )
+	cRet := AllTrim( StrTran( MemoLine( cTiposDoc,, nCount ), CHR(13), CHR(10) ) )
+	nPosSign := Rat( "=", cRet)
+	If nPosSign > 0 .AND. AllTrim( cSerie ) == AllTrim( SubStr( cRet, 1, nPosSign - 1 ) )
+		If SX5->( DbSeek( xFilial("SX5") + "42" + SubStr( cRet, nPosSign + 1 ) ) )
+			cRet := SubStr( cRet, nPosSign + 1 )
+		Else
+			cRet := SPACE(5)
+		EndIf
+		Exit
+	Else
+		cRet := SPACE(5)
+	EndIf
+Next nCount
+
+Return cRet

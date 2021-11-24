@@ -13,6 +13,7 @@
 #DEFINE _ADMINISTRATIVA				10					//Funcao administrativa
 #DEFINE _GENERICA 					11					//Transacao generica     
 #DEFINE _CANCELAMENTO				12					//Transacao generica  
+#DEFINE _PAGDIGPIX                 14                  // Transação Pagamento Digitais e PIX
 #DEFINE _NUMERO_LINHAS_IMPRESSAO	0					//Numero de Linhas por impressão 
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

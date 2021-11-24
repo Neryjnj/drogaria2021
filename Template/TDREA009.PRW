@@ -64,7 +64,7 @@ If !Empty(aLin[1][3]) //Se houver ao menos uma linha preenchida no List de busca
 	oLbx:bLine		:= LocxBLin('oLbx',aCpo,.T.)
 	oLbx:bLDblClick	:={ || ChgMarkLb(oLbx,aLin,{|| .T. },.F.) }
 	
-	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,)
+	ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,,,,,,,.T.)
 	
 	//Retornar a area porque para conveniado estava posicionado na empresa de convenio
 	SA1->(RestArea(aAreaSA1))

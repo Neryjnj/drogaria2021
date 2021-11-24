@@ -64,7 +64,7 @@ RefreshRate=30
 
 //Exemplo de user function para testes
 User Function TesteUp()
-	STWUpData( "99" , "01" , "001",".T." )	
+	STWUpData( "99" , "01" , "001")
 Return
 	
 
@@ -234,11 +234,11 @@ If !lFirst
 			 					"TX"	, "OK"	, cPDV														)
 			    				 			    				 
 			//Grava Sangria
-			STDRecTabServer("SE5",	 16, "SE5->E5_FILIAL + SE5->E5_SITUA + SE5->E5_NATUREZ", xFilial("SE5") + "00" + PADR(cMvNatSang, nTamE5Nat) ,;
+			STDRecTabServer("SE5",	 16, "SE5->E5_FILIAL + SE5->E5_SITUA + SE5->E5_NATUREZ", xFilial("SE5") + StrZero(0,TamSx3("E5_SITUA")[1]) + PADR(cMvNatSang, nTamE5Nat) ,;
 							 "OK", "OK", cPDV) 
 			
 			//Grava Suprimento
-			STDRecTabServer("SE5",	 16, "SE5->E5_FILIAL + SE5->E5_SITUA + SE5->E5_NATUREZ", xFilial("SE5") + "00" + PADR(cMvNatTrc, nTamE5Nat),;
+			STDRecTabServer("SE5",	 16, "SE5->E5_FILIAL + SE5->E5_SITUA + SE5->E5_NATUREZ", xFilial("SE5") + StrZero(0,TamSx3("E5_SITUA")[1]) + PADR(cMvNatTrc, nTamE5Nat),;
 							 "OK", "OK", cPDV) 
 			
 

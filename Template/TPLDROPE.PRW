@@ -823,7 +823,7 @@ If lRet
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	oDlg:lEscClose := .F. 
 	
-	ACTIVATE MSDIALOG oDlg CENTERED ON INIT EnchoiceBar( oDlg, bOk, bCancel, Nil, Nil )
+	ACTIVATE MSDIALOG oDlg CENTERED ON INIT EnchoiceBar( oDlg, bOk, bCancel, Nil, Nil,,,,,,.T. )
 	
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³ Retornar a area porque para conveniado estava posicionado na empresa de convenio      ³
@@ -998,7 +998,7 @@ oLbx:SetArray(aLin)
 oLbx:bLine		:= LocxBLin('oLbx',aCpo,.T.)
 oLbx:bLDblClick	:={ || ChgMarkLb(oLbx,aLin,{|| .T. },.F.) }
 
-ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,) CENTERED
+ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{|| lRet := .T.,oDlg:End()},{|| lRet := .F.,oDlg:End()},,,,,,,,.T.) CENTERED
 
 If !lTotvsPDV
 	SetKey(15, {|| } ) //Limpa o Ctrl + O ao fechar a tela de condicao de pgto.
@@ -1667,7 +1667,7 @@ If lCPFDuplic
 	oLbxCli:bLine		:= LocxBLin('oLbxCli',aCpoCli,.T.)
 	oLbxCli:bLDblClick	:={ || ChgMarkLb(oLbxCli,aLinCli,{|| .T. },.F.) }
 	
-	ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRet := .T.,oDlgCli:End()},{|| lRet := .F.,oDlgCli:End()},,)
+	ACTIVATE MSDIALOG oDlgCli ON INIT EnchoiceBar(oDlgCli,{|| lRet := .T.,oDlgCli:End()},{|| lRet := .F.,oDlgCli:End()},,,,,,,,.T.)
 	If lRet
 		aEval( aLinCli, { |x,y| If( aLinCli[y,1] == 1, cRetCli := (aLinCli[y,3]+aLinCli[y,4]), ) } )
 		Posicione("SA1",1,xFilial("SA1")+cRetCli,"A1_COD+A1_LOJA")

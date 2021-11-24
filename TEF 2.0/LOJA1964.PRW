@@ -29,20 +29,22 @@ Class LJCCupom
 	Method Inserir(	cTipo		, oViaCaixa	, oViaCliente	, cTipoTrans,;
 					cTotalizador, cFormaPgto, nValor		, nVias		,;
 					nTentativas	)
-	Method CupomReduzido(lRemove, cMsgProm, cChave) //Retorna o primeiro cupom reduzido e o exclui da Lista 
-	Method RetornarCupons(cTipo, cTotalizador, cTipoTrans) //Retorna o cupom conforme o Totalizador e o Tipo de Transacao   
+	Method CupomReduzido(lRemove, cMsgProm, cChave)										//Retorna o primeiro cupom reduzido e o exclui da Lista 
+	Method RetornarCupons(cTipo, cTotalizador, cTipoTrans)								//Retorna o cupom conforme o Totalizador e o Tipo de Transacao   
 	Method InserirFormas( cTipo		, cTotalizador	, cFormaPgto	, nValor		,;
-						  cTipoTrans, nVlrSaque		, nVlrVndcDesc	, nVlrDescTEF	) //Insere as formas de pagamento TEF
-	Method RetornarFormas(cTipo, cTotalizador, cTipoTrans) //Retorna as Formas de Pagamento TEF  
-	Method Imprimir(lRelGer) //Imprime os cupons TEF 
-	Method RetornarCompr() //Retorna os comprovantes a serem impressos
-	Method ImprimirCompr(oComprov, oCupons, cTexto, lRelGer) //Imprive o comprovante  
-	Method VerificarImpressao(aRet, lReimprime ) //Verifica se a impressao foi realizada com sucesso e se deve ser realizada a reimpressão
-	Method TGVerificarImpressao(aRet, lReimprime, lRelGer ) //Rel. Gerencial Verifica se a impressao foi realizada com sucesso e se deve ser realizada a reimpressão
-	Method ReimpSenSup() //Verifica se é necessário a digitação da senha do superior
+						  cTipoTrans, nVlrSaque		, nVlrVndcDesc	, nVlrDescTEF	)	//Insere as formas de pagamento TEF
+	Method RetornarFormas(cTipo, cTotalizador, cTipoTrans)								//Retorna as Formas de Pagamento TEF  
+	Method Imprimir(lRelGer)															//Imprime os cupons TEF 
+	Method RetornarCompr()																//Retorna os comprovantes a serem impressos
+	Method ImprimirCompr(oComprov, oCupons, cTexto, lRelGer)							//Imprive o comprovante  
+	Method VerificarImpressao(aRet, lReimprime )										//Verifica se a impressao foi realizada com sucesso e se deve ser realizada a reimpressão
+	Method TGVerificarImpressao(aRet, lReimprime, lRelGer ) 							//Rel. Gerencial Verifica se a impressao foi realizada com sucesso e se deve ser realizada a reimpressão
+	Method ReimpSenSup() 																//Verifica se é necessário a digitação da senha do superior
 	Method ImprimirTxtFisc(oCupons, cTexto)  
 	Method RetornarTexto(oCupons)
 	Method TGImprimirTxtFisc(oCupons, cTexto)
+	Method ImpCpvTPdv()																	//Impressão do comprovante para Totvs PDV
+	Method ImpCpvLoja()																	//Impressão do comprovante para SIGALOJA
 
 EndClass         
 
@@ -148,6 +150,7 @@ Return nil
 ±±º			 ³			C - Pagamento em cartao		    				  º±±
 ±±º			 ³			R - Recarga de Celular   			    		  º±±
 ±±º			 ³			B - Correspondente Bancário                       º±±
+±±º		     ³          D - Pagamento Digital		                      º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±º          ³                                                            º±±
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
@@ -458,7 +461,8 @@ If nTotCup > 0
 	    Do While nConta <= nTotFormas .And. ;
 				 cTipo  == Self:oFormas:Elements(nConta):cTipo .AND.;
 				 cTotalizador == Self:oFormas:Elements(nConta):cTotalizador .AND. ;
-				 cTipoTrans == 	Self:oFormas:Elements(nConta):cTipoTrans
+				 cTipoTrans == 	Self:oFormas:Elements(nConta):cTipoTrans .AND. ;
+				 cFormaPgto == Self:oFormas:Elements(nConta):cFormaPgto
 			 
 			 //Somente adiciona se localizou um cupom fiscal
 			 If Self:oCupom:Seek("cChave", cTipo + cTotalizador + cTipoTrans) > 0
@@ -481,8 +485,8 @@ If nTotCup > 0
 	    	
 		If nTotForma > 0 .OR. nTransAdm > 0
 			oRetorno:Add( LjCFormas():New(		cTipo			,	cTotalizador	,	cFormaPgto	, nTotForma ,;
-												 	NIL				,	cTipoTrans		,	Nil			, nVlrSaque ,;
-												 	nVlrVndcDesc 	, nVlrDescTEF		) )
+											 	NIL				,	cTipoTrans		,	Nil			, nVlrSaque ,;
+											 	nVlrVndcDesc 	, nVlrDescTEF		) )
 		EndIf    
 	
 	EndDo
@@ -502,18 +506,22 @@ Return oRetorno
 ±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
 ±±ºUso       ³ MP10                                                       º±±
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
-Method Imprimir(lRelGer,lSTDSatRecovery) Class LJCCupom
-	Local oComprov		:=  0 //total de Comprovantes
-	Local nC			:=  1 //Contador de Comprovantes
-	Local oCupons		:= NIl //Cupons Fiscais Vinculados a Forma de Pagamento
-	Local lImprimiu		:= .T.  //Retorno da função
-	Local cTexto			:= ""
+Method Imprimir(lRelGer,lSTDSatRecovery, lPagDigPix) Class LJCCupom
+	Local oComprov		:=  0	//total de Comprovantes
+	Local nC			:=  1	//Contador de Comprovantes
+	Local oCupons		:= NIl	//Cupons Fiscais Vinculados a Forma de Pagamento
+	Local lImprimiu		:= .T.	//Retorno da função
+	Local cTexto		:= ""
+	Local lPOS		  	:= STFIsPOS()	// Pos?
 
-	Default lRelGer := .F.
+	Default lRelGer			:= .F.
 	Default lSTDSatRecovery := .F.
+	Default lPagDigPix		:= .F.
 	
-	STFMessage("TEF", "RUN", "Aguarde a impressão do comprovante TEF....")  //"Aguarde a impressão do comprovante TEF...."
-	STFShowMessage("TEF")
+	If lPOS
+		STFMessage("TEF", "RUN", STR0006)  //"Aguarde a impressão do comprovante TEF...."
+		STFShowMessage("TEF")
+	EndIf
 	
 	oComprov := Self:RetornarCompr()
 	
@@ -521,11 +529,16 @@ Method Imprimir(lRelGer,lSTDSatRecovery) Class LJCCupom
 	
 	    oCupons  := Self:RetornarCupons(oComprov:Elements(nC):cTipo, oComprov:Elements(nC):cTotalizador, oComprov:Elements(nC):cTipoTrans)
 		cTexto	 := ""
-	
-		If oCupons:Count() >0 .AND. !Self:ImprimirCompr( oComprov:Elements(nC), oCupons, @cTexto, @lRelGer,lSTDSatRecovery) 
+
+		lImprimiu := Self:ImprimirCompr( oComprov:Elements(nC), oCupons, @cTexto, @lRelGer,lSTDSatRecovery)
+
+		If lImprimiu .AND. (oComprov:aColecao[nC]:cFormaPgto $ "PD/PX/PIX/PAGTO DIGITAL" .OR. lPagDigPix)
+			Exit
+		ElseIf  oCupons:Count() >0 .AND. !lImprimiu
 			lImprimiu := .F.    
 			Exit
 		EndIf
+
 	Next nC   
 	
 	If oComprov:Count() > 0
@@ -539,8 +552,10 @@ Method Imprimir(lRelGer,lSTDSatRecovery) Class LJCCupom
 	Self:oCupom :=  LJCList():New()  //Objeto do Tipo Lista
 	Self:oFormas :=  LJCList():New()  //Objeto do Tipo Lista
 
-	STFMessage("SITEF", "ALERT", IIF( lImprimiu,"Impressão realizada" , "Falha na impressão do comprovante.") ) //"Falha na impressão do comprovante."
-	STFShowMessage("SITEF")
+	If lPOS
+		STFMessage("SITEF", "ALERT", IIF( lImprimiu,"Impressão realizada" , STR0003) ) //"Falha na impressão do comprovante."
+		STFShowMessage("SITEF")
+	EndIf
 	
 Return lImprimiu
 
@@ -565,260 +580,14 @@ Return lImprimiu
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 */
 Method ImprimirCompr(oComprov, oCupons, cTexto, lRelGer, lSTDSatRecovery) Class LJCCupom
-	Local lContinua  	:= .F.	//Laco de continuidade do processo
-	Local lReimprime 	:= .F.	//Indicação de reimpressão do comprovante 
-	Local lImprimiu  	:= .F.	//Impressão do comprovante com sucesso?
-	Local aRet	     	:= {}	//Retorno do ECF
-	Local lGuil			:= SuperGetMV("MV_FTTEFGU",, .T.)	// Ativa guilhotina
-	Local nValorTotal	:= 0	//Total da venda
-	Local oTotal		:= NIL
-	Local oNewModel		:= NIL
-	Local cFormaPagto	:= ""	//Forma de pagamento
-	Local lIsReceipTit	:= .F. 	//É recebimento de titulos?
-	Local lIsNotFiscal	:= .F.	//Possui item nao fiscal
-	Local lMobile 		:= STFGetCfg("lMobile", .F.)		//Smart Client Mobile	
-	Local lLJ7101		:= ExistBlock("LJ7101")
-	Local aRetPE		:= {} // retorno PE
-	Local lCancel		:= .F.
+Local lImprimiu  	:= .F.			//Impressão do comprovante com sucesso?
+Local lPOS		  	:= STFIsPOS()	// Pos?
 
-	Default cTexto			:= ""
-	Default lRelGer			:= .F.
-	Default lSTDSatRecovery	:= .F.
-
-	If !lSTDSatRecovery
-		oTotal := STFGetTot()	// Totalizador
-	Else
-		oNewModel	:= STFEstrTot() 
-		oTotal		:= oNewModel:GetModel("MasterStr")
-	EndIf
-
-	lMobile := ( ValType(lMobile) == "L" .AND. lMobile )
-
-	If oComprov <> Nil .AND.  oCupons <> nil
-
-		lIsReceipTit := STIGetRecTit()
-
-	    lContinua := .T.
-	    Do While lContinua  
-	    	oComprov:nVezes := oComprov:nVezes + 1
-			Do Case
-
-				Case !STFGetCfg("lUseECF")
-
-					If Empty(cTexto)
-						cTexto := Self:RetornarTexto(oCupons) //Linha inicial do comprovante
-					EndIf
-
-					If !Empty(cTexto)
-
-						If "CANCELAMENTO" $ cTexto
-							lCancel := .T.
-						EndIf
-
-						If !lMobile
-
-							lImprimiu := (STWPrintTextNotFiscal(cTexto) == 0)
-							If lImprimiu .AND. lGuil
-								cTexto := Replic(CHR(10)+CHR(13),6)
-								cTexto += TAG_GUIL_INI+TAG_GUIL_FIM		//Corte de Papel								
-								STWPrintTextNotFiscal(cTexto)
-							EndIf	
-							
-							lContinua := .F. 	
-						Else
-							//bufferizar as linhas do comprovante e enviar conforme contador					
-							aRet := Self:TGImprimirTxtFisc(oCupons, @cTexto, lMobile)	
-							
-							If !Self:TGVerificarImpressao(aRet, @lReimprime, @lRelGer, lMobile )  
-								//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-								lContinua := .F.
-				         	Else
-				            	lImprimiu := .T.
-								lContinua := .F.
-							EndIf
-						EndIf
-					EndIf
-
-				Case oComprov:cTipo == "V" .AND. oComprov:nVezes == 1
-					//Abre cupom fiscal não vinculado
-
-					/* Ajusta VALOR TOTAL e FORMA DE PAGAMENTO caso tenha algum produto não fiscal na venda */
-					If (lIsNotFiscal := STBExistNItemFiscal()) .And. !lIsReceipTit .AND. oComprov:cTipoTrans <> "RNF" .AND. oComprov:cTipoTrans <> "B" 
-						If oComprov:nValor <> oTotal:GetValue("L1_VLRLIQ") 
-							nValorTotal := oTotal:GetValue("L1_VLRLIQ")
-							cFormaPagto := STWFindTot()  
-						Else
-							nValorTotal := oComprov:nValor	
-							cFormaPagto := oComprov:cFormaPgto
-						EndIf
-						oComprov:cTotalizador := GetPvProfString("Microsiga", "Pedido" , "01", GetClientDir()+"SIGALOJA.INI")
-					Else
-					 	//Recebimento de titulos
-						If lIsReceipTit
-							oReceiptTitle := STIRetObjTit()
-							nValorTotal	:= oReceiptTitle:GetTotal() //Valor total dos recebimentos selecionados
-							cFormaPagto	:= Iif(FindFunction("STWReceTotalizer"),STWReceTotalizer("FORMA"),"")  //forma de pagamento
-							oComprov:cTotalizador := Iif(FindFunction("STWReceTotalizer"), STWReceTotalizer("Totalizadores"),"") //totalizador do recebimento					
-						Else
-							nValorTotal := oComprov:nValor	
-							cFormaPagto := oComprov:cFormaPgto
-						EndIf
-					EndIf						
-
-					If lIsReceipTit .Or. lIsNotFiscal .AND. oComprov:cTipoTrans <> "RNF" .AND. oComprov:cTipoTrans <> "B" 
-						aRet := STFFireEvent(	ProcName(0)				,;
-												"STReceiveNotFiscal"	,;
-												{oComprov:cTotalizador	,;
-												(nValorTotal + (oComprov:nVlrSaque - oComprov:nVlrDescTEF)) * IIF(STBFactor()[2] > 0, STBFactor()[2], 1),;
-												cFormaPagto})
-												
-						If !Self:VerificarImpressao(aRet, @lReimprime ) 
-							//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-							If lReimprime
-			                    Loop
-							Else
-								lContinua := .F.
-							EndIf
-						EndIf 
-					
-					EndIf
-
-					aRet := STFFireEvent(	ProcName(0)		,;
-											"STOpenNotFiscalReceipt",;
-											{cFormaPagto			,;
-											Str( (nValorTotal + (oComprov:nVlrSaque - oComprov:nVlrDescTEF)) * IIF(STBFactor()[2] > 0, STBFactor()[2], 1),14,2),;  //totalizar nformas de pagamento
-										 	oComprov:cTotalizador	,;
-											cTexto					,;
-											NIL})	
-
-					If !Self:VerificarImpressao(aRet, @lReimprime ) 
-						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-						
-						If lReimprime
-		                    Loop
-						Else
-							lContinua := .F.    
-							//Exit
-						EndIf
-		                
-					EndIf 
-					
-					If !lContinua
-						Loop
-					Endif
-					
-					//bufferizar as linhas do comprovante e enviar conforme contador   
-					
-					If "CANCELAMENTO" $ oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ]
-						lCancel := .T.
-					EndIf					
-					
-					If lLJ7101 .And. !lCancel 
-						aRetPE := ExecBlock( "LJ7101", .F., .F. )
-						If Len(aRetPE) > 0 .And. ValType(aRetPE[1]) == "C"
-							oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ] += aRetPE[1]
-						EndIf		
-						If Len(aRetPE) > 1 .And. ValType(aRetPE[2]) == "C"
-							oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ] += aRetPE[2]
-						EndIf														
-					EndIf						
-					
-					aRet := Self:ImprimirTxtFisc(oCupons, @cTexto)
-					
-					If !Self:VerificarImpressao(aRet, @lReimprime ) 
-						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-						
-						If lReimprime
-							Loop
-		
-						Else
-							lContinua := .F. 
-						EndIf
-						
-		                
-					EndIf 
-					
-					If !lContinua
-						Loop
-					Endif
-					InKey(2)
-			
-					aRet := 	STFFireEvent(	ProcName(0)																	,;		// Nome do processo
-								  		"STCloseNotFiscalReceipt",;
-										{})
-										
-					If !Self:VerificarImpressao(aRet, @lReimprime ) 
-						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-						
-						If lReimprime
-		                    Loop
-						Else
-							lContinua := .F. 
-						EndIf
-						
-    			    Else 
-			         	lImprimiu := .T.
-						lContinua := .F. 
-     				EndIf 
-					
-					If !lContinua
-						Loop
-					Endif
-		
-				Case oComprov:cTipo == "G" .OR. oComprov:nVezes > 1
-		
-					If Empty(cTexto)
-						cTexto := Self:RetornarTexto(oCupons) //Linha inicial do comprovante
-					EndIf
-										
-					If !Empty(cTexto) 
-					
-						//bufferizar as linhas do comprovante e enviar conforme contador					
-						aRet := Self:TGImprimirTxtFisc(oCupons, @cTexto)	
-						
-						//Se for Homologacao do TEF chama a rotina de fechamento do relatorio gerencial
-						//Pois so para homologacao aceita essa funcionalidade 
-						If SuperGetMV("MV_LJHMTEF", ,.F.)	
-							If Valtype(aRet) == "A" .AND. Len(aRet) > 0 .AND. aRet[1] == 0      
-								aRet := 	STFFireEvent(	ProcName(0)					,;		// Nome do processo
-															"STManagReportPrint"		,;
-															{"FechaRelatorioGerencial"	,;
-							 								1})						 	
-							EndIf 	
-						EndIf	 
-						
-						If !Self:TGVerificarImpressao(aRet, @lReimprime, @lRelGer )  
-							//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
-							
-							If lReimprime
-								Loop
-			
-							Else
-								lContinua := .F. 
-							EndIf
-							
-			         	Else 
-			            	lImprimiu := .T.
-							lContinua := .F. 	
-							lRelGer   := .T.						
-						EndIf 
-					
-					Else
-						//Protecao para evitar execucao do laco de forma infinita, quando forma 
-						//de pagamento for CHEQUE e nao existir comprovante a ser impresso.
-						If oComprov:cFormaPgto == "CHEQUE" .And. oComprov:nVezes > 10 //Tenta ate 10 vezes
-							lImprimiu := .T.
-							lContinua := .F. 	
-							lRelGer   := .T.	
-						EndIf
-						
-					EndIf
-						
-			EndCase
-
-		End
-	
-	EndIf
+If lPOS
+	lImprimiu := Self:ImpCpvTPdv(oComprov, oCupons, cTexto, lRelGer, lSTDSatRecovery)
+Else
+	LjMsgRun(STR0008 + " " + STR0001,,{ || lImprimiu := Self:ImpCpvLoja(oComprov, oCupons, cTexto, lRelGer, lSTDSatRecovery) })	//"Aguarde..." "Imprimindo comprovante..."
+EndIf
 	 
 Return lImprimiu   
 
@@ -884,13 +653,13 @@ Method VerificarImpressao(aRet, lReimprime ) Class LjCCupom
 					
 		If nOpt == 2 .OR. !Self:ReimpSenSup()  //Superior não digitou senha para desfazer a transacao
 			lReimprime := .T. 
-			STFMessage("TEF", "RUN", "Aguarde a impressão do comprovante TEF....") 
+			STFMessage("TEF", "RUN", STR0006)  // "Aguarde a impressão do comprovante TEF...."
 			STFShowMessage("TEF")
 		EndIf
 
 	Else
 		If ValType(aRet) <> "A"
-			STFMessage("TEFImprime", "ALERT", "Problemas com a Impressora Fiscal")
+			STFMessage("TEFImprime", "ALERT", STR0007) //"Problemas com a Impressora Fiscal"
 			STFShowMessage("TEFImprime") 				
 		EndIf
 	EndIf
@@ -1364,3 +1133,330 @@ Method TGImprimirTxtFisc(oCupons, cTexto) Class LjCCupom
 	EndIf
 	
 Return aRet
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} ImpCpvTPdv
+Impressão do comprovante para Totvs PDV
+
+@type       Method
+@author     Alberto Deviciente
+@since      29/10/2020
+@version    12.1.27
+
+@param oComprov, Objeto, Objeto do comprovante 
+@param oCupons, Objeto, Objeto de cupons do comprovante
+@param cTexto, Caractere, Texto de impressão
+@param lRelGer, Lógico, Indica se é impressão de relatório gerencial
+@param lSTDSatRecovery, Lógico, Indica se é recuperação de venda SAT
+
+@return lImprimiu, Lógico, Indica se imprimiu com sucesso.
+/*/
+//-------------------------------------------------------------------------------------
+Method ImpCpvTPdv(oComprov, oCupons, cTexto, lRelGer, lSTDSatRecovery) Class LJCCupom
+	Local lContinua  	:= .F.	//Laco de continuidade do processo
+	Local lReimprime 	:= .F.	//Indicação de reimpressão do comprovante 
+	Local lImprimiu  	:= .F.	//Impressão do comprovante com sucesso?
+	Local aRet	     	:= {}	//Retorno do ECF
+	Local lGuil			:= SuperGetMV("MV_FTTEFGU",, .T.)	// Ativa guilhotina
+	Local nValorTotal	:= 0	//Total da venda
+	Local oTotal		:= NIL
+	Local oNewModel		:= NIL
+	Local cFormaPagto	:= ""	//Forma de pagamento
+	Local lIsReceipTit	:= .F. 	//É recebimento de titulos?
+	Local lIsNotFiscal	:= .F.	//Possui item nao fiscal
+	Local lMobile 		:= STFGetCfg("lMobile", .F.)	//Smart Client Mobile	
+	Local lLJ7101		:= ExistBlock("LJ7101")
+	Local aRetPE		:= {}							// retorno PE
+	Local lCancel		:= .F.
+
+	Default cTexto			:= ""
+	Default lRelGer			:= .F.
+	Default lSTDSatRecovery	:= .F.
+
+	If !lSTDSatRecovery
+		oTotal := STFGetTot()	// Totalizador
+	Else
+		oNewModel	:= STFEstrTot() 
+		oTotal		:= oNewModel:GetModel("MasterStr")
+	EndIf
+
+	lMobile := ( ValType(lMobile) == "L" .AND. lMobile )
+
+	If oComprov <> Nil .AND.  oCupons <> nil
+
+		lIsReceipTit := STIGetRecTit()
+
+	    lContinua := .T.
+	    Do While lContinua  
+	    	oComprov:nVezes := oComprov:nVezes + 1
+			Do Case
+
+				Case !STFGetCfg("lUseECF")
+
+					If Empty(cTexto)
+						cTexto := Self:RetornarTexto(oCupons) //Linha inicial do comprovante
+					EndIf
+
+					If !Empty(cTexto)
+
+						If "CANCELAMENTO" $ cTexto
+							lCancel := .T.
+						EndIf
+
+						If !lMobile
+
+							lImprimiu := (STWPrintTextNotFiscal(cTexto) == 0)
+
+							If lImprimiu .AND. lGuil .AND. !(oComprov:cFormaPgto $ "PD/PX/PIX/PAGTO DIGITAL") // Pagamento Digital e PIX já imprime as duas vias de uma vez
+								cTexto := Replic(CHR(10)+CHR(13),6)
+								cTexto += TAG_GUIL_INI+TAG_GUIL_FIM		//Corte de Papel								
+								STWPrintTextNotFiscal(cTexto)
+							EndIf	
+							
+							lContinua := .F. 	
+						Else
+							//bufferizar as linhas do comprovante e enviar conforme contador					
+							aRet := Self:TGImprimirTxtFisc(oCupons, @cTexto, lMobile)	
+							
+							If !Self:TGVerificarImpressao(aRet, @lReimprime, @lRelGer, lMobile )  
+								//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
+								lContinua := .F.
+				         	Else
+				            	lImprimiu := .T.
+								lContinua := .F.
+							EndIf
+						EndIf
+					EndIf
+
+				Case oComprov:cTipo == "V" .AND. oComprov:nVezes == 1
+					//Abre cupom fiscal não vinculado
+
+					/* Ajusta VALOR TOTAL e FORMA DE PAGAMENTO caso tenha algum produto não fiscal na venda */
+					If (lIsNotFiscal := STBExistNItemFiscal()) .And. !lIsReceipTit .AND. oComprov:cTipoTrans <> "RNF" .AND. oComprov:cTipoTrans <> "B" 
+						If oComprov:nValor <> oTotal:GetValue("L1_VLRLIQ") 
+							nValorTotal := oTotal:GetValue("L1_VLRLIQ")
+							cFormaPagto := STWFindTot()  
+						Else
+							nValorTotal := oComprov:nValor	
+							cFormaPagto := oComprov:cFormaPgto
+						EndIf
+						oComprov:cTotalizador := GetPvProfString("Microsiga", "Pedido" , "01", GetClientDir()+"SIGALOJA.INI")
+					Else
+					 	//Recebimento de titulos
+						If lIsReceipTit
+							oReceiptTitle := STIRetObjTit()
+							nValorTotal	:= oReceiptTitle:GetTotal() //Valor total dos recebimentos selecionados
+							cFormaPagto	:= Iif(FindFunction("STWReceTotalizer"),STWReceTotalizer("FORMA"),"")  //forma de pagamento
+							oComprov:cTotalizador := Iif(FindFunction("STWReceTotalizer"), STWReceTotalizer("Totalizadores"),"") //totalizador do recebimento					
+						Else
+							nValorTotal := oComprov:nValor	
+							cFormaPagto := oComprov:cFormaPgto
+						EndIf
+					EndIf						
+
+					If lIsReceipTit .Or. lIsNotFiscal .AND. oComprov:cTipoTrans <> "RNF" .AND. oComprov:cTipoTrans <> "B" 
+						aRet := STFFireEvent(	ProcName(0)				,;
+												"STReceiveNotFiscal"	,;
+												{oComprov:cTotalizador	,;
+												(nValorTotal + (oComprov:nVlrSaque - oComprov:nVlrDescTEF)) * IIF(STBFactor()[2] > 0, STBFactor()[2], 1),;
+												cFormaPagto})
+												
+						If !Self:VerificarImpressao(aRet, @lReimprime ) 
+							//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
+							If lReimprime
+			                    Loop
+							Else
+								lContinua := .F.
+							EndIf
+						EndIf 
+					
+					EndIf
+
+					aRet := STFFireEvent(	ProcName(0)		,;
+											"STOpenNotFiscalReceipt",;
+											{cFormaPagto			,;
+											Str( (nValorTotal + (oComprov:nVlrSaque - oComprov:nVlrDescTEF)) * IIF(STBFactor()[2] > 0, STBFactor()[2], 1),14,2),;  //totalizar nformas de pagamento
+										 	oComprov:cTotalizador	,;
+											cTexto					,;
+											NIL})	
+
+					If !Self:VerificarImpressao(aRet, @lReimprime ) 
+						
+						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR						
+						If lReimprime
+		                    Loop
+						Else
+							lContinua := .F.
+						EndIf
+		                
+					EndIf 
+					
+					If !lContinua
+						Loop
+					Endif
+					
+					//bufferizar as linhas do comprovante e enviar conforme contador   
+					
+					If "CANCELAMENTO" $ oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ]
+						lCancel := .T.
+					EndIf					
+					
+					If lLJ7101 .And. !lCancel 
+						aRetPE := ExecBlock( "LJ7101", .F., .F. )
+						If Len(aRetPE) > 0 .And. ValType(aRetPE[1]) == "C"
+							oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ] += aRetPE[1]
+						EndIf		
+						If Len(aRetPE) > 1 .And. ValType(aRetPE[2]) == "C"
+							oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO[Len(oCupons:ACOLECAO[1]:OVIACAIXA:ACOLECAO) ] += aRetPE[2]
+						EndIf														
+					EndIf						
+					
+					aRet := Self:ImprimirTxtFisc(oCupons, @cTexto)
+					
+					If !Self:VerificarImpressao(aRet, @lReimprime ) 
+						
+						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR						
+						If lReimprime
+							Loop
+		
+						Else
+							lContinua := .F. 
+						EndIf						
+		                
+					EndIf 
+					
+					If !lContinua
+						Loop
+					Endif
+					InKey(2)
+			
+					aRet := 	STFFireEvent(	ProcName(0)			,;		// Nome do processo
+								  		"STCloseNotFiscalReceipt"	,;
+										{})
+										
+					If !Self:VerificarImpressao(aRet, @lReimprime ) 
+						//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
+						
+						If lReimprime
+		                    Loop
+						Else
+							lContinua := .F. 
+						EndIf
+						
+    			    Else 
+			         	lImprimiu := .T.
+						lContinua := .F. 
+     				EndIf 
+					
+					If !lContinua
+						Loop
+					Endif
+		
+				Case oComprov:cTipo == "G" .OR. oComprov:nVezes > 1
+		
+					If Empty(cTexto)
+						cTexto := Self:RetornarTexto(oCupons) //Linha inicial do comprovante
+					EndIf
+										
+					If !Empty(cTexto) 
+					
+						//bufferizar as linhas do comprovante e enviar conforme contador					
+						aRet := Self:TGImprimirTxtFisc(oCupons, @cTexto)	
+						
+						//Se for Homologacao do TEF chama a rotina de fechamento do relatorio gerencial
+						//Pois so para homologacao aceita essa funcionalidade 
+						If SuperGetMV("MV_LJHMTEF", ,.F.)	
+							If Valtype(aRet) == "A" .AND. Len(aRet) > 0 .AND. aRet[1] == 0      
+								aRet := 	STFFireEvent(	ProcName(0)					,;		// Nome do processo
+															"STManagReportPrint"		,;
+															{"FechaRelatorioGerencial"	,;
+							 								1})						 	
+							EndIf 	
+						EndIf	 
+						
+						If !Self:TGVerificarImpressao(aRet, @lReimprime, @lRelGer )  
+							//Erro de Impressao e pode reimprimir OU USUÁRIO NÃO TEM PERMISSÃO PARA CANCELAR  //LjTEFAskImp(@nOpt,nRet) .OR. (nOpt == 0 .And. !LjSenSupTEF())
+							
+							If lReimprime
+								Loop
+			
+							Else
+								lContinua := .F. 
+							EndIf
+							
+			         	Else 
+			            	lImprimiu := .T.
+							lContinua := .F. 	
+							lRelGer   := .T.						
+						EndIf 
+					
+					Else
+						//Protecao para evitar execucao do laco de forma infinita, quando forma 
+						//de pagamento for CHEQUE e nao existir comprovante a ser impresso.
+						If oComprov:cFormaPgto == "CHEQUE" .And. oComprov:nVezes > 10 //Tenta ate 10 vezes
+							lImprimiu := .T.
+							lContinua := .F. 	
+							lRelGer   := .T.	
+						EndIf
+						
+					EndIf
+						
+			EndCase
+
+		End
+	
+	EndIf
+	 
+Return lImprimiu
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} ImpCpvLoja
+Impressão do comprovante para o SIGALOJA.
+
+@type       Method
+@author     Alberto Deviciente
+@since      29/10/2020
+@version    12.1.27
+
+@param oComprov, Objeto, Objeto do comprovante 
+@param oCupons, Objeto, Objeto de cupons do comprovante
+@param cTexto, Caractere, Texto de impressão
+@param lRelGer, Lógico, Indica se é impressão de relatório gerencial
+@param lSTDSatRecovery, Lógico, Indica se é recuperação de venda SAT
+
+@return lImprimiu, Lógico, Indica se imprimiu o comprovante com sucesso.
+/*/
+//-------------------------------------------------------------------------------------
+Method ImpCpvLoja(oComprov, oCupons, cTexto, lRelGer, lSTDSatRecovery) Class LJCCupom
+	Local lImprimiu  	:= .F.	//Imprimiu o comprovante com sucesso?
+	Local lImpFiscal	:= IIF(ISBLIND(),.F.,Lj121IsFisc(LjGetStation("LG_IMPFISC"))) //Verifica se é impressora fiscal
+	
+	Default cTexto			:= ""
+	Default lRelGer			:= .F.
+	Default lSTDSatRecovery	:= .F.
+
+	If oComprov <> Nil .AND. oCupons <> nil
+
+		If Empty(cTexto)
+			cTexto := Self:RetornarTexto(oCupons)
+		EndIf
+		
+		If !Empty(cTexto)
+			
+			If lImpFiscal
+				//-----------------------
+				//Impressora Fiscal (ECF)
+				//-----------------------
+				lImprimiu := LjImpPDFis(cTexto, oComprov:nValor, oComprov:cFormaPgto, oComprov:cTotalizador, lRelGer )
+			Else
+				//-----------------------
+				//Impressora Nao Fiscal
+				//-----------------------
+				lImprimiu := LjImpPDNFis(cTexto)
+			EndIf
+
+		EndIf
+
+	EndIf
+	 
+Return lImprimiu

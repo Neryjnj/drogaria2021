@@ -44,7 +44,7 @@ oLstCdPg:lReadOnly := lReadOnly
 oBtnOk := TButton():New(POSVERT_BTNPAY,POSHOR_BTNCONFPAY,STR0001,oPnlAdconal,{|| STICPConfPay(oLstCdPg,oPnlAdconal) },LARGBTN,ALTURABTN,,,,.T.) //'Efetuar Pagamento'
 
 /* Button: Cancelar */
-oBtnCa	:= TButton():New(POSVERT_BTNPAY,000,STR0002,oPnlAdconal,{|| IIF(ExistFunc("STBCancPay"), IIF(STBCancPay(),STIPayCancel(),NIL), STIPayCancel() ) },LARGBTN,ALTURABTN,,,,.T.) //'Cancelar'
+oBtnCa	:= TButton():New(POSVERT_BTNPAY,000,STR0002,oPnlAdconal,{|| IIF(ExistFunc("STBCancPay"), IIF(STBCancPay(),STIPayCancel(oPnlAdconal),NIL), STIPayCancel(oPnlAdconal) ) },LARGBTN,ALTURABTN,,,,.T.) //'Cancelar'
 
 oBtnOk:SetCSS( POSCSS (GetClassName(oBtnOk), CSS_BTN_FOCAL ))
 oBtnCa:SetCSS( POSCSS (GetClassName(oBtnCa), CSS_BTN_ATIVO )) 

@@ -33,12 +33,13 @@ Class LJC_TEF
 	Method Desfazer()
 	Method ISAtivo()
 	Method Config()
-	Method Cupom()									//Imprime os comprovantes TEF    
+	Method Cupom()								//Imprime os comprovantes TEF    
 	Method Formas()								//Retorna as formas de pagamento
-	Method Forma(cForma)                               //Retorna a Forma de Pagamento 
+	Method Forma(cForma)                        //Retorna a Forma de Pagamento 
 	Method Administradoras()                    //Retorna as administradoras
 	Method Fechar()
 	Method ResetCompro()
+	Method PgtoDigital()
 	
 
 End Class                 
@@ -175,13 +176,19 @@ Return Self:oConfig:getRecCel()
 Method PBM() Class LJC_TEF
 Return Self:oConfig:getPBM()          
 
-/*---------------------------------------------------------------------------
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
 ฑฑบPrograma  ณConfirmar    บAutor  ณVendas CRM       บ Data ณ  09/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณConfirma todas as operacoes pendentes						  บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
----------------------------------------------------------------------------*/
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/  
 Method Confirmar() Class LJC_TEF
 	
 	//Confirma as transacoes de cartao
@@ -203,6 +210,11 @@ Method Confirmar() Class LJC_TEF
 	If Self:oConfig:ISRecCel()
 		Self:RecargaCel():Confirmar()
 	EndIf
+
+	//Confirma as transacoes de pagamentos digitais
+	If Self:oConfig:ISPgtoDig()
+		Self:PgtoDigital():Confirmar()
+	EndIf
 	
 	//Confirma as transacoes de PBM
 	If Self:oConfig:ISPBM()
@@ -211,13 +223,19 @@ Method Confirmar() Class LJC_TEF
 
 Return Nil
 
-/*---------------------------------------------------------------------------
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัอออออออออออออหอออออออัอออออออออออออออออหออออออัอออออออออออออปฑฑ
 ฑฑบPrograma  ณDesfazer     บAutor  ณVendas CRM       บ Data ณ  09/03/10   บฑฑ
 ฑฑฬออออออออออุอออออออออออออสอออออออฯอออออออออออออออออสออออออฯอออออออออออออนฑฑ
 ฑฑบDesc.     ณDesfaz todas as operacoes pendentes				   บฑฑ
 ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
 ฑฑบUso       ณ MP10                                                       บฑฑ
----------------------------------------------------------------------------*/
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/  
 Method Desfazer() Class LJC_TEF
 	
 	//Desfaz as transacoes de cartao
@@ -239,6 +257,12 @@ Method Desfazer() Class LJC_TEF
 	//Desfaz as transacoes de recarga de celular	
 	If Self:oConfig:ISRecCel()
 		Self:RecargaCel():Desfazer()
+	EndIf
+
+	//Desfaz as transacoes de pagamentos digitais
+	If Self:oConfig:ISPgtoDig()
+		Self:PgtoDigital():Desfazer()
+		Self:ResetCompro()
 	EndIf
 			
 	// Desfaz as transacoes de PBM
@@ -432,3 +456,19 @@ Self:oConfig:oCupom:oCupom	:=  LJCList():New()
 Self:oConfig:oCupom:oFormas	:=  LJCList():New()
 
 Return Self
+
+//-------------------------------------------------------------------------------------
+/*/{Protheus.doc} PgtoDigital
+Retorna o objeto contendo as configura็๕es do pagamento digital
+
+@type       Method
+@author     Bruno Almeida
+@since      26/10/2020
+@version    12.1.27
+@param 
+@return 	oPgDig, Objeto, Retorna objeto com as configura็๕es do pgto digital
+
+/*/
+//-------------------------------------------------------------------------------------
+Method PgtoDigital() Class LJC_TEF   
+Return Self:oConfig:getPgtoDigital()

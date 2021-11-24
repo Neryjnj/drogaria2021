@@ -110,6 +110,10 @@ Local nComisAux	    := 0 											//Auxiliar para calculo comissao
 Local nPosVend		:= 0                							//Guarda Posição do Vendedor no array aVendedor
 Local aVendedor		:= {}											//Vendedores utilizados no SL2, para gravacao no financeiro
 Local lVenSuper 	:= .F.											//Guarda se o Vendedor é um dos Superiores (gerente/Supervisor) 
+Local lTemPagDig    := .F.											//Controla se na venda tem Pagamento Digital
+Local lPagDigOk	    := .F.											//Valida se o Pagamento Digital foi OK
+Local lL1VLRPGDG 	:= SL1->(ColumnPos("L1_VLRPGDG")) > 0 			//Verifica se existe o campo onde é gravado o valor da venda paga em Pagamento Digital
+Local lL1VLRPGPX 	:= SL1->(ColumnPos("L1_VLRPGPX")) > 0 			//Verifica se existe o campo onde é gravado o valor da venda paga em PIX
 
 Default nHandle 	:= -1											// Handle do arquivo
 Default lJob		:= .F.											// IdentIfica se a rotina e' chamada via JOB ou nao
@@ -277,6 +281,17 @@ If  !(AllTrim(SL1->L1_NSO) $ "P3|P4|P5")
 		If !aRetTef[2]	//Continua o processo da função LJ7Pedido
 			lRet := .F.
 		EndIf
+
+		//-----------------------------------------
+		// Processa Transação de Pagamento Digital
+		//-----------------------------------------
+		If lRet .And. ExistFunc("LjPgtoDig") .And. STWChkTef("PD")
+			lPagDigOk := LjPgtoDig(@lTemPagDig)
+			If lTemPagDig
+				lRet := lPagDigOk
+			EndIf
+		EndIf
+
 	EndIf
 	
 	nSeconds := Seconds() // Armazena segundos inicial apos o TEF
@@ -472,7 +487,12 @@ If  !(AllTrim(SL1->L1_NSO) $ "P3|P4|P5")
 			Lj701ImpTr(nHandle,@lTemTEFPend) //Aguarde... Impressão do Tef
 			LjGrvLog(cNumPai,"Impressao do comprovante TEF ",lTemTEFPend)
 			Lj7GeraSL("SL1",{{"L1_NSO","P4"}},.F.)
-		Endif		
+		Endif
+
+		If ExistFunc("LjImprimPD") .And. lTemPagDig .And. lPagDigOk
+			//Imprime o comprovante de Pagamento Digital
+			LjImprimPD()
+		EndIf
 			
 	EndIf
 
@@ -768,17 +788,6 @@ If lRet
 	RestArea(aAreaL4Filhos)
 
 EndIf	
-
-/*
-	Atenção não adicionar rotinas fora da Transação
- 	Apos Gravação do Financeiro pois em casos de erro não existe estorno
- 	para a mesma fora da transação. 
-*/
-//Chamada da Função IntegDef para dispara a rotina de Rastreamento de pedido.
-If lRet .And. FWHasEAI("MATA410B", .T., , .T.)
-	LjGrvLog("LJ7PEDIDO" , "Chamada IntegDef - MATA410B.")
-	FwIntegDef("MATA410B",,,, "MATA410B")
-Endif
 
 LjGrvLog(cNumPai,'Finalização da Geração do Pedido - ' + If( lRet, 'S', 'N' ) )
 LjGrvLog("LJ7PEDIDO" , "Tempo total geração do pedido: " + AllTrim(Str(Seconds() - nSeconds) ) + " segundos.")
@@ -1591,7 +1600,10 @@ Local lIsDiscado	:= L010IsDirecao(L010GetGPAtivo())
 Local lVerEmpres    := Lj950Acres(SM0->M0_CGC)				    	// Verifica as filiais da trabalharam com acrescimento separado
 Local cL1NSUTEF		:= ""
 Local cL4NSUTEF		:= ""
-Local lTefMult		:= SuperGetMV("MV_TEFMULT", ,.F.)		// Identifica se o cliente utiliza múltiplas transacoes TEF
+Local lTefMult		:= SuperGetMV("MV_TEFMULT", ,.F.)				// Identifica se o cliente utiliza múltiplas transacoes TEF
+Local nMVLjTrDin	:= SuperGetMv("MV_LJTRDIN",,0)					// Se o local fisico do servidor está em Horário de Verão(.F.->Não/.T.->Sim)
+Local lMVLjTroco	:= SuperGetMv("MV_LJTROCO",,.F.)				// Determina se utiliza troco para diferentes formas de Pagamento
+Local lIntegDef     := SL1->L1_ORIGEM == "N"
 
 Default lJob		:= .F.
 Default aRetCNF		:= {.F., {"", ""}}
@@ -1749,7 +1761,13 @@ For nX := 1 to Len( aPgtos )
 	aAdd( aSL4[nX], { "L4_FILIAL"	, xFilial("SL4") } )
 	aAdd( aSL4[nX], { "L4_NUM"		, SL1->L1_NUM	} )
 	aAdd( aSL4[nX], { "L4_DATA"		, aPgtos[nX][1] } )
-	aAdd( aSL4[nX], { "L4_VALOR"	, aPgtos[nX][2] } )
+	
+	If nMVLjTrDin == 0 .AND. lMVLjTroco	.or. lIntegDef
+		aAdd( aSL4[nX], { "L4_VALOR"	, aPgtos[nX][2] } )
+	Else	
+		aAdd( aSL4[nX], { "L4_VALOR"	, aPgtos[nX][2] - Lj7T_Troco(2)} )
+	EndIf
+	
 	aAdd( aSL4[nX], { "L4_FORMA"	, aPgtos[nX][3] } )
 
 	If !IsMoney(aPgtos[nX][3]) .AND. !lLayAway
@@ -1889,6 +1907,7 @@ For nX := 1 to Len( aPgtos )
 			aAdd( aSL4[nX], { "L4_VENDTEF", "S"})
 			aAdd( aSL4[nX], { "L4_DOCTEF" , cNSUVndTef } )
 			aAdd( aSL4[nX], { "L4_NSUTEF" , cL4NSUTEF } )
+			aAdd( aSL4[nX], { "L4_AUTORIZ", cNSUVndTef } )
 			aAdd( aSL4[nX], { "L4_DATATEF", Str(Year(dDataBase),4)+StrZero(Month(dDataBase),2)+StrZero(Day(dDataBase),2) } )
 			aAdd( aSL4[nX], { "L4_ADMINIS", aPgtos[nX][4][05] } )
 		EndIf
@@ -2665,7 +2684,9 @@ Else
 	
 	//Gera SE5 para o troco pela função AtuaTroco (LOCXFUN) quando
 	//venda com apenas Itens-Pedido ou apenas Itens-Retira Posterior
-	If cPaisLoc == "BRA" .AND. SuperGetMV( "MV_LJTROCO", ,.F. ) .And. SL1->L1_TROCO1 > 0
+	If	cPaisLoc == "BRA" .AND.;
+		( SuperGetMV( "MV_LJTROCO", ,.F. ) .And. SuperGetMv("MV_LJTRDIN",,0) == 0 ) .AND.;
+		SL1->L1_TROCO1 > 0
 		RestArea(aAreaL1Pai)
 		If ExistFunc("LjNewGrvTC") .And. LjNewGrvTC() //Verifica se o sistema está atualizado para executar o novo procedimento para gravação dos movimentos de troco.
 			lRet :=  LjTrocoInc(SL1->L1_TROCO1	, 1 			 , 2    		, dDatabase		 ,;
@@ -2890,6 +2911,7 @@ Local nTamLojRes	:= TamSx3("L2_LOJARES")[1]
 Local cNumDoc	    := Space(TamSx3("L1_DOC")[1])				// L1_DOC
 Local cNum 		    := Space(nTamNumOrc)						// L1_NUM
 Local cStatus	    := Space(TamSx3("L1_STATUS")[1])			// L1_STATUS
+Local cL2_TRANSP	:= ""
 Local nAuxRotina	:= 0										// Rotina
 Local nAuxNcc		:= 0										// NCC
 Local nDecsAux		:= 2										// Numero de casas decimais
@@ -2910,10 +2932,17 @@ Local nTotOrc		:= 0										// Total do Orçamento/Venda a ser rateado
 Local nTotSL4		:= 0										// Total dos Pagamentos
 Local nDifSL4		:= 0										// Diferença entre Orçamento/Venda e pagamentos
 Local nNccProp		:= 0    									// Valor da NCC proporcional ao valor do orçamento filho
+Local nL1_TRANSP	:= 0
+
 //As variáveis lEmitNfce - alimentada pela rotina LjEmitNFCe, lFtvdVer12 - alimentada pela rotina - LjFTVD() e cNomeProg - alimentada pela variável  lFtvdVer12  tiveram seu escopo alterado para variáveis locais, pois o cliente pode mudar de modulo para o SigaFAT através do SIGAADV e essas variáveis mudam o seu valor conforme o módulo
 Local lEmitNfce		:= LjEmitNFCe()								// Sinaliza se utiliza NFC-e
-Local aAreaSL1 		:={} 										// variável para armazenar a área original da SL1
+Local aAreaSL1 		:= {} 										// variável para armazenar a área original da SL1
 Local nVlrTroco		:= 0										// Valor do troco
+Local lL1VLRPGDG 	:= SL1->(ColumnPos("L1_VLRPGDG")) > 0 		//Verifica se existe o campo onde é gravado o valor da venda paga em Pagamento Digital
+Local lL1VLRPGPX 	:= SL1->(ColumnPos("L1_VLRPGPX")) > 0 		//Verifica se existe o campo onde é gravado o valor da venda paga em PIX
+Local lL2_TRANSP	:= SL2->(ColumnPos("L2_TRANSP")) > 0
+Local lIntegDef		:= .F.
+Local nDescFid      := 0
 
 Default lJob			:= .F.
 Default aAuxaPgtos  	:= {}
@@ -2960,8 +2989,17 @@ aSL1[aScan(aSL1,{|x|x[1]=="L1_VALES"  })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_FINANC" })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_OUTROS" })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_ENTRADA"})][2]	:= 0
+
+If lL1VLRPGDG
+	aSL1[aScan(aSL1,{|x|x[1]=="L1_VLRPGDG"})][2]	:= 0
+EndIf
+If lL1VLRPGPX
+	aSL1[aScan(aSL1,{|x|x[1]=="L1_VLRPGPX"})][2]	:= 0
+EndIf
+
 aSL1[aScan(aSL1,{|x|x[1]=="L1_DOCPED" })][2]	:= cNumDoc
 aSL1[aScan(aSL1,{|x|x[1]=="L1_STATUS" })][2]	:= cStatus
+
 If cEntrega <> "2"
 	aSL1[aScan(aSL1,{|x|x[1]== "L1_DOC"		})][2]	:= cNumDoc
 	If lEmitNFCe .Or. LjGtPafNfce()
@@ -2981,6 +3019,10 @@ If lAlterOrc
 	aSL1[aScan(aSL1,{|x|x[1]=="L1_PDV" })][2]	:= ""
 	aSL1[aScan(aSL1,{|x|x[1]=="L1_OPERADO" })][2]	:= ""
 EndIf
+
+lIntegDef := SL1->L1_ORIGEM == "N"
+nL1_TRANSP := aScan(aSL1,{|x|x[1]=="L1_TRANSP"})
+
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Posiciona o SL2 para gerar o array aSL2                                  ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -3045,6 +3087,11 @@ For nX := 1 to Len( aItens )
 
 		//Vincula o item do pedido filho ao item do PAI
 		aSL2[nX][aScan(aSL2[nX],{|x|x[1]=="L2_ITESC6"})][2]   := SL2->L2_ITEM
+
+		//Na integração, a transportadora deve ser a mesma em todos os itens, portanto pego somente 1 vez
+		If lIntegDef .And. lL2_TRANSP .And. Empty(cL2_TRANSP)
+			cL2_TRANSP := AllTrim(SL2->L2_TRANSP)
+		EndIf
     EndIf
 Next nX
 
@@ -3076,6 +3123,14 @@ aSL1[aScan(aSL1,{|x|x[1]=="L1_VALES"  })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_FINANC" })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_OUTROS" })][2]	:= 0
 aSL1[aScan(aSL1,{|x|x[1]=="L1_ENTRADA"})][2]	:= 0
+
+If lL1VLRPGDG
+	aSL1[aScan(aSL1,{|x|x[1]=="L1_VLRPGDG"})][2]	:= 0
+EndIf
+If lL1VLRPGPX
+	aSL1[aScan(aSL1,{|x|x[1]=="L1_VLRPGPX"})][2]	:= 0
+EndIf
+
 aSL1[aScan(aSL1,{|x|x[1]=="L1_DESCONT"})][2]	:= nVlrDescPro
 aSL1[aScan(aSL1,{|x|x[1]=="L1_FRETE" })][2]		:= nVlrFre
 aSL1[aScan(aSL1,{|x|x[1]=="L1_SEGURO"})][2]		:= nVlrSeg
@@ -3125,12 +3180,31 @@ If cPaisLoc = "BRA"
 	aSL1[aScan(aSL1,{|x|x[1]=="L1_VALBRUT"})][2]	:= nValorTotal + nVlrFSD + nVlrTIcmsRet + nVlrIpi
 Endif
 
+//Proporcionaliza o valor de desconto da fidelização este desconto já esta composto no campo L1_DESCONT
+If ExistFunc("LjxRaasInt") .And. LjxRaasInt() .And. SL1->L1_FIDCORE
+
+    //Tratamento para quando só existir o desconto de fidelização no L1_DESCONT
+    If SL1->L1_DESCONT == SL1->L1_DESCFID
+        nDescFid := aSL1[aScan(aSL1,{|x|x[1]=="L1_DESCONT"})][2]
+    Else
+        nDescFid := aSL1[aScan(aSL1,{|x|x[1]=="L1_VLRTOT"})][2] * 100 
+        nDescFid := nDescFid / SL1->L1_VLRTOT
+        nDescFid := SL1->L1_DESCFID * ( nDescFid / 100)
+    EndIf
+
+    aSL1[aScan(aSL1,{|x|x[1]=="L1_DESCFID"})][2] := nDescFid
+EndIf
+
 aSL1[aScan(aSL1,{|x|x[1]=="L1_VALMERC"})][2]	:= nValMerc
 aSL1[aScan(aSL1,{|x|x[1]=="L1_VALICM" })][2]	:= nVlrIcms
 aSL1[aScan(aSL1,{|x|x[1]=="L1_VALIPI" })][2]	:= nVlrIpi
 aSL1[aScan(aSL1,{|x|x[1]=="L1_VALISS" })][2] 	:= nVlrIss
 aSL1[aScan(aSL1,{|x|x[1]=="L1_BRICMS" })][2] 	:= nVlrBrIcms
 aSL1[aScan(aSL1,{|x|x[1]=="L1_ICMSRET"})][2] 	:= nVlrIcmsRet
+
+If !Empty(cL2_TRANSP) .And. (nL1_TRANSP > 0) //Insere o Código da Transportadora
+	aSL1[nL1_TRANSP][2] := cL2_TRANSP
+EndIf
 
 //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 //³ Alterando os valores especIficos para a loja destino                     ³

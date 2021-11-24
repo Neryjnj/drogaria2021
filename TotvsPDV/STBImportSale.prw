@@ -45,8 +45,6 @@ Local lContinue			:= .T.			// Fluxo lógico função
 Local ni 				:= 1			// Variavel de loop
 Local cNomeCli			:= ""			// Nome do cliente
 Local nVlrTot			:= 0			// Valor do orçamento importado
-Local aOrcBlock			:={}			// array de orçamentos sendo utilizados por Retaguarda
-Local cNumOrcBlk		:=""			// variavel para listar orçamentos bloqueados para mostrar na tela 
 
 Default nOption				:= 0
 Default cField				:= ""
@@ -92,18 +90,11 @@ Do Case
 			
 			 // Percorre array para pegar os dados do cliente e valor para apresentar na tela de importação
 			 While ni <= LEN(aOptionSales)
-			 	If cFieldAssigned == aOptionSales[ni][1]
+			 
+			 	If StrZero(Val(cFieldAssigned),TamSX3(cField)[1]) == aOptionSales[ni][1]
 			 		cNomeCli := aOptionSales[ni][3]
 			 		//"Atribuindo ao Valor total da venda o valor do acréscimo e do desconto((L1_VLRTOT + L1_VLRJUR) - L1_DESCONT) "
-					nVlrTot  := STBArred( aOptionSales[ni][4] ) 
-
-					If AScan( aOptionSales[ni],"ORCLOCK") > 0
-						STFMessage("STImportSale","STOP", STR0011 + " : " + aOptionSales[ni][1] ) //Orçamento sendo alterado na tela do Retaguarda
-						STFShowMessage("STImportSale")	
-						LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0011 + " : " + aOptionSales[ni][1])
-						aOptionSales := {}
-						Exit  
-					Endif 
+					nVlrTot  := STBArred( aOptionSales[ni][4] )
 
 			 	EndIf	 	
 			 	ni++
@@ -134,29 +125,6 @@ Do Case
 			
 			If lContinue
 				  
-				While ni <= Len(aOptionSales)
-					If AScan( aOptionSales[ni],"ORCLOCK") > 0
-						Aadd(aOrcBlock, aOptionSales[ni][1] )
-						LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0011 + " : " + aOptionSales[ni][1])
-						Adel(aOptionSales, ni) 
-						aSize(aOptionSales,Len(aOptionSales)-1)
-					Else
-						ni++
-					Endif
-					
-				EndDo
-
-				If Len(aOrcBlock)> 0 
-					ni:=1
-					While ni <= Len(aOrcBlock)
-						cNumOrcBlk += aOrcBlock[ni]+  IIf(ni < Len(aOrcBlock), "; ","")
-						ni++
-					EndDo
-					MsgAlert(STR0011+ ": "+ cNumOrcBlk )
-					LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0011 + " : " + cNumOrcBlk)	
-				EndIf 
-
-				lContinue:= Len(aOptionSales)>=1 		
 		
 				If Len(aOptionSales) == 0
 				
@@ -208,15 +176,7 @@ Do Case
 				//"Atribuindo ao Valor total da venda o valor do acréscimo e do desconto((L1_VLRTOT + L1_VLRJUR) - L1_DESCONT) "
 				nVlrTot  := STBArred( aOptionSales[ni][4] )
 				aOptionSales[ni][4]	:= nVlrTot	 	
-				If AScan( aOptionSales[ni],"ORCLOCK") > 0
-					LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0011 + " : " + aOptionSales[ni][1])
-					Aadd(aOrcBlock, aOptionSales[ni][1] )
-					Adel(aOptionSales, ni) 
-					aSize(aOptionSales,Len(aOptionSales)-1)
-				Else
-					ni++ 
-				Endif 
-				
+				ni++
 			EndDo	
 		EndIF
 		
@@ -233,15 +193,6 @@ Do Case
 				STFShowMessage("STImportSale")	
 				LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0003)	//"Nao foi encontrado orcamento em aberto"
 				aOptionSales := {}
-				lContinue := .F.	
-			Elseif Len(aOrcBlock)> 0 
-				ni:=1
-				While ni <= Len(aOrcBlock)
-					cNumOrcBlk += aOrcBlock[ni]+  IIf(ni < Len(aOrcBlock), "; ","")
-					ni++
-				EndDo
-				MsgAlert(STR0011+ ": "+ cNumOrcBlk )
-				LjGrvLog("Importa_Orcamento:STBISSearchOptions", STR0011 + " : " + cNumOrcBlk)
 				lContinue := .F.	
 			EndIf
 		EndIf	
@@ -360,6 +311,7 @@ Local nL1_NUM		:= 0			// Armazena posicao do L1_NUM
 Local aRetCred      := {}			// Array com as informações  da Avaliação de Crédito 
 Local cCredLj   	:= SuperGetMV( "MV_CREDLJ",,"N")// Indica se deve ser feita a Análise de Crédito do Cliente 
 Local lSTVLDIMP     := ExistBlock("STVLDIMP") 
+Local lSL1Locked	:= .F. 			
 
 Default cField			:= ""
 Default cFieldAssigned	:= ""
@@ -385,7 +337,7 @@ If lContinue
 		Case cField == "L1_NUM"
 			LjGrvLog( " 02  - Importação do PDV", "aSale", Nil )	
 			LjGrvLog("Importa_Orcamento:STBImportRemote","Chama rotina: STDISSL1Get")
-			aSL1 := STDISSL1Get( cFieldAssigned )
+			aSL1 := STDISSL1Get( cFieldAssigned, @lSL1Locked )
 			
 			If Len(aSL1) == 0
 				lContinue := .F.
@@ -512,7 +464,11 @@ If lContinue
 			/*/
 			If lContinue	// Indica que deve ser retornado o orcamento (tudo certo)
 				If Len(aSale) == 0 // Nenhum STATUS atribuído
-					AADD( aSale , "OK" )
+					If lSL1Locked
+						AADD( aSale , "SL1LOCK" )
+					Else 
+						AADD( aSale , "OK" )
+					Endif 
 					AADD( aSale , { aSL1 , aSL2 , aSL4  } )					
 				Else
 					AADD( aSale , { aSL1 , aSL2 , aSL4  } )
@@ -758,6 +714,7 @@ Local nL2_RESERVA		:= 0	   			// Posição da reserva no array
 Local aItensConsult		:= {}	   			// Itens a consultar estoque
 Local lValThisItem		:= .F.		   		// Define se avalia estoque para esse item
 Local lItemIncluded		:= .F.		   		// Define se o item ja foi incluido no array
+Local nL2_ENTREGA 		:= 0 	   			// Posição do campo L2_ENTREGA no array 
 
 
 Default aSL2				:= {}
@@ -768,13 +725,13 @@ If Len(aSL2) > 0
 	If SuperGetMV( "MV_LJESTOR"	, , .F. ) .AND. ( SuperGetMV( "MV_ESTNEG" , , "S" ) == "N" )  
 	
 		nL2_RESERVA := AScan( aSL2[1] , { |x| x[1] == "L2_RESERVA"	} 	)	
-		
+		nL2_ENTREGA := AScan( aSL2[1] , { |x| x[1] == "L2_ENTREGA"	} 	)	
 		//		Armazena os produtos a serem avaliados estoque
 		For nI := 1 To Len(aSL2)
 		       
 			lValThisItem := .F.
 			
-			If Empty(aSL2[nI][nL2_RESERVA][2])
+			If Empty(aSL2[nI][nL2_RESERVA][2]) .AND. !aSL2[nI][nL2_ENTREGA][2] == "5" //pedido entrega sem reserva não valida estoque
 			   
 			   lValThisItem 	:= .T.
 			    
@@ -933,10 +890,12 @@ Local lImportSale		:= .T.
 Local lZeraPay 			:= .F.							// Indica se é para zerar os pagamentos
 Local lPosCrd			:=	CrdxInt(.F.,.F.) .AND. ExistFunc("STBSetCrdIdent")	// Ativa Integração TOTVSPDV x SIGACRD
 Local cCgcCart			:= ""							// Cartão para SIGACRD
+Local cIndPres			:= ""
+Local cTransp			:= ""
+Local nPosL1INDP		:= 0							// Posição do campo L1_INDPRES no array aSL1[] , caso não existir o campo na RET não terá essa posição. 
 Local cMatricula 		:= ""							//Matricula do cliente no caso de Convênio (Template Drogaria)
 
 Default aSale			:= {}
-
 
 /*/
 	Valida se o orçamento passado contém cabeçalho, itens e pagamento
@@ -1030,6 +989,11 @@ If lRet
 	cVendedor	:= aSL1[AScan( aSL1 	, { |x| x[1] == "L1_VEND"	} )][2]
 	cNumOrig 	:= aSL1[AScan( aSL1 	, { |x| x[1] == "L1_NUM" 	} )][2]
 	cCgcCart 	:= aSL1[AScan( aSL1 	, { |x| x[1] == "L1_CGCCART"} )][2]
+	nPosL1INDP := AScan(aSL1, { |x| x[1] == "L1_INDPRES"})
+	If  nPosL1INDP > 0
+		cIndPres := aSL1[nPosL1INDP][2]
+	Endif 
+	cTransp 	:= aSL1[AScan( aSL1 	, { |x| x[1] == "L1_TRANSP"} )][2]
 	
 	lIsRetPost	:= Empty(cPedRes) .And. !Empty(cOrcRes)  
 	oCliModel := STWCustomerSelection(cCliCode+cCliStore,cNumOrig)
@@ -1041,6 +1005,8 @@ If lRet
 	STDSPBasket( "SL1" , "L1_TIPOCLI"	, cCliType	)
 	STDSPBasket( "SL1" , "L1_CONDPG"	, cCondPg	)
 	STDSPBasket( "SL1" , "L1_CGCCART"	, cCgcCart	)
+	STDSPBasket( "SL1" , "L1_INDPRES"	, cIndPres	)
+	STDSPBasket( "SL1" , "L1_TRANSP"	, cTransp	)
 	
 	/* Setando vendedor na importação */	
 	oVendModel := STWSalesmanSelection(cVendedor)
@@ -1059,7 +1025,6 @@ If lRet
 	cEndCli  	:= oCliModel:GetValue("SA1MASTER", "A1_END"	)
 	cCgcCli		:= oCliModel:GetValue("SA1MASTER", "A1_CGC"	)
 	
-	
 	If lPosCrd		//Integração TOTVSPDV x SIGACRD
 		If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
 			cMatricula	:= oCliModel:GetValue("SA1MASTER", "A1_MATRICU")
@@ -1071,7 +1036,10 @@ If lRet
 		If (nCallCPF = 2 .OR. nCallCPF = 3)
 			STDSPBasket("SL1","L1_CGCCLI",cCGCCli)
 		ElseIf (nCallCPF = 0 .OR. nCallCPF = 1)
-			//Quando MV_LJDCCLI = 0 ou 1, verificar se possui CPF, se não possuir, limpar os campos cNomeCli e cEndCli. Motivo: Quando lInfoCNPJ = .T., esta abrindo o cupom com Nome/end mesmo quando nao possui o CPF, com isso impacta na finalizacao da venda onde nao eh possuivel informar o CPF 	  
+			/*Quando MV_LJDCCLI = 0 ou 1, verificar se possui CPF, se não possuir, 
+			limpar os campos cNomeCli e cEndCli. Motivo: Quando lInfoCNPJ = .T., 
+			esta abrindo o cupom com Nome/end mesmo quando nao possui o CPF, 
+			com isso impacta na finalizacao da venda onde nao eh possuivel informar o CPF 	  */
 			If !Empty(AllTrim(cCgcCli))
 				If Iif(GetApoInfo("STFRESTART.PRW")[4] >= Ctod("22/02/2019"), !STBGetPgtCPF(), .T.)
 					STFMessage(ProcName(0),"YESNO", STR0007) //"Deseja Imprimir CPF/CNPJ no Comprovante da Venda ?"
@@ -2426,6 +2394,9 @@ Do Case
 			aAdd( aRetFields, "L1_VLRJUR" 	)
 		Endif
 		aAdd( aRetFields, "L1_CGCCART" 	)
+		If SL1->(ColumnPos("L1_INDPRES")) > 0
+			aAdd( aRetFields, "L1_INDPRES" 	)
+		Endif
 		//---------------------------------------------------------------------------
 		//Campos Adicionais que serao considerados na importacao de orcamento
 		// definidos no Ponto de Entrada "STIMPFIELD".

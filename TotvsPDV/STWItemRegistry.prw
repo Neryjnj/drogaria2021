@@ -63,6 +63,7 @@ Function Registra Item.
 @sample
 */
 //-------------------------------------------------------------------
+
 Function STWItemReg(	nItemLine		,	cItemCode		, cCliCode		,	cCliLoja	,;
 						nMoeda      	,	nDiscount   	, cTypeDesc 	,	lAddItem	,;
 						cItemTES 		,	cCliType		, lItemFiscal	,	nPrice		,;
@@ -70,6 +71,7 @@ Function STWItemReg(	nItemLine		,	cItemCode		, cCliCode		,	cCliLoja	,;
 						lServFinal		,   lProdBonif		, lListProd		,	cCodList	,;
 						cCodListIt		,	cCodMens		, cEntrega		,	cCodItemGar ,;
 						cIdItRel		,	cValePre		, cCodProdKit 	, 	nItemTPL	)
+
 
 Local lKitMaster		:= .F.														// Utiliza kit master
 Local aInfoItem			:= {}														// Array de retorno da busca de item
@@ -244,7 +246,6 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 			EndIf
 		EndIf
 	EndIf
-
 	//Valida quantidade 
 	//Limite de qtde de 9999.99 somente para ECF
 	If lRet .AND. ((!(lEmitNFCe .OR. lUseSat) .AND.STBGetQuant() > 9999.99 ) .OR. STBGetQuant() == 0)
@@ -291,7 +292,8 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	
 	//So deixa vender com caixa aberto
 	If lRet
-		lRet := STBCaixaVld()			
+		lRet := STBCaixaVld()
+			
 		If !lRet
 			LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Caixa Fechado")
 		EndIf			
@@ -609,9 +611,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		// Total da venda antes do calculo dos impostos
 		nVTotAfter := oTotal:GetValue("L1_VLRTOT")
 		
-		/*Atualiza totalizadores da Matxfis para evitar erro de diferença de valores entre sistema e impressora fiscal.
+		/*/Atualiza totalizadores da Matxfis para evitar erro de diferença de valores entre sistema e impressora fiscal.
 		Necessário para quando registra um item com desconto e recebe negacao da permissão de superior ou quando 
-		caixa faz alguma operação na impressora. Ex. Troca de papel, queda de luz, etc. durante a inclusão do item. */
+		caixa faz alguma operação na impressora. Ex. Troca de papel, queda de luz, etc. durante a inclusão do item./*/
  		If lItemDel .And. STBTaxFoun("IT", nItemLine)
 			conout("STIWtemRegister - Ajustando valor do item na MatxFis!")
 			LjGrvLog(cL1Num,"Ira ajustar valor do item na Matxfis")
@@ -624,11 +626,11 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 		// Add item para calculo do imposto
 		If lRet
 			STBTaxIniL(	nItemLine		,	.F.			,	aInfoItem[ITEM_CODIGO]	, cItemTES 			, ;
-						STBGetQuant()	,	nPrice		, 	0						, nItemTotal			)
+						STBGetQuant()	,	nPrice		, 	0							, nItemTotal			)
 								
 			// Atualiza o preco pois apos passar pelas funcoes fiscais
 			// o preco pode ter sido alterado, arredondado etc..	devido aos impostos
-			nPrice := STBTaxRet(nItemLine,"IT_PRCUNI")
+			nPrice := STBTaxRet(nItemLine,"IT_PRCUNI"		)
 
 			//valores de impostos por ente tributario da lei dos impostos
 			 If lFLImpItem .And. (Len(aInfoItem) >= 23)
@@ -677,8 +679,9 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 				   		LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Diferenca entre a Data/Hora do Sistema com a Impressora Fiscal.") 
 						lRet := .F.
 					EndIf
-				EndIf
 
+				EndIf
+				
 				//Verifica se tem desconto no Item
 				If nDiscount > 0 .AND. (cTypeDesc $ "V|P")
 					LjGrvLog(cL1Num,"Item possui desconto de:"+cValToChar(nDiscount))
@@ -732,7 +735,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 					Else
 						//Se Conseguiu Abrir Cupom atualiza Cesta de Venda
 						LjGrvLog(cL1Num,"Abertura de Cupom Fiscal realizada com sucesso" )
-						STDSPBasket( "SL1" , "L1_SITUA"			, "02" )  // "02" - Impresso a Abertura do Cupom
+						STDSPBasket( "SL1" , "L1_SITUA"			, "02" 							)  // "02" - Impresso a Abertura do Cupom
 					EndIf
 				ElseIf lReceiptIsOpen
 					LjGrvLog(cL1Num,"Abertura do Cupom Fiscal já realizada" )
@@ -740,6 +743,7 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 
 
             	If lRet //Cupom Aberto com sucesso
+
 
 		 			// Indica se imprime codigo de barras no cupom ao inves do codigo do produto
 		 			// LjAnalisaLeg(39)[1] - A legislação exige que no cupom fiscal seja impresso o codigo EAN"
@@ -889,9 +893,11 @@ If aInfoItem[ITEM_ENCONTRADO] .AND. !aInfoItem[ITEM_BLOQUEADO]
 	EndIf
 
 Else
+
 	LjGrvLog(cL1Num,"Item não poderá ser registrado, motivo: Item nao localizado ou indisponivel no cadastro do PDV.")
 	LjGrvLog(cL1Num,"Status Codigo do Item:" + cItemCode + " - Localizado:"+IIF(aInfoItem[ITEM_ENCONTRADO],"Sim","Nao")+" - Bloqueado:"+IIF(aInfoItem[ITEM_BLOQUEADO],"Sim","Nao") + " - Tipo GE(B1_TIPO):"+ IIF(aInfoItem[ITEM_TIPO] == 'GE',"Sim","Nao") )
 	lRet := .F.			// Item nao encontrado
+
 EndIf
 
 If !lKitMaster
@@ -944,7 +950,7 @@ EndIf
 
 // Limpa Objetos variaveis e restaura padrao
 
-STBSetDefQuant()								// Seta quantidade padrao apos o registro de item
+STBSetDefQuant()									// Seta quantidade padrao apos o registro de item
 STBDefItDiscount()								// Seta desconto padrao apos registro de item
 
 //Mostra mensagens referente ao registro de itens
@@ -953,7 +959,6 @@ If !lRecovery
 EndIf
 
 LjGrvLog( cL1Num, "Fim - Workflow Registra Item" )  //Gera LOG
-
 If lRet
 	If !lAddItem .AND. MsFile("ACR")
 		STWBonusSales( nItemLine )
@@ -1020,6 +1025,7 @@ If lRet .And. lTPLDrogaria
 EndIf
 
 Return lRet
+
 
 //-------------------------------------------------------------------
 /* {Protheus.doc} STWSetOpenedReceipt
@@ -1206,7 +1212,9 @@ Local lObrigaLJ950	:= ExistFunc("Lj950ImpCpf") .And. Lj950ImpCpf(STDGPBasket("SL
 /*Caso exija CPF ou tenha paramterização para chamar tela de CPF no final da venda*/
 If lObrigaLJ950 .Or. (ExistFunc("LjInfDocCli") .And. LjInfDocCli() > 1)
 	lDadosInf := .T.
-	STI7InfCPF(.F.)
+	If Empty(STDGPBasket("SL1","L1_CGCCLI"))
+	   STI7InfCPF(.F.)
+	Endif
 	STWInfoCNPJ(,.T.,lObrigaLJ950)
 Else
 	STICallPayment()
