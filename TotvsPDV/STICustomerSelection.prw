@@ -105,6 +105,10 @@ Local aFields			:= STDWhatFields()				//Campos que serão importados
 Local lSTIALTC			:= ExistBlock("STIALTC") 		//Verifica se existe o ponto de entrada STIALTC na seleção do cliente
 Local aCustomers		:= {}							//Dados dos clientes buscado no PE
 
+Local lIsTplDro 		:= ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
+Local cTxtList			:= ""
+
+
 If lSTIALTC
 	oGetList := TListBox():Create(oMainPanel, nOGetListVert, POSHOR_1, {|u| If(PCount()>0,cGetList:=u,cGetList)}, , LARG_LIST_CONSULT , noGetListAlt,,,,,.T.,,bConfirm,oListFont)
 	oGetList:SetCSS( POSCSS (GetClassName(oGetList), CSS_LISTBOX )) 
@@ -172,7 +176,7 @@ Else
 		oGetCrdCart:bLostFocus := { || IIF( !lBusca .AND. !Empty(cGetCrdCart) .AND. STIAddFilter("",oGetList, @lBusca, cGetCrdCart, 2, ""),(cGetCustomer := Space(Len(cGetCustomer)), cGetMatric := Space(Len(cGetMatric)), oGetList:SetFocus()),Nil)}
 		
 		//Informe a Matricula (Integração com CRD habilitado + Template Drogaria)
-		If ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
+		If lIsTplDro //Verifica se usa o Template de Drogaria
 			oLblMatric := TSay():New(POSVERT_LABEL2,POSHOR_2, {||"Ou Informe a Matrícula"}, oMainPanel,,,,,,.T.)  // "Ou Informe a matrícula"
 			oLblMatric:SetCSS( POSCSS (GetClassName(oLblMatric), CSS_LABEL_FOCAL ))
 
@@ -193,8 +197,12 @@ Else
 		noGetListAlt  := ALT_LIST_CONSULT
 		
 	EndIf
-
-	oLblList := TSay():New(noLblListVert,POSHOR_1, {||IIF(lPosCrd,STR0029,STR0007)}, oMainPanel,,,,,,.T.)       // Nome / Código / Loja / CPF/CNPJ / Cartão
+	
+	//Define o Título do List de clientes
+	cTxtList := STR0007 //"Nome / Código / Loja / CPF/CNPJ"
+	cTxtList += IIF(lPosCrd," / " + STR0027,"") //"Cartão"
+	cTxtList += IIF(lPosCrd .And. lIsTplDro," / " + STR0029,"") //"Matrícula"
+	oLblList := TSay():New(noLblListVert,POSHOR_1, {||cTxtList}, oMainPanel,,,,,,.T.)
 	oLblList:SetCSS( POSCSS (GetClassName(oLblList), CSS_LABEL_FOCAL )) 
 
 	oGetList := TListBox():Create(oMainPanel, nOGetListVert, POSHOR_1, {|u| If(PCount()>0,cGetList:=u,cGetList)}, , LARG_LIST_CONSULT , noGetListAlt,,,,,.T.,,bConfirm,oListFont)

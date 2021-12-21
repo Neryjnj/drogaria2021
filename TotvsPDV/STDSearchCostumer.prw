@@ -49,6 +49,7 @@ Local cBodyQuery		:= ""	// -- Variavel para montagem de Query
 Local cEndQuery			:= ""	// -- Variavel para montagem de Query
 Local cFullQuery		:= ""	// -- Variavel para montagem de Query
 Local aFieldSeek		:= {"SA1->A1_COD","SA1->A1_NOME","SA1->A1_CGC"}	// -- Campos que serão comparados baseados no valor de nSeek (Corresponde ao primeiro valor do indice)		
+Local lIsTplDro 		:= ExistFunc("LJIsDro") .And. LJIsDro() //Verifica se usa o Template de Drogaria
 
 Default cWhatSearch 	:= ""								// -- Conteudo a ser buscado
 Default nLimitRegs 		:= SuperGetMV("MV_LJQTDPL",,20) 	// -- Limite de clientes buscado (Recebe do solicitante, caso não exista busca do parametro)
@@ -134,9 +135,15 @@ EndIf
 
 	While (cAliasQuery)->(!EOF())
 		
-		//-- Posição 1 do retorno, String contendo NOME / CODIGO / LOJA / CPF / CARTÃO CRD
-		aAdd(aCustomers, AllTrim((cAliasQuery)->A1_NOME)+" / "+AllTrim((cAliasQuery)->A1_COD)+" / "+AllTrim((cAliasQuery)->A1_LOJA)+" / "+AllTrim((cAliasQuery)->A1_CGC) + IIF(lIntCRD," / " + AllTrim((cAliasQuery)->MA6_NUM),""))
-		
+		//-- Posição 1 do retorno, String contendo NOME / CODIGO / LOJA / CPF / CARTÃO CRD / Número de Matrícula do cliente (convênio)
+		aAdd(aCustomers,	AllTrim((cAliasQuery)->A1_NOME)				+; //01-Nome do Cliente
+							" / "+AllTrim((cAliasQuery)->A1_COD)		+; //02-Código do Cliente
+							" / "+AllTrim((cAliasQuery)->A1_LOJA)		+; //03-Loja do Cliente
+							" / "+AllTrim((cAliasQuery)->A1_CGC)		+; //-04CPF/CNPJ
+							IIF(lIntCRD," / " + AllTrim((cAliasQuery)->MA6_NUM),"")+; //05-Se Ativa a integração com CRD, exibe a informação do CARTÃO CRD
+							IIF(lIntCRD .And. lIsTplDro," / " + AllTrim((cAliasQuery)->A1_MATRICU),""); //06-Em ambiente com CRD + Template Drogaria exibe tambem por Número de Matrícula do cliente (convênio)
+							)
+									
 		// -- Posição 2 do retorno, Array contendo o conteudo dos campos solicitados
 		aAdd(aDataCustomers,{})
 		For nFields := 1 To nLenFields
